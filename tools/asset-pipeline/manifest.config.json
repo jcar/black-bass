@@ -169,5 +169,14 @@
         "prompt": "Instrumental. [0:00 - 0:01] One single dry rimshot click on a snare drum, very short. [0:01 - 0:30] Silence."
       }
     }
+  },
+  "sprites": {
+    "$comment": "Isolated sprites on chroma green, keyed to transparency in post (Gemini can't output alpha). sprite_<name>.",
+    "aspect": "16:9",
+    "size": "1K",
+    "outWidth": 640,
+    "items": {
+      "boat": "Exact overhead top-down view (orthographic, straight down from directly above, no perspective) of a single modern fiberglass bass boat about 20 ft long, bow pointing to the right, centred and filling about 85% of the image width. Glossy deep red hull with a white and silver metal-flake stripe, grey carpeted front casting deck with a black trolling motor mounted on the bow, centre console with a small windshield, two black seats, a black outboard motor on the stern at the left. No people, no water, no wake, no shadow. Isolated on a perfectly flat, uniform pure green (#00FF00) chroma-key background."
+    }
   }
 }

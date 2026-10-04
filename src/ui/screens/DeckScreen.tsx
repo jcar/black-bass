@@ -4,7 +4,10 @@ import { COLORS, LURES } from '../../data/lures';
 import { LINE_OPTIONS, lineLabel, RODS } from '../../data/rods';
 import { assetUrl, rodIconId } from '../../game/assets';
 import { MAX_DECK } from '../../state/career';
-import { useStore } from '../../state/store';
+import { canRerig, useStore } from '../../state/store';
+import { rigIssues } from '../../sim/advisor';
+import { LAKES } from '../../data/lakes';
+import { RigCheck, ScoutingSheet } from '../ProAdvice';
 import type { LineType, RodSetup } from '../../sim/types';
 import { LureIcon } from '../components';
 import { Button, Icon, IconButton, Rail, Scene, Scorebug, Segmented, Sheet, Slug, Stepper, rise, stagger } from '../kit';
@@ -33,8 +36,21 @@ export function DeckScreen() {
   const mutateSave = useStore((s) => s.mutateSave);
   const setScreen = useStore((s) => s.setScreen);
   const [shake, setShake] = useState(0);
-  const locked = !!save.activeTournament;
+  const tournament = useStore((s) => s.tournament);
+  const selectedLake = useStore((s) => s.selectedLake);
+  const rerig = useStore((s) => s.rerigBeforeLaunch);
+  // Rods are locked once you're on the water; before blast-off each day you can still re-rig.
+  const preLaunch = canRerig(tournament);
+  const locked = !!save.activeTournament && !preLaunch;
+  const lakeId = tournament?.lakeId ?? selectedLake;
   const [editing, setEditing] = useState<number | null>(null);
+  const [scout, setScout] = useState(false);
+  const back = () => {
+    if (preLaunch) {
+      rerig();
+      setScreen('briefing');
+    } else setScreen('hub');
+  };
 
   const update = (i: number, patch: Partial<RodSetup>) =>
     mutateSave((s) => {
@@ -47,10 +63,15 @@ export function DeckScreen() {
       <Scene id="ui_locker" dim="full" />
       <div className="stage">
         <div className="topbar">
-          <IconButton name="back" label="Back to marina" cue="back" onClick={() => setScreen('hub')} />
+          <IconButton name="back" label={preLaunch ? 'Back to briefing' : 'Back to marina'} cue="back" onClick={back} />
           <Slug size="lg">Rod locker</Slug>
-          <span className="small muted">Swap rods on the water with one tap.</span>
+          <span className="small muted">{preLaunch ? 'Last chance to re-rig before blast-off.' : 'Swap rods on the water with one tap.'}</span>
           <div className="spacer" />
+          {LAKES[lakeId]?.cover && (
+            <Button cue="open" onClick={() => setScout(true)}>
+              <Icon name="info" /> Pro tips
+            </Button>
+          )}
           {locked && (
             <m.span key={shake} className="badge warn" initial={false} animate={shake ? { x: [0, -8, 8, -6, 6, -3, 0] } : undefined} transition={{ duration: 0.45 }}>
               <Icon name="lock" size={13} /> Locked during a tournament
@@ -81,7 +102,7 @@ export function DeckScreen() {
                   <span className="kicker" style={{ color: 'var(--accent)' }}>
                     Rod {i + 1}
                   </span>
-                  {mismatchOf(r) && <span className="badge warn">Weight mismatch</span>}
+                  {LAKES[lakeId] && rigIssues(LAKES[lakeId], r).some((x) => x.severity === 'warn') ? <span className="badge warn">Check rig</span> : null}
                 </div>
                 <RodArt rodId={r.rodId} />
                 <span className="display" style={{ fontSize: 17 }}>
@@ -123,6 +144,7 @@ export function DeckScreen() {
         </m.div>
       </div>
 
+      <ScoutingSheet lakeId={lakeId} open={scout} onClose={() => setScout(false)} />
       <Sheet
         open={!!d}
         onClose={() => setEditing(null)}
@@ -186,6 +208,8 @@ export function DeckScreen() {
                 </span>
               )}
             </section>
+
+            {LAKES[lakeId] && <RigCheck lakeId={lakeId} deck={[d]} firstRod={editing + 1} />}
 
             <section className="col" style={{ gap: 8 }}>
               <span className="kicker">Line</span>

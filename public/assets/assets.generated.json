@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T22:38:33.231Z",
+  "generatedAt": "2026-10-04T23:14:21.882Z",
   "assets": [
     {
       "id": "plate_champlain_bluebird_open",
@@ -495,6 +495,11 @@
       "id": "ui_trophy",
       "kind": "ui",
       "path": "assets/ui/ui_trophy.webp"
+    },
+    {
+      "id": "sprite_boat",
+      "kind": "sprite",
+      "path": "assets/sprites/sprite_boat.webp"
     },
     {
       "id": "icon_rod_rod-ml",

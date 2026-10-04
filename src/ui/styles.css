@@ -683,6 +683,74 @@ p {
 }
 
 /* ---------- Toasts ---------- */
+/* ---------- Pro advice ---------- */
+.advice-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.plan-strip {
+  align-items: stretch;
+}
+.plan-chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 6px 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.plan-chip .kicker {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.plan-rod {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-size: 13px;
+  color: var(--accent);
+}
+.pro-pick {
+  margin-left: 2px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--good);
+  color: #062b10;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.rod-chip.on .pro-pick {
+  background: #062b10;
+  color: var(--good);
+}
+.goal-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 12px 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--good);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  max-width: 260px;
+}
+.goal-chip .kicker {
+  font-size: 10px;
+  color: var(--good);
+}
+.sb-label.advancing {
+  color: var(--good);
+}
+
 /* ---------- In-game notices ---------- */
 .sr-only {
   position: absolute;

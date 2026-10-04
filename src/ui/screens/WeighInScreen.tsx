@@ -80,6 +80,10 @@ export function WeighInScreen() {
       payout: over ? (purse.payouts[place - 1] ?? 0) : 0,
       points: over ? (purse.points[place - 1] ?? 10) : 0,
       promotes: over && place <= PROMOTE_TOP && !!next && !save.unlockedLakes.includes(next.id) ? next.name : null,
+      missedPromotion:
+        over && place > PROMOTE_TOP && !!next && !save.unlockedLakes.includes(next.id)
+          ? { name: next.name, shortLb: Math.max(0.01, final[PROMOTE_TOP - 1].total - me.total) }
+          : null,
       recordBag: me.today > 0 && me.today > save.personalBests.bestBagLb,
       recordFish: !!big && big.weightLb > save.personalBests.bigFishLb,
       big,
@@ -210,7 +214,7 @@ export function WeighInScreen() {
           </div>
 
           {/* Scale, hot seat, result */}
-          <div className="col" style={{ flex: 1.05, gap: 10, minWidth: 0, justifyContent: 'center', alignItems: 'flex-start' }}>
+          <div className="col" style={{ flex: 1.05, gap: 10, minWidth: 0, justifyContent: 'center', alignItems: 'flex-start', paddingBottom: phase >= Phase.Board ? 64 : 0 }}>
             <AnimatePresence initial={false}>
               {phase < Phase.Board && (
                 <m.div className="hot-seat" exit={{ opacity: 0, height: 0, marginBottom: -10, paddingTop: 0, paddingBottom: 0 }} transition={{ duration: 0.3 }}>
@@ -292,6 +296,11 @@ export function WeighInScreen() {
                   </Slug>
                 )}
                 {data.promotes && <Slug tone="gold">Promoted · {data.promotes} unlocked</Slug>}
+                {data.missedPromotion && (
+                  <Slug tone="dark">
+                    Top {PROMOTE_TOP} advances to {data.missedPromotion.name} · {lbOz(data.missedPromotion.shortLb)} short
+                  </Slug>
+                )}
                 {data.recordBag && <Slug tone="good">Personal best bag</Slug>}
                 {data.recordFish && <Slug tone="good">Personal best fish</Slug>}
               </m.div>

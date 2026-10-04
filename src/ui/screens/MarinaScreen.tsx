@@ -1,6 +1,6 @@
 import { m } from 'motion/react';
 import { useState } from 'react';
-import { RANK_LABEL } from '../../state/career';
+import { nextCareerGoal, RANK_LABEL } from '../../state/career';
 import { lakeName, useStore, type Screen } from '../../state/store';
 import { lbOz, money } from '../components';
 import { Button, Icon, IconButton, LowerThird, Scene, Scorebug, Slug, spring } from '../kit';
@@ -22,6 +22,7 @@ export function MarinaScreen() {
   const last = useStore((s) => s.lastResult);
   const [settings, setSettings] = useState(false);
   const active = save.activeTournament;
+  const goal = nextCareerGoal(save.unlockedLakes);
 
   return (
     <>
@@ -61,6 +62,14 @@ export function MarinaScreen() {
               ]}
             />
           </m.div>
+          {goal && (
+            <m.div className="goal-chip" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ ...spring, delay: 0.2 }}>
+              <span className="kicker">Next goal</span>
+              <span>
+                Top {goal.place} at {goal.from} unlocks <strong>{goal.to}</strong>
+              </span>
+            </m.div>
+          )}
           <div className="spacer" />
           <IconButton name="gear" label="Settings" onClick={() => setSettings(true)} />
           <IconButton name="back" label="Title screen" cue="back" onClick={() => setScreen('title')} />

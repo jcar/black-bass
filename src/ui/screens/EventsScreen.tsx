@@ -7,6 +7,7 @@ import { lakeName, useStore } from '../../state/store';
 import { money } from '../components';
 import { Button, ConfirmSheet, Icon, IconButton, Scene, Scorebug, Slug, spring, stagger, rise } from '../kit';
 import { playUi } from '../../audio/sound';
+import { ScoutingSheet } from '../ProAdvice';
 
 const TIER_NAME = { Amateur: 'Co-Angler Series', SemiPro: 'Semi-Pro Series', Pro: 'Pro Series', Elite: 'Elite Series' } as const;
 
@@ -19,6 +20,7 @@ export function EventsScreen() {
   const start = useStore((s) => s.startTournament);
   const resume = useStore((s) => s.resumeTournament);
   const [withdraw, setWithdraw] = useState(false);
+  const [scout, setScout] = useState(false);
   const active = save.activeTournament;
   const sel = LAKE_LADDER.find((l) => l.id === selected)!;
   const purse = PURSE[sel.tier];
@@ -87,6 +89,11 @@ export function EventsScreen() {
             ]}
           />
           <div className="spacer" />
+          {sel.available && (
+            <Button cue="open" onClick={() => setScout(true)}>
+              <Icon name="info" /> Scouting
+            </Button>
+          )}
           {active ? (
             <>
               <Button variant="danger" onClick={() => setWithdraw(true)}>
@@ -108,6 +115,7 @@ export function EventsScreen() {
           )}
         </div>
       </div>
+      <ScoutingSheet lakeId={sel.id} open={scout} onClose={() => setScout(false)} onRigUp={() => setScreen('deck')} />
       <ConfirmSheet
         open={withdraw}
         title="Withdraw"

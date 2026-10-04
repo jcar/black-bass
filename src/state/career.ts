@@ -11,6 +11,20 @@ const RANK_ORDER: Rank[] = ['CoAngler', 'SemiPro', 'Pro', 'Elite'];
 /** Finish in the top 3 to earn promotion to the next lake/tier. */
 export const PROMOTE_TOP = 3;
 
+/** What finishing well here unlocks: the next stop on the ladder, if it isn't open yet. */
+export function promotionTarget(lakeId: string, unlocked: string[]): { name: string; id: string; place: number } | null {
+  const idx = LAKE_LADDER.findIndex((l) => l.id === lakeId);
+  const next = LAKE_LADDER[idx + 1];
+  return next && !unlocked.includes(next.id) ? { name: next.name, id: next.id, place: PROMOTE_TOP } : null;
+}
+
+/** The career's next goal: the first locked stop and the event that opens it. */
+export function nextCareerGoal(unlocked: string[]): { from: string; to: string; place: number } | null {
+  const idx = LAKE_LADDER.findIndex((l) => !unlocked.includes(l.id));
+  if (idx <= 0) return null;
+  return { from: LAKE_LADDER[idx - 1].name, to: LAKE_LADDER[idx].name, place: PROMOTE_TOP };
+}
+
 export function tierOfLake(lakeId: string): Tier {
   return LAKE_LADDER.find((l) => l.id === lakeId)?.tier ?? 'Amateur';
 }

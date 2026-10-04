@@ -12,6 +12,7 @@ npm run dev:lan      # same, exposed on your LAN so you can open it on an iPhone
 npm test             # simulation unit tests
 npm run simulate     # headless bot plays tournament days; prints balance stats
                      # e.g. npm run simulate -- 30 lakefork SemiPro
+npx tsx tools/advisor-check.ts champlain 12   # does the pro advice match how fish actually bite?
 npm run build        # typecheck + production build + zero-runtime-API guard
 ```
 
@@ -49,6 +50,15 @@ npm run assets                  # everything that's missing or whose prompt chan
   trimmed with ffmpeg (needs `ffmpeg`/`ffprobe` on PATH). In-game SFX are still synthesised at
   runtime; any `sfx_<event>` file added to the index takes priority.
 - Until assets exist, the game draws everything procedurally, so it's always playable.
+
+## Pro advice
+
+`src/sim/advisor.ts` scores rigs with the same functions the fish use to decide whether to bite
+(activity, depth match against where fish hold, lure temperature/light fit, colour vs clarity, line
+visibility, species affinity, detection reach) plus how much water a retrieve covers. It drives the
+scouting report, the briefing's day plan, the rig checks and the in-game "Pro" pick.
+`tools/advisor-check.ts` has the bot fish each lure on the same seeded days and reports how well the
+advisor's ranking predicts real bites; rerun it whenever lure, species or attraction tuning changes.
 
 ## Adding a lake
 

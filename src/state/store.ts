@@ -3,7 +3,10 @@ import { LAKES } from '../data/lakes';
 import { PURSE } from '../data/lakes';
 import { LURES } from '../data/lures';
 import { SPECIES } from '../data/species';
+import { TUNING } from '../data/tuning';
+import { proPickNow } from '../sim/advisor';
 import { formatClock } from '../sim/conditions';
+import { depthAt, getLakeGrid } from '../sim/lake';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
 import { createTournament, isTournamentOver, standings, startNextDay, switchRod } from '../sim/tournament';
 import type { CaughtFish, GamePhase, TournamentState } from '../sim/types';
@@ -41,6 +44,8 @@ export interface Hud {
   nearWaypoint: { name: string; tip: string } | null;
   pendingCull: CaughtFish | null;
   lastLanded: CaughtFish | null;
+  /** Advisor's best rig for right now at the depth under the boat (deck index). */
+  proPick: number;
 }
 
 /**
@@ -88,7 +93,12 @@ interface StoreState {
   finishDay: () => void;
   nextDay: () => void;
   completeTournament: () => void;
+  /** Copy the edited rod locker into the tournament (only before launching for the day). */
+  rerigBeforeLaunch: () => void;
 }
+
+/** Before blast-off each day you can still re-rig: nothing has happened on the water yet. */
+export const canRerig = (t: TournamentState | null) => !!t && t.phase === 'Navigate' && t.clockMin === TUNING.clock.dayStartMin;
 
 let noticeId = 1;
 const NOTICE_MS: Partial<Record<NoticeKind, number>> = { banner: 2300, bug: 3200 };
@@ -189,7 +199,15 @@ export const useStore = create<StoreState>((set, get) => ({
     if (!t) return;
     startNextDay(t);
     get().persist();
-    set({ screen: 'game', paused: false });
+    // Each morning gets a briefing: new conditions, a new plan, a chance to re-rig.
+    set({ screen: 'briefing', paused: false });
+  },
+  rerigBeforeLaunch: () => {
+    const t = get().tournament;
+    if (!canRerig(t)) return;
+    t!.deck = structuredClone(get().save.deck);
+    t!.activeRod = 0;
+    get().persist();
   },
   completeTournament: () => {
     const t = get().tournament;
@@ -203,6 +221,7 @@ export const useStore = create<StoreState>((set, get) => ({
 }));
 
 export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint']): Hud {
+  const lake = LAKES[t.lakeId];
   const st = standings(t, false);
   const placeIdx = st.findIndex((x) => x.isPlayer);
   const fight = t.fight;
@@ -235,6 +254,7 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint']):
     nearWaypoint,
     pendingCull: t.pendingCull,
     lastLanded: t.lastLanded,
+    proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, depthAt(getLakeGrid(lake), t.boat.pos.x, t.boat.pos.y)) : t.activeRod,
   };
 }
 

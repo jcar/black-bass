@@ -51,8 +51,8 @@ interface BotStats {
   phaseTime: Record<string, number>;
 }
 
-export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amateur', skill = 1): BotStats {
-  const s: TournamentState = createTournament({ lakeId, tier, seed, deck: botDeck(lakeId) });
+export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amateur', skill = 1, deck?: RodSetup[]): BotStats {
+  const s: TournamentState = createTournament({ lakeId, tier, seed, deck: deck ?? botDeck(lakeId) });
   const feedCount = { rivalCatch: 0, leaderChange: 0, playerPlace: 0, wraps: 0 };
   const rng = new Rng(seed ^ 0x9e3779b9);
   const lake = LAKES[lakeId];
@@ -74,6 +74,7 @@ export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amat
   const phaseTime: Record<string, number> = {};
 
   const chooseRod = () => {
+    if (s.deck.length === 1) return 0;
     const light = lightLevel(s.clockMin, s.conditions.weather);
     const surfaceOk = s.conditions.waterTempF >= 60 && light < 0.55;
     if (surfaceOk) return 3;

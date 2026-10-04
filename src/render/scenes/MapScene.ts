@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { LakeGrid } from '../../sim/lake';
 import type { TournamentState, Vec2 } from '../../sim/types';
+import { BOAT_LENGTH_M, BOAT_SPRITE, texture } from '../../game/assets';
 import { paintLakeCanvas } from '../lakeTexture';
 import { PAL } from '../palette';
 import { HUD_FONT, type Scene, type View } from './types';
@@ -20,7 +21,9 @@ export class MapScene implements Scene {
   private markers = new Container();
   private regionLabels: Text[] = [];
   private sonar = new Graphics();
-  private boat = new Graphics();
+  private boat = new Container();
+  private boatShape = new Graphics();
+  private boatSprite = new Sprite();
   private wake = new Graphics();
   private mini = new Container();
   private miniLake?: Sprite;
@@ -43,8 +46,12 @@ export class MapScene implements Scene {
   }
 
   private drawBoat() {
+    // Generated top-down sprite when loaded; the vector hull is the fallback.
+    this.boatSprite.anchor.set(0.5);
+    this.boatSprite.visible = false;
+    this.boat.addChild(this.boatShape, this.boatSprite);
     // Hull in metres (bass boats are ~6 m): pointed bow toward +x.
-    this.boat
+    this.boatShape
       .clear()
       .poly([3.2, 0, 1.2, -1.2, -3, -1.1, -3, 1.1, 1.2, 1.2])
       .fill(PAL.boat)
@@ -110,9 +117,17 @@ export class MapScene implements Scene {
     // Region names only read well when zoomed out at speed.
     const labelAlpha = Math.max(0, Math.min(0.4, (1.0 - this.zoom) * 0.8));
     for (const l of this.regionLabels) l.alpha = labelAlpha;
+    const tex = texture(BOAT_SPRITE);
+    if (tex && !this.boatSprite.visible) {
+      this.boatSprite.texture = tex;
+      this.boatSprite.scale.set(BOAT_LENGTH_M / tex.width);
+      this.boatSprite.visible = true;
+      this.boatShape.visible = false;
+    }
     this.boat.position.set(boat.pos.x, boat.pos.y);
     this.boat.rotation = boat.heading;
-    this.boat.scale.set(Math.max(1.5, 2.6 / this.zoom));
+    // Drawn larger than life so the boat reads as the player's marker on the chart.
+    this.boat.scale.set(Math.max(3.6, 6 / this.zoom));
 
     // Wake trail.
     if (boat.speed > 1) this.wakePts.push({ x: boat.pos.x - Math.cos(boat.heading) * 3, y: boat.pos.y - Math.sin(boat.heading) * 3, age: 0 });

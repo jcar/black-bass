@@ -10,6 +10,7 @@ import { useStore } from '../../state/store';
 import { lbOz, LureIcon } from '../components';
 import { Icon, spring } from '../kit';
 import { NoticeStrip } from './Notices';
+import { promotionTarget } from '../../state/career';
 
 function staminaStage(s: number) {
   // Four stages, like the NES fish icon: normal, thinner, very thin, bones.
@@ -34,7 +35,7 @@ function usePlaceTrend(place: number): 'up' | 'down' | null {
   return dir;
 }
 
-const RodBar = memo(function RodBar({ labels, active, deck }: { labels: string[]; active: number; deck?: RodSetup[] }) {
+const RodBar = memo(function RodBar({ labels, active, pick, deck }: { labels: string[]; active: number; pick: number; deck?: RodSetup[] }) {
   const selectRod = useStore((s) => s.selectRod);
   return (
     <div className="rod-bar">
@@ -42,6 +43,11 @@ const RodBar = memo(function RodBar({ labels, active, deck }: { labels: string[]
         <button key={i} className={`rod-chip ${i === active ? 'on' : ''}`} onClick={() => selectRod(i)}>
           {deck?.[i] && <LureIcon lureId={deck[i].lureId} colorId={deck[i].colorId} size={34} />}
           {i + 1} {l}
+          {i === pick && (
+            <span className="pro-pick" title="Pro pick for this time of day and depth">
+              Pro
+            </span>
+          )}
         </button>
       ))}
     </div>
@@ -53,6 +59,9 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const deck = useStore((s) => s.tournament?.deck);
   const tier = useStore((s) => s.tournament?.tier);
   const cutDay = useStore((s) => (s.tournament && s.tournament.cutAfterDay === s.tournament.day ? TIER_FORMAT[s.tournament.tier].cutTo : null));
+  const lakeId = useStore((s) => s.tournament?.lakeId);
+  const unlocked = useStore((s) => s.save.unlockedLakes);
+  const promo = lakeId ? promotionTarget(lakeId, unlocked) : null;
   const slots = Array.from({ length: LIVEWELL_LIMIT }, (_, i) => hud.livewell[i]);
   const showRods = hud.phase === 'Navigate' || (hud.phase === 'Cast' && !hud.castFlying && !hud.castCharging);
   const trend = usePlaceTrend(hud.place);
@@ -90,8 +99,20 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
               <span className="sb-value">{lbOz(hud.bag)}</span>
             </div>
             <div className="sb-cell">
-              <span className="sb-label">
-                {line !== null ? (inside ? (cutDay ? 'Inside cut' : 'In the money') : cutDay ? `Cut #${line}` : `Money #${line}`) : 'Place'}
+              <span className={`sb-label ${promo && hud.place <= promo.place ? 'advancing' : ''}`}>
+                {promo
+                  ? hud.place <= promo.place
+                    ? 'Advancing'
+                    : `Top ${promo.place} advances`
+                  : line !== null
+                    ? inside
+                      ? cutDay
+                        ? 'Inside cut'
+                        : 'In the money'
+                      : cutDay
+                        ? `Cut #${line}`
+                        : `Money #${line}`
+                    : 'Place'}
               </span>
               <span className="sb-value">
                 #{hud.place}
@@ -158,7 +179,7 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
         </div>
       )}
 
-      {showRods && <RodBar labels={hud.rodLabels} active={hud.activeRod} deck={deck} />}
+      {showRods && <RodBar labels={hud.rodLabels} active={hud.activeRod} pick={hud.proPick} deck={deck} />}
     </>
   );
 }

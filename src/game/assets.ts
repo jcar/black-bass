@@ -46,4 +46,7 @@ export const portraitId = (species: SpeciesId, weightLb: number) =>
   `portrait_${species}_${weightLb >= 5 ? 'trophy' : weightLb >= 2.5 ? 'quality' : 'small'}`;
 export const lureIconId = (lureId: string, colorId: string) => `icon_lure_${lureId}_${colorId}`;
 export const rodIconId = (rodId: string) => `icon_rod_${rodId}`;
+/** Top-down boat sprite, bow toward +x; drawn 6.4 m long (a 20 ft bass boat). */
+export const BOAT_SPRITE = 'sprite_boat';
+export const BOAT_LENGTH_M = 6.4;
 export const musicId = (name: string) => `music_${name}`;

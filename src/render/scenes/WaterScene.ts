@@ -4,6 +4,7 @@ import { SPECIES } from '../../data/species';
 import { activeTackle } from '../../sim/context';
 import { depthAt, secchiAt, type LakeGrid } from '../../sim/lake';
 import type { TournamentState, Vec2 } from '../../sim/types';
+import { BOAT_LENGTH_M, BOAT_SPRITE, texture } from '../../game/assets';
 import { paintLocalCanvas } from '../lakeTexture';
 import { hexNum, PAL } from '../palette';
 import { HUD_FONT, type Scene, type View } from './types';
@@ -25,6 +26,8 @@ export class WaterScene implements Scene {
   private shadows = new Graphics();
   private lineG = new Graphics();
   private actors = new Graphics();
+  private boatSprite = new Sprite();
+  private boatShadow = new Graphics();
   private ripples = new Graphics();
   private inset = new Graphics();
   private viewAngle = 0;
@@ -33,7 +36,9 @@ export class WaterScene implements Scene {
   private lastLurePos: Vec2 | null = null;
 
   constructor() {
-    this.world.addChild(this.shadows, this.ripples, this.lineG, this.actors);
+    this.boatSprite.anchor.set(0.5);
+    this.boatSprite.visible = false;
+    this.world.addChild(this.shadows, this.ripples, this.boatShadow, this.boatSprite, this.lineG, this.actors);
     this.root.addChild(this.world);
     this.overlay.addChild(this.inset, this.insetTitle, this.lureReadout, this.bottomReadout);
     this.bottomReadout.anchor.set(1, 0);
@@ -128,14 +133,25 @@ export class WaterScene implements Scene {
     const a = this.viewAngle;
     const tip = { x: b.x + Math.cos(a) * 2.6, y: b.y + Math.sin(a) * 2.6 };
 
-    // Boat hull (pointing toward the cast).
-    const hull = [3.2, 0, 1.2, -1.2, -3, -1.1, -3, 1.1, 1.2, 1.2];
-    const ca = Math.cos(a);
-    const sa = Math.sin(a);
-    g.poly(hull.reduce<number[]>((acc, v, i) => {
-      if (i % 2 === 0) acc.push(b.x + v * ca - hull[i + 1] * sa, b.y + v * sa + hull[i + 1] * ca);
-      return acc;
-    }, [])).fill(PAL.boat).stroke({ width: 0.12, color: 0x444444 });
+    // Boat (pointing toward the cast): generated sprite when loaded, vector hull as the fallback.
+    const tex = texture(BOAT_SPRITE);
+    this.boatShadow.clear();
+    if (tex) {
+      this.boatSprite.texture = tex;
+      this.boatSprite.scale.set(BOAT_LENGTH_M / tex.width);
+      this.boatSprite.position.set(b.x, b.y);
+      this.boatSprite.rotation = a;
+      this.boatSprite.visible = true;
+      this.boatShadow.ellipse(b.x + 0.25, b.y + 0.35, BOAT_LENGTH_M * 0.5, 1.15).fill({ color: 0x04121a, alpha: 0.35 });
+    } else {
+      const hull = [3.2, 0, 1.2, -1.2, -3, -1.1, -3, 1.1, 1.2, 1.2];
+      const ca = Math.cos(a);
+      const sa = Math.sin(a);
+      g.poly(hull.reduce<number[]>((acc, v, i) => {
+        if (i % 2 === 0) acc.push(b.x + v * ca - hull[i + 1] * sa, b.y + v * sa + hull[i + 1] * ca);
+        return acc;
+      }, [])).fill(PAL.boat).stroke({ width: 0.12, color: 0x444444 });
+    }
 
     if (t.present) {
       const p = t.present;

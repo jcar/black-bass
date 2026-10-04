@@ -5,6 +5,7 @@ import { weightFromLength } from '../src/data/species';
 import { seasonFor } from '../src/sim/conditions';
 import { breakingStrengthLb, newFightState } from '../src/sim/fight';
 import { makeCtx } from '../src/sim/context';
+import { fishDepthProfile, rigIssues, scoreRig, scoreRigDay, suggestedLine } from '../src/sim/advisor';
 import { migrate, newSave } from '../src/state/save';
 import { jerkPauseWindow, presentationMatch } from '../src/sim/fish/attraction';
 import { tempFactor } from '../src/sim/fish/activity';
@@ -312,5 +313,35 @@ describe('save migration', () => {
     const old = { ...newSave(), unlockedLakes: ['champlain', 'guntersville'] };
     expect(migrate(old).unlockedLakes).toEqual(['champlain', 'lakefork']);
     expect(migrate(migrate(old)).unlockedLakes).toEqual(['champlain', 'lakefork']);
+  });
+});
+
+describe('pro advisor', () => {
+  const lake = LAKES.champlain;
+  const base = newT(4).conditions;
+  const rig = (lureId: string, colorId: string, line: RodSetup['line'] = { type: 'fluoro', testLb: 10 }) => ({ lureId, colorId, line });
+  const profile = fishDepthProfile(lake, base.season);
+  it('favours topwater at dawn over midday (light fit)', () => {
+    const c = { ...base, waterTempF: 72, weather: 'Bluebird' as const };
+    const dawn = scoreRig(lake, c, 400, rig('walker', 'bone', { type: 'mono', testLb: 14 }), profile).score;
+    const noon = scoreRig(lake, c, 735, rig('walker', 'bone', { type: 'mono', testLb: 14 }), profile).score;
+    expect(dawn).toBeGreaterThan(noon);
+  });
+  it('ranks the jerkbait above topwater in cold water (temperature fit)', () => {
+    const c = { ...base, waterTempF: 45, season: 'Prespawn' as const };
+    const jerk = scoreRigDay(lake, c, rig('jerkbait', 'ghostMinnow'));
+    const walk = scoreRigDay(lake, c, rig('walker', 'bone', { type: 'mono', testLb: 14 }));
+    expect(jerk).toBeGreaterThan(walk);
+  });
+  it('prefers fluoro to braid for subsurface baits in clear water (line visibility)', () => {
+    const f = scoreRigDay(lake, base, rig('ned', 'greenPumpkin', { type: 'fluoro', testLb: 8 }));
+    const b = scoreRigDay(lake, base, rig('ned', 'greenPumpkin', { type: 'braid', testLb: 8 }));
+    expect(f).toBeGreaterThan(b);
+  });
+  it('asks for heavy line in standing timber and flags rod/lure mismatches', () => {
+    expect(suggestedLine(LAKES.lakefork, 'footballJig').testLb).toBeGreaterThanOrEqual(15);
+    const issues = rigIssues(LAKES.lakefork, { id: 'x', rodId: 'rod-xh', line: { type: 'fluoro', testLb: 8 }, lureId: 'ned', colorId: 'greenPumpkin' });
+    expect(issues.map((i) => i.text).join(' ')).toMatch(/outside the rod/);
+    expect(issues.map((i) => i.text).join(' ')).toMatch(/standing timber/);
   });
 });

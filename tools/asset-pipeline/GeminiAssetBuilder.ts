@@ -29,7 +29,7 @@ const CACHE = join(HERE, '.cache');
 const HASHES = join(CACHE, 'hashes.json');
 const STYLE_REFS = join(HERE, 'styleRefs');
 
-type Kind = 'plate' | 'portrait' | 'icon' | 'ui' | 'music' | 'sfx';
+type Kind = 'plate' | 'portrait' | 'icon' | 'ui' | 'sprite' | 'music' | 'sfx';
 interface Job {
   id: string;
   kind: Kind;
@@ -123,6 +123,12 @@ function buildJobs(): Job[] {
   for (const [name, desc] of Object.entries<string>(S.items)) {
     const id = `ui_${name}`;
     jobs.push({ id, kind: 'ui', prompt: `${cfg.style} ${desc}`, out: `assets/ui/${id}.webp`, aspect: S.aspect, size: S.size, outWidth: S.outWidth });
+  }
+  const SP = cfg.sprites;
+  for (const [name, desc] of Object.entries<string>(SP.items)) {
+    const id = `sprite_${name}`;
+    // No style string: the house style's "no UI elements / text" bits fight the chroma-key brief.
+    jobs.push({ id, kind: 'sprite', prompt: `Stylized modern illustration for a premium mobile sports game, clean shapes, soft painterly shading. ${desc}`, out: `assets/sprites/${id}.webp`, aspect: SP.aspect, size: SP.size, outWidth: SP.outWidth });
   }
   const RD = cfg.rods;
   for (const rod of Object.values(RODS)) {
@@ -247,13 +253,39 @@ async function runJob(j: Job): Promise<void> {
     }
   } else {
     const img = await generateImage(j);
-    await sharp(img).resize({ width: j.outWidth, withoutEnlargement: true }).webp({ quality: j.kind === 'icon' ? 90 : 80 }).toFile(dest);
+    if (j.kind === 'sprite') await chromaKey(img, dest, j.outWidth ?? 512);
+    else await sharp(img).resize({ width: j.outWidth, withoutEnlargement: true }).webp({ quality: j.kind === 'icon' ? 90 : 80 }).toFile(dest);
     // The first image of each kind anchors the style of the rest (unless user refs exist).
     if (!anchors.has(j.kind)) anchors.set(j.kind, { type: 'image', mime_type: 'image/jpeg', data: img.toString('base64') });
   }
   hashes[j.id] = jobHash(j);
   mkdirSync(CACHE, { recursive: true });
   writeFileSync(HASHES, JSON.stringify(hashes, null, 2));
+}
+
+// ---------- Sprite post-processing ----------
+/**
+ * Key out the green background: alpha from distance to the sampled corner colour (soft edge),
+ * green spill removed from edge pixels, then trimmed to the sprite's bounds.
+ */
+async function chromaKey(img: Buffer, dest: string, width: number) {
+  const { data, info } = await sharp(img).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const at = (x: number, y: number) => (y * info.width + x) * 4;
+  const corners = [at(2, 2), at(info.width - 3, 2), at(2, info.height - 3), at(info.width - 3, info.height - 3)];
+  const key = [0, 1, 2].map((k) => corners.reduce((a, i) => a + data[i + k], 0) / corners.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+    const d = Math.hypot(r - key[0], g - key[1], b - key[2]);
+    const a = Math.max(0, Math.min(1, (d - 60) / 70));
+    data[i + 3] = Math.round(a * 255);
+    // Despill: green can't exceed the brighter of red/blue on a non-green subject.
+    if (a < 1 && g > Math.max(r, b)) data[i + 1] = Math.max(r, b);
+  }
+  await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .trim({ threshold: 1 })
+    .resize({ width, withoutEnlargement: true })
+    .webp({ quality: 90, alphaQuality: 100 })
+    .toFile(dest);
 }
 
 // ---------- Audio post-processing (ffmpeg) ----------

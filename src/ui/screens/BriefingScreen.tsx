@@ -1,15 +1,14 @@
 import { m } from 'motion/react';
 import { useState } from 'react';
 import { LAKES, TIER_FORMAT } from '../../data/lakes';
-import { COLORS, LURES } from '../../data/lures';
-import { lineLabel } from '../../data/rods';
 import { unlockAudio } from '../../audio/sound';
 import { plateId } from '../../game/assets';
-import { useStore } from '../../state/store';
+import { canRerig, useStore } from '../../state/store';
+import { promotionTarget } from '../../state/career';
+import { DayPlan, RigCheck } from '../ProAdvice';
 import type { Weather } from '../../sim/types';
 import { keeperMinIn } from '../../sim/livewell';
 import { conditionsAdvice } from '../advice';
-import { LureIcon } from '../components';
 import { Button, Icon, LowerThird, Scene, Scorebug, Sheet, Slug, rise, stagger, type IconName } from '../kit';
 
 const SKY_ICON: Record<Weather, IconName> = { Bluebird: 'sun', Overcast: 'cloud', Windy: 'wind', Rain: 'rain' };
@@ -20,6 +19,8 @@ export function BriefingScreen() {
   const t = useStore((s) => s.tournament);
   const setScreen = useStore((s) => s.setScreen);
   const [howTo, setHowTo] = useState(false);
+  const [plan, setPlan] = useState(false);
+  const unlocked = useStore((s) => s.save.unlockedLakes);
   if (!t) return null;
   const lake = LAKES[t.lakeId];
   const c = t.conditions;
@@ -27,6 +28,7 @@ export function BriefingScreen() {
   const date = new Date(`${c.date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const tips = conditionsAdvice(c, lake).slice(0, 3);
   const minIn = keeperMinIn(lake);
+  const promo = promotionTarget(t.lakeId, unlocked);
   const slot = lake.regs?.slot;
 
   return (
@@ -38,6 +40,9 @@ export function BriefingScreen() {
             {SERIES[t.tier]} · Day {t.day} of {t.totalDays}
           </Slug>
           <div className="spacer" />
+          <Button size="md" cue="open" onClick={() => setPlan(true)}>
+            <Icon name="fish" /> Pro plan
+          </Button>
           <Button size="md" cue="open" onClick={() => setHowTo(true)}>
             <Icon name="info" /> How to fish
           </Button>
@@ -45,6 +50,11 @@ export function BriefingScreen() {
 
         <LowerThird kicker="Today on the water" title={lake.name} sub={lake.blurb} delay={0.15} />
         <m.div className="row" style={{ gap: 6, flexWrap: 'wrap' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
+          {promo && (
+            <span className="badge good">
+              <Icon name="trophy" size={12} /> Top {promo.place} advances to {promo.name}
+            </span>
+          )}
           <span className="badge">Bass {minIn}" minimum</span>
           {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": catch, weigh &amp; release (counts)</span>}
           {lake.lanes?.length ? <span className="badge">Run the buoyed lanes: stumps everywhere else</span> : null}
@@ -80,18 +90,13 @@ export function BriefingScreen() {
       </div>
 
       <div className="thumb-zone" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-        <m.div className="row" style={{ gap: 6 }} {...stagger(0.9, 0.05)}>
-          <m.span {...rise} className="kicker" style={{ alignSelf: 'center', marginRight: 4 }}>
-            On deck
+        <m.div className="row" style={{ gap: 6, alignItems: 'center' }} {...stagger(0.9, 0.05)}>
+          <m.span {...rise} className="kicker" style={{ marginRight: 2, color: 'var(--accent)' }}>
+            Pro plan
           </m.span>
-          {t.deck.map((d, i) => (
-            <m.div key={d.id} {...rise} className="panel" style={{ padding: 3, position: 'relative' }} title={`${LURES[d.lureId].name} (${COLORS[d.colorId].name}) · ${lineLabel(d.line)}`}>
-              <LureIcon lureId={d.lureId} colorId={d.colorId} size={46} />
-              <span className="num" style={{ position: 'absolute', left: 4, top: 1, fontSize: 13 }}>
-                {i + 1}
-              </span>
-            </m.div>
-          ))}
+          <m.div {...rise}>
+            <DayPlan lakeId={t.lakeId} conditions={c} deck={t.deck} compact />
+          </m.div>
         </m.div>
         <Button
           variant="primary"
@@ -108,6 +113,24 @@ export function BriefingScreen() {
         </Button>
       </div>
 
+      <Sheet
+        open={plan}
+        onClose={() => setPlan(false)}
+        title="Today's pro plan"
+        footer={
+          canRerig(t) && (
+            <Button cue="open" onClick={() => setScreen('deck')}>
+              Re-rig rods
+            </Button>
+          )
+        }
+      >
+        <p className="small muted">
+          Which of your rigs pulls the most bites in each part of the day, from today's water ({Math.round(c.waterTempF)}°F, {c.season.toLowerCase()}), light, wind and where the fish are holding.
+        </p>
+        <DayPlan lakeId={t.lakeId} conditions={c} deck={t.deck} />
+        <RigCheck lakeId={t.lakeId} deck={t.deck} />
+      </Sheet>
       <Sheet open={howTo} onClose={() => setHowTo(false)} title="How to fish">
         <div className="col small" style={{ gap: 10, fontSize: 15 }}>
           <p>
