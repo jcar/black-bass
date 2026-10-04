@@ -65,4 +65,15 @@ export interface LakeDef {
     medianBagLb: Record<Tier, number>;
     sigma: number;
   };
+  /** Lake regulations. Defaults: 12" minimum, no slot. */
+  regs?: {
+    minIn: number;
+    /** Protected slot. Under catch-weigh-release, slot bass are weighed on the boat and count. */
+    slot?: { minIn: number; maxIn: number; mode: 'catchWeighRelease' };
+  };
+  /** Buoyed boat lanes (polylines). Running the outboard outside them in a stump zone is risky. */
+  lanes?: Pt[][];
+  laneWidthM?: number;
+  /** Fields of submerged stumps just under the surface. */
+  stumpZones?: { x: number; y: number; r: number }[];
 }

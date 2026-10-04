@@ -6,14 +6,22 @@ import { STARTER_RODS } from '../src/data/rods';
 import { TUNING } from '../src/data/tuning';
 import { lightLevel } from '../src/sim/conditions';
 import { getLakeGrid, isWater } from '../src/sim/lake';
-import { bagWeight, continueAfterLanded } from '../src/sim/livewell';
+import { bagWeight, continueAfterLanded, keeperMinIn } from '../src/sim/livewell';
 import { Rng } from '../src/sim/rng';
 import { createTournament, drainEvents, standings, stepTournament } from '../src/sim/tournament';
 import { emptyInput, type RodSetup, type Tier, type TournamentState } from '../src/sim/types';
 
 const DT = 1 / 60;
 
-export function botDeck(): RodSetup[] {
+export function botDeck(lakeId = 'champlain'): RodSetup[] {
+  // Timber lakes: a pro rigs heavier (17 lb fluoro jig, 14 lb crank line) or gets wrapped up.
+  if (LAKES[lakeId]?.cover.some((c) => c.type === 'standing'))
+    return [
+      { id: 'r1', rodId: STARTER_RODS[1], line: { type: 'fluoro', testLb: 12 }, lureId: 'ned', colorId: 'greenPumpkin' },
+      { id: 'r2', rodId: STARTER_RODS[2], line: { type: 'fluoro', testLb: 17 }, lureId: 'tube', colorId: 'greenPumpkin' },
+      { id: 'r3', rodId: STARTER_RODS[2], line: { type: 'fluoro', testLb: 14 }, lureId: 'squarebill', colorId: 'sexyShad' },
+      { id: 'r4', rodId: STARTER_RODS[2], line: { type: 'mono', testLb: 17 }, lureId: 'walker', colorId: 'bone' },
+    ];
   return [
     { id: 'r1', rodId: STARTER_RODS[0], line: { type: 'fluoro', testLb: 8 }, lureId: 'ned', colorId: 'greenPumpkin' },
     { id: 'r2', rodId: STARTER_RODS[0], line: { type: 'fluoro', testLb: 8 }, lureId: 'tube', colorId: 'greenPumpkin' },
@@ -34,11 +42,18 @@ interface BotStats {
   bycatch: number;
   shorts: number;
   casts: number;
+  botBig: number;
+  fieldBig: number;
+  wraps: number;
+  feed: number;
+  leads: number;
+  places: number;
   phaseTime: Record<string, number>;
 }
 
 export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amateur', skill = 1): BotStats {
-  const s: TournamentState = createTournament({ lakeId, tier, seed, deck: botDeck() });
+  const s: TournamentState = createTournament({ lakeId, tier, seed, deck: botDeck(lakeId) });
+  const feedCount = { rivalCatch: 0, leaderChange: 0, playerPlace: 0, wraps: 0 };
   const rng = new Rng(seed ^ 0x9e3779b9);
   const lake = LAKES[lakeId];
   const grid = getLakeGrid(lake);
@@ -166,7 +181,7 @@ export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amat
       }
       case 'Landed':
         if (s.lastLanded) {
-          if (s.lastLanded.weightLb > 0 && s.lastLanded.lengthIn < TUNING.population.keeperMinIn) shorts++;
+          if (s.lastLanded.weightLb > 0 && s.lastLanded.lengthIn < keeperMinIn(lake)) shorts++;
           landed++;
         }
         continueAfterLanded(s);
@@ -175,6 +190,8 @@ export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amat
     phaseTime[s.phase] = (phaseTime[s.phase] ?? 0) + DT;
     stepTournament(s, input, DT);
     for (const e of drainEvents(s)) {
+      if (e.type === 'rivalCatch' || e.type === 'leaderChange' || e.type === 'playerPlace') feedCount[e.type]++;
+      if (e.type === 'snap' && e.text?.startsWith('Wrapped')) feedCount.wraps++;
       if (process.env.BOT_TRACE && ['splash', 'edge', 'crash', 'retrieved', 'strike', 'shore'].includes(e.type))
         console.log(t.toFixed(1), e.type, s.deck[s.activeRod].lureId, s.present ? s.present.lureDepthFt.toFixed(1) : '', s.boat.pos.x.toFixed(0), s.boat.pos.y.toFixed(0));
     }
@@ -194,6 +211,12 @@ export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amat
     bycatch: s.stats.bycatch,
     shorts,
     casts: s.stats.casts,
+    botBig: s.stats.bigFishLb,
+    fieldBig: Math.max(0, ...s.rivals.flatMap((r) => r.catches.map((c) => c.weightLb))),
+    wraps: feedCount.wraps,
+    feed: feedCount.rivalCatch,
+    leads: feedCount.leaderChange,
+    places: feedCount.playerPlace,
     phaseTime,
   };
 }
@@ -214,5 +237,8 @@ if (isMain) {
   console.log(`${days} bot days on ${lakeId} (${tier}) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   console.log(`bot bag    median ${bags[Math.floor(bags.length / 2)].toFixed(2)}  p10 ${bags[Math.floor(bags.length * 0.1)].toFixed(2)}  p90 ${bags[Math.floor(bags.length * 0.9)].toFixed(2)}`);
   console.log(`field      median ${avg('median')}  winner ${avg('winner')}   bot avg place ${avg('place')} / ${rows[0].field}`);
-  console.log(`per day    casts ${avg('casts')}  bites ${avg('bites')}  landed ${avg('landed')}  lost ${avg('lost')}  shorts ${avg('shorts')}  bycatch ${avg('bycatch')}`);
+  console.log(`per day    casts ${avg('casts')}  bites ${avg('bites')}  landed ${avg('landed')}  lost ${avg('lost')}  shorts ${avg('shorts')}  bycatch ${avg('bycatch')}  timber wraps ${avg('wraps')}`);
+  const bigs = rows.map((r) => r.fieldBig).sort((a, b) => a - b);
+  console.log(`big fish   bot best ${Math.max(...rows.map((r) => r.botBig)).toFixed(2)}  field big bass median ${bigs[Math.floor(bigs.length / 2)].toFixed(2)}  max ${bigs[bigs.length - 1].toFixed(2)}`);
+  console.log(`feed/day   rival catches ${avg('feed')}  lead changes ${avg('leads')}  place calls ${avg('places')}`);
 }

@@ -75,6 +75,10 @@ export function migrate(raw: unknown): SaveData {
   merged.player = { ...base.player, ...merged.player };
   merged.settings = { ...base.settings, ...merged.settings };
   merged.personalBests = { ...base.personalBests, ...merged.personalBests };
+  // Lake Fork was inserted as career stop 2 ahead of Guntersville. A promotion earned at Champlain
+  // before that unlocked 'guntersville' (then stop 2, not yet playable): it now opens Lake Fork.
+  if (merged.unlockedLakes.includes('guntersville') && !merged.unlockedLakes.includes('lakefork'))
+    merged.unlockedLakes = merged.unlockedLakes.map((id) => (id === 'guntersville' ? 'lakefork' : id));
   return merged;
 }
 

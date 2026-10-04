@@ -14,7 +14,12 @@ export const PAL = {
   dock: '#8a6a45',
   dockDark: '#5e4428',
   timber: '#4c3b2a',
+  standing: '#6b5a48',
+  standingTop: '#a39785',
   reeds: '#a9b863',
+  lane: 'rgba(255,255,255,0.6)',
+  buoy: '#f4f1ea',
+  buoyStripe: '#e8672c',
   boat: 0xf2f2ee,
   boatAccent: 0xd23b2b,
   sonar: 0x63e6ff,
@@ -49,6 +54,7 @@ export const COVER_LABEL: Record<CoverType, string> = {
   dock: 'Docks',
   timber: 'Timber',
   reeds: 'Reeds',
+  standing: 'Standing timber',
 };
 
 export const SKY: Record<Weather, { top: number; bottom: number }> = {

@@ -206,6 +206,15 @@ export class CastScene implements Scene {
         g.moveTo(x, y).lineTo(x + s * 0.2, y - s * 3).stroke({ width: Math.max(2, s * 0.18), color: 0x4c3b2a });
         g.moveTo(x + s * 0.1, y - s * 1.6).lineTo(x + s * 0.9, y - s * 2.3).stroke({ width: Math.max(1, s * 0.1), color: 0x4c3b2a });
         break;
+      case 'standing':
+        // Bare grey trunks rising out of the water, a couple of broken limbs.
+        for (let k = -1; k <= 1; k++) {
+          const tx = x + k * s * 0.9;
+          const th = s * (2.6 + 0.8 * ((k + 2) % 2));
+          g.moveTo(tx, y).lineTo(tx + s * 0.05, y - th).stroke({ width: Math.max(2, s * 0.16), color: 0x6b6258 });
+          g.moveTo(tx, y - th * 0.6).lineTo(tx + s * 0.45 * (k || 1), y - th * 0.85).stroke({ width: Math.max(1, s * 0.07), color: 0x6b6258 });
+        }
+        break;
       case 'dock':
         g.rect(x - s * 1.6, y - s * 0.75, s * 3.2, s * 0.35).fill(0x8a6a45);
         for (let k = -1; k <= 1; k++) g.rect(x + k * s * 1.3 - s * 0.08, y - s * 0.45, s * 0.16, s * 0.6).fill(0x5e4428);

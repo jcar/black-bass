@@ -1,17 +1,18 @@
-import { LAKES, TIER_FORMAT } from '../data/lakes';
+import { LAKES, PURSE, TIER_FORMAT } from '../data/lakes';
+import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { stepCast } from './cast';
 import { generateConditions, nextDayConditions } from './conditions';
 import { dist, emit, fishActivity, makeCtx, type SimCtx } from './context';
 import { stepFight } from './fight';
-import { createRivals, rivalBagAt, rollRivalDay, type Standing } from './field';
+import { createRivals, notableWeight, rivalBagAt, rollRivalDay, type Standing } from './field';
 import { generatePopulation, updatePopulationSlice } from './fish/population';
-import { getLakeGrid, isWater } from './lake';
+import { getLakeGrid, isWater, stumpHazardAt } from './lake';
 import { bagWeight, resolveCull, suggestedCull } from './livewell';
 import { transition } from './machine';
 import { stepPresent } from './presentation';
 import { Rng } from './rng';
-import type { Conditions, InputFrame, RodSetup, Tier, TournamentState } from './types';
+import type { BroadcastState, Conditions, InputFrame, RodSetup, Tier, TournamentState } from './types';
 
 export interface NewTournamentOptions {
   lakeId: string;
@@ -61,7 +62,83 @@ export function createTournament(o: NewTournamentOptions): TournamentState {
     timeWarned: false,
     lastAimAngle: 0,
     popCursor: 0,
+    broadcast: { notableLb: notableWeight(rivals), lastReportMin: -Infinity, leaderId: null, lastPlace: fmt.fieldSize },
   };
+}
+
+// ---------- Live broadcast feed ----------
+// Rival catches are pre-rolled, so the feed just reports them as the clock passes: notable fish,
+// lead changes, and the player crossing the lines that matter (money, cut, podium). Deterministic.
+const FEED = {
+  /** Game minutes between routine catch reports (~20 real seconds). */
+  reportGapMin: 12,
+  /** Leader changes before this are noise (everyone has one fish). */
+  leaderAfterMin: TUNING.clock.dayStartMin + 60,
+};
+
+function broadcastFor(s: TournamentState): BroadcastState {
+  if (!s.broadcast) {
+    // Tournament saved before the feed existed: start the cursors at "now" so nothing replays.
+    for (const r of s.rivals) r.feedCursor = r.catches.filter((c) => c.atMin <= s.clockMin).length;
+    s.broadcast = { notableLb: notableWeight(s.rivals), lastReportMin: s.clockMin, leaderId: null, lastPlace: s.rivals.length + 1 };
+  }
+  return s.broadcast;
+}
+
+const lbText = (lb: number) => `${lb.toFixed(2)} lb`;
+
+function stepBroadcast(s: TournamentState, bagChanged: boolean): void {
+  const b = broadcastFor(s);
+  let newest: { name: string; weightLb: number; species?: TournamentState['rivals'][number]['catches'][number]['species'] } | null = null;
+  let changed = bagChanged;
+  for (const r of s.rivals) {
+    if (r.cut) continue;
+    let i = r.feedCursor ?? 0;
+    while (i < r.catches.length && r.catches[i].atMin <= s.clockMin) {
+      const c = r.catches[i];
+      if (c.weightLb >= b.notableLb && (!newest || c.weightLb > newest.weightLb)) newest = { name: r.name, weightLb: c.weightLb, species: c.species };
+      changed = true;
+      i++;
+    }
+    r.feedCursor = i;
+  }
+  if (!changed) return;
+
+  const st = standings(s, false);
+  if (newest) {
+    const big = newest.weightLb >= b.notableLb * 1.5;
+    if (big || s.clockMin - b.lastReportMin >= FEED.reportGapMin) {
+      b.lastReportMin = s.clockMin;
+      const sp = newest.species ? SPECIES[newest.species].name.toLowerCase() : 'bass';
+      const place = st.findIndex((x) => x.name === newest!.name) + 1;
+      emit(s, 'rivalCatch', `${newest.name} boats a ${lbText(newest.weightLb)} ${sp}`, undefined, { name: newest.name, weightLb: newest.weightLb, species: newest.species, place, big });
+    }
+  }
+
+  const leader = st[0];
+  if (leader && leader.total > 0 && leader.id !== b.leaderId) {
+    if (s.clockMin >= FEED.leaderAfterMin && b.leaderId !== null)
+      emit(s, 'leaderChange', leader.isPlayer ? 'You take the lead!' : `${leader.name} takes the lead with ${lbText(leader.total)}`, undefined, {
+        name: leader.isPlayer ? 'You' : leader.name,
+        weightLb: leader.total,
+        place: 1,
+      });
+    b.leaderId = leader.id;
+  }
+
+  const place = st.findIndex((x) => x.isPlayer) + 1;
+  if (place !== b.lastPlace) {
+    const money = PURSE[s.tier].payouts.length;
+    const cutTo = s.cutAfterDay === s.day ? TIER_FORMAT[s.tier].cutTo : null;
+    const crossed = (line: number) => (b.lastPlace > line) !== (place > line);
+    const up = place < b.lastPlace;
+    let text: string | null = null;
+    if (crossed(3) && up) text = `You move onto the podium: #${place}`;
+    else if (cutTo && crossed(cutTo)) text = up ? `Inside the cut line: #${place}` : `Below the cut line: #${place}`;
+    else if (st.length > money && crossed(money)) text = up ? `Into the money: #${place}` : `Out of the money: #${place}`;
+    if (text) emit(s, 'playerPlace', text, undefined, { place });
+    b.lastPlace = place;
+  }
 }
 
 function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: number) {
@@ -92,6 +169,13 @@ function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: nu
   if (isWater(ctx.grid, nx, ny) && isWater(ctx.grid, lookX, lookY)) boat.pos = { x: nx, y: ny };
   else boat.speed = 0;
 
+  // Stumps just under the surface: running on plane outside the buoyed lanes is a gamble.
+  if (boat.speed > B.stumpSpeed && stumpHazardAt(ctx.grid, boat.pos.x, boat.pos.y) && ctx.rng.chance(B.stumpChancePerSec * dt)) {
+    boat.speed = 0;
+    s.clockMin += TUNING.clock.stumpMin;
+    emit(s, 'stump', `Hit a stump! Lost ${TUNING.clock.stumpMin} minutes checking the lower unit.`, { ...boat.pos });
+  }
+
   // Outboard noise displaces fish (TPWD telemetry); the trolling motor is far quieter.
   const radius = boat.motor === 'outboard' ? B.outboardSpookRadius : B.trollingSpookRadius;
   if (boat.speed > 0.5) {
@@ -121,6 +205,7 @@ function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: nu
 export function stepTournament(s: TournamentState, input: InputFrame, dt: number): void {
   if (s.phase === 'WeighIn') return;
   const ctx = makeCtx(s);
+  const bagBefore = s.livewell.length + (s.pendingCull ? 1 : 0);
 
   if (s.phase !== 'Landed') s.clockMin += TUNING.clock.gameMinPerSec * dt;
 
@@ -149,6 +234,7 @@ export function stepTournament(s: TournamentState, input: InputFrame, dt: number
       break;
   }
 
+  stepBroadcast(s, s.livewell.length + (s.pendingCull ? 1 : 0) !== bagBefore);
   if (s.clockMin >= TUNING.clock.dayEndMin) endDay(s);
   s.rngState = ctx.rng.state;
 }
@@ -216,6 +302,7 @@ export function startNextDay(s: TournamentState): void {
     f.interest = 0;
   }
   for (const r of s.rivals) if (!r.cut) rollRivalDay(r, lake, s.tier, s.conditions, ctx.rng);
+  s.broadcast = { notableLb: notableWeight(s.rivals.filter((r) => !r.cut)), lastReportMin: -Infinity, leaderId: null, lastPlace: standings(s, false).findIndex((x) => x.isPlayer) + 1 };
   s.boat = { pos: { x: lake.launch.x, y: lake.launch.y }, heading: lake.launch.heading, speed: 0, motor: 'trolling' };
   s.rngState = ctx.rng.state;
   transition(s, 'Navigate');

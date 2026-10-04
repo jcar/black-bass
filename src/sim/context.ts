@@ -37,8 +37,9 @@ export function fishActivity(s: TournamentState, f: FishEntity): number {
   return activityFor(f.species, s.conditions, s.clockMin, f.weightLb);
 }
 
-export function emit(s: TournamentState, type: TournamentState['events'][number]['type'], text?: string, at?: { x: number; y: number }) {
-  s.events.push({ type, text, at: at ? { x: at.x, y: at.y } : undefined });
+type SimEvent = TournamentState['events'][number];
+export function emit(s: TournamentState, type: SimEvent['type'], text?: string, at?: { x: number; y: number }, data?: SimEvent['data']) {
+  s.events.push({ type, text, at: at ? { x: at.x, y: at.y } : undefined, ...(data ? { data } : {}) });
 }
 
 export const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);

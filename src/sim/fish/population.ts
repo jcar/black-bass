@@ -39,7 +39,7 @@ function depthSuitability(species: SpeciesId, season: Season, depthFt: number): 
   return Math.exp(-off / 6);
 }
 
-function sampleLength(rng: Rng, lake: LakeDef, species: SpeciesId, onStructure: boolean): number {
+export function sampleLength(rng: Rng, lake: LakeDef, species: SpeciesId, onStructure: boolean): number {
   const prof = lake.species.sizes[species] ?? { medianIn: 14, sigma: 0.18, maxIn: 22 };
   let len = rng.logNormal(prof.medianIn, prof.sigma);
   // Structure holds the better fish: a small chance to re-roll and keep the bigger one.

@@ -1,7 +1,7 @@
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { activeTackle, dist, emit, type SimCtx } from './context';
-import { isWater } from './lake';
+import { coverAt, isWater } from './lake';
 import { landFish } from './livewell';
 import { transition } from './machine';
 import type { FightState, FishEntity, InputFrame, TournamentState, Vec2 } from './types';
@@ -156,6 +156,16 @@ export function stepFight(s: TournamentState, ctx: SimCtx, input: InputFrame, dt
   if (fight.tensionLb > breakLb) {
     loseFish(s, 'snap', `SNAP! The ${setup.line.testLb} lb line broke.`);
     return;
+  }
+  // Standing timber: a fish running through trunks under heavy pressure can wrap the line.
+  // Heavier line and braid survive it; light fluoro in the timber is a gamble.
+  if (fight.tension > F.wrapTension && coverAt(grid, fight.pos.x, fight.pos.y) === 'standing') {
+    const lineFactor = (setup.line.type === 'braid' ? F.wrapBraidFactor : 1) * Math.min(1.5, 12 / setup.line.testLb);
+    const p = F.wrapChancePerSec * ((fight.tension - F.wrapTension) / (1 - F.wrapTension)) * lineFactor * dt;
+    if (rng.chance(p)) {
+      loseFish(s, 'snap', 'Wrapped in the timber! The line frayed through.');
+      return;
+    }
   }
 
   // --- Move the fish (stays in water) ---

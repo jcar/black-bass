@@ -1,0 +1,1349 @@
+{
+ "$comment": "Source of truth for Lake Fork, TX. Run `npx tsx tools/lake-shape.ts lakefork` to regenerate src/data/lakes/lakefork.json, then `npx tsx tools/lake-preview.ts lakefork` to check it. Layout follows the real lake (stylised and compressed): dam at the south, Lake Fork Creek arm NW, Caney Creek arm NE, Little Caney between, FM 515 bridges mid-lake, Lake Fork Marina on the west shore. Sources: TPWD lake page and surveys, Martin's Map 'Learn the Lake' series, Bassmaster Elite coverage. Clarity is set clearer than TPWD's 4-6 ft Secchi on purpose: the engine's sight model is tuned on clear lakes, and real-world stain made bites too scarce (bot: 1.5 bites/day); 10 ft with stained creek backs plays like a tough but fair trophy lake.",
+ "id": "lakefork",
+ "name": "Lake Fork",
+ "region": "TX",
+ "tier": "SemiPro",
+ "blurb": "Texas's trophy factory: Florida-strain largemouth in a drowned forest of standing timber. Run the boat lanes.",
+ "sizeM": {
+  "w": 3600,
+  "h": 4000
+ },
+ "cellM": 20,
+ "launch": {
+  "x": 960,
+  "y": 2470,
+  "heading": 0,
+  "name": "Lake Fork Marina"
+ },
+ "shape": {
+  "resM": 10,
+  "simplifyM": 7,
+  "basins": [
+   [
+    [
+     1400,
+     3550
+    ],
+    [
+     1500,
+     3300
+    ],
+    [
+     1750,
+     3200
+    ],
+    [
+     2000,
+     3250
+    ],
+    [
+     2150,
+     3450
+    ],
+    [
+     2100,
+     3700
+    ],
+    [
+     2000,
+     3860
+    ],
+    [
+     1500,
+     3860
+    ],
+    [
+     1420,
+     3750
+    ]
+   ]
+  ],
+  "arms": [
+   {
+    "name": "Lake Fork Creek",
+    "path": [
+     [
+      1650,
+      3400
+     ],
+     [
+      1450,
+      3000
+     ],
+     [
+      1220,
+      2500
+     ],
+     [
+      1000,
+      2000
+     ],
+     [
+      840,
+      1500
+     ],
+     [
+      680,
+      1000
+     ],
+     [
+      520,
+      550
+     ],
+     [
+      380,
+      200
+     ]
+    ],
+    "width": [
+     760,
+     680,
+     600,
+     540,
+     440,
+     340,
+     240,
+     130
+    ]
+   },
+   {
+    "name": "Caney Creek",
+    "path": [
+     [
+      1950,
+      3400
+     ],
+     [
+      2250,
+      3000
+     ],
+     [
+      2550,
+      2550
+     ],
+     [
+      2780,
+      2100
+     ],
+     [
+      2980,
+      1650
+     ],
+     [
+      3150,
+      1150
+     ],
+     [
+      3280,
+      650
+     ],
+     [
+      3360,
+      250
+     ]
+    ],
+    "width": [
+     700,
+     640,
+     580,
+     500,
+     420,
+     320,
+     220,
+     120
+    ]
+   },
+   {
+    "name": "Little Caney",
+    "path": [
+     [
+      1800,
+      3250
+     ],
+     [
+      1840,
+      2750
+     ],
+     [
+      1890,
+      2250
+     ],
+     [
+      1940,
+      1750
+     ],
+     [
+      1990,
+      1350
+     ]
+    ],
+    "width": [
+     420,
+     360,
+     300,
+     200,
+     90
+    ],
+    "coves": false
+   },
+   {
+    "name": "Birch Creek",
+    "path": [
+     [
+      930,
+      1800
+     ],
+     [
+      1180,
+      1500
+     ],
+     [
+      1300,
+      1100
+     ],
+     [
+      1360,
+      700
+     ],
+     [
+      1400,
+      350
+     ]
+    ],
+    "width": [
+     300,
+     260,
+     200,
+     140,
+     70
+    ]
+   },
+   {
+    "name": "Little Mustang",
+    "path": [
+     [
+      1150,
+      2700
+     ],
+     [
+      850,
+      2760
+     ],
+     [
+      600,
+      2850
+     ],
+     [
+      380,
+      2980
+     ]
+    ],
+    "width": [
+     260,
+     220,
+     150,
+     70
+    ]
+   },
+   {
+    "name": "Big Mustang",
+    "path": [
+     [
+      1380,
+      3080
+     ],
+     [
+      1050,
+      3250
+     ],
+     [
+      780,
+      3420
+     ],
+     [
+      560,
+      3560
+     ]
+    ],
+    "width": [
+     240,
+     210,
+     150,
+     70
+    ]
+   },
+   {
+    "name": "Chaney Branch",
+    "path": [
+     [
+      1480,
+      3620
+     ],
+     [
+      1250,
+      3720
+     ],
+     [
+      1050,
+      3800
+     ]
+    ],
+    "width": [
+     220,
+     170,
+     80
+    ]
+   },
+   {
+    "name": "Williams Creek",
+    "path": [
+     [
+      1080,
+      2380
+     ],
+     [
+      850,
+      2330
+     ],
+     [
+      700,
+      2280
+     ]
+    ],
+    "width": [
+     150,
+     110,
+     60
+    ],
+    "coves": false
+   },
+   {
+    "name": "Wolf Creek",
+    "path": [
+     [
+      1830,
+      2550
+     ],
+     [
+      1680,
+      2480
+     ],
+     [
+      1570,
+      2420
+     ]
+    ],
+    "width": [
+     180,
+     140,
+     60
+    ],
+    "coves": false
+   },
+   {
+    "name": "Dale Creek",
+    "path": [
+     [
+      1960,
+      2650
+     ],
+     [
+      2090,
+      2610
+     ],
+     [
+      2190,
+      2580
+     ]
+    ],
+    "width": [
+     170,
+     130,
+     60
+    ],
+    "coves": false
+   },
+   {
+    "name": "Glade Creek",
+    "path": [
+     [
+      2900,
+      2350
+     ],
+     [
+      3150,
+      2420
+     ],
+     [
+      3400,
+      2550
+     ]
+    ],
+    "width": [
+     230,
+     170,
+     70
+    ]
+   },
+   {
+    "name": "Oil Well Bay",
+    "path": [
+     [
+      3100,
+      1600
+     ],
+     [
+      3300,
+      1700
+     ],
+     [
+      3480,
+      1850
+     ]
+    ],
+    "width": [
+     200,
+     150,
+     60
+    ]
+   },
+   {
+    "name": "Elm Creek",
+    "path": [
+     [
+      700,
+      1100
+     ],
+     [
+      450,
+      1050
+     ],
+     [
+      250,
+      1100
+     ]
+    ],
+    "width": [
+     180,
+     120,
+     50
+    ]
+   },
+   {
+    "name": "Searcy Branch",
+    "path": [
+     [
+      3200,
+      1000
+     ],
+     [
+      3000,
+      850
+     ],
+     [
+      2850,
+      700
+     ]
+    ],
+    "width": [
+     170,
+     120,
+     50
+    ]
+   }
+  ],
+  "islands": [
+   [
+    [
+     1250,
+     2760
+    ],
+    [
+     1330,
+     2730
+    ],
+    [
+     1390,
+     2780
+    ],
+    [
+     1360,
+     2850
+    ],
+    [
+     1270,
+     2850
+    ]
+   ]
+  ],
+  "wobble": 0.32,
+  "coves": {
+   "everyM": 230,
+   "lenM": [
+    110,
+    280
+   ],
+   "widthM": [
+    60,
+    130
+   ]
+  }
+ },
+ "depthPoints": [
+  [
+   1750,
+   3750,
+   70
+  ],
+  [
+   1750,
+   3500,
+   62
+  ],
+  [
+   1600,
+   3300,
+   55
+  ],
+  [
+   1450,
+   3000,
+   48
+  ],
+  [
+   1300,
+   2700,
+   42
+  ],
+  [
+   1200,
+   2450,
+   38
+  ],
+  [
+   1050,
+   2100,
+   33
+  ],
+  [
+   930,
+   1800,
+   30
+  ],
+  [
+   840,
+   1500,
+   26
+  ],
+  [
+   700,
+   1050,
+   20
+  ],
+  [
+   560,
+   650,
+   13
+  ],
+  [
+   420,
+   280,
+   6
+  ],
+  [
+   2050,
+   3300,
+   55
+  ],
+  [
+   2250,
+   3000,
+   48
+  ],
+  [
+   2550,
+   2550,
+   38
+  ],
+  [
+   2780,
+   2100,
+   32
+  ],
+  [
+   2980,
+   1650,
+   26
+  ],
+  [
+   3150,
+   1150,
+   18
+  ],
+  [
+   3300,
+   550,
+   9
+  ],
+  [
+   1810,
+   3050,
+   42
+  ],
+  [
+   1850,
+   2600,
+   30
+  ],
+  [
+   1900,
+   2100,
+   20
+  ],
+  [
+   1960,
+   1600,
+   12
+  ],
+  [
+   1180,
+   1500,
+   22
+  ],
+  [
+   1300,
+   1100,
+   16
+  ],
+  [
+   1380,
+   550,
+   8
+  ],
+  [
+   900,
+   2750,
+   18
+  ],
+  [
+   600,
+   2850,
+   9
+  ],
+  [
+   1050,
+   3250,
+   20
+  ],
+  [
+   700,
+   3460,
+   8
+  ],
+  [
+   1250,
+   3720,
+   22
+  ],
+  [
+   1060,
+   3790,
+   8
+  ],
+  [
+   850,
+   2330,
+   10
+  ],
+  [
+   1650,
+   2460,
+   14
+  ],
+  [
+   2120,
+   2610,
+   12
+  ],
+  [
+   3150,
+   2420,
+   12
+  ],
+  [
+   3380,
+   2540,
+   5
+  ],
+  [
+   3300,
+   1700,
+   10
+  ],
+  [
+   450,
+   1050,
+   8
+  ],
+  [
+   3000,
+   850,
+   9
+  ],
+  [
+   2900,
+   1850,
+   14
+  ],
+  [
+   1300,
+   3150,
+   16
+  ]
+ ],
+ "shoreSlopeFtPerM": 0.16,
+ "clarity": {
+  "defaultSecchiFt": 10,
+  "zones": [
+   {
+    "x": 450,
+    "y": 350,
+    "r": 600,
+    "secchiFt": 5.5
+   },
+   {
+    "x": 3300,
+    "y": 450,
+    "r": 500,
+    "secchiFt": 5.5
+   },
+   {
+    "x": 3350,
+    "y": 2530,
+    "r": 300,
+    "secchiFt": 6.0
+   },
+   {
+    "x": 450,
+    "y": 2950,
+    "r": 300,
+    "secchiFt": 6.5
+   },
+   {
+    "x": 600,
+    "y": 3530,
+    "r": 260,
+    "secchiFt": 6.5
+   }
+  ]
+ },
+ "cover": [
+  {
+   "type": "standing",
+   "x": 1250,
+   "y": 2600,
+   "r": 260
+  },
+  {
+   "type": "standing",
+   "x": 1050,
+   "y": 2150,
+   "r": 220
+  },
+  {
+   "type": "standing",
+   "x": 880,
+   "y": 1650,
+   "r": 200
+  },
+  {
+   "type": "standing",
+   "x": 720,
+   "y": 1150,
+   "r": 180
+  },
+  {
+   "type": "standing",
+   "x": 560,
+   "y": 700,
+   "r": 150
+  },
+  {
+   "type": "standing",
+   "x": 1200,
+   "y": 1450,
+   "r": 150
+  },
+  {
+   "type": "standing",
+   "x": 1320,
+   "y": 1000,
+   "r": 130
+  },
+  {
+   "type": "standing",
+   "x": 1850,
+   "y": 2700,
+   "r": 200
+  },
+  {
+   "type": "standing",
+   "x": 1900,
+   "y": 2150,
+   "r": 160
+  },
+  {
+   "type": "standing",
+   "x": 2350,
+   "y": 2900,
+   "r": 230
+  },
+  {
+   "type": "standing",
+   "x": 2650,
+   "y": 2400,
+   "r": 220
+  },
+  {
+   "type": "standing",
+   "x": 2900,
+   "y": 1900,
+   "r": 200
+  },
+  {
+   "type": "standing",
+   "x": 3080,
+   "y": 1400,
+   "r": 180
+  },
+  {
+   "type": "standing",
+   "x": 3230,
+   "y": 850,
+   "r": 150
+  },
+  {
+   "type": "standing",
+   "x": 750,
+   "y": 2800,
+   "r": 140
+  },
+  {
+   "type": "standing",
+   "x": 900,
+   "y": 3330,
+   "r": 130
+  },
+  {
+   "type": "standing",
+   "x": 3150,
+   "y": 2440,
+   "r": 120
+  },
+  {
+   "type": "standing",
+   "x": 1650,
+   "y": 2460,
+   "r": 100
+  },
+  {
+   "type": "standing",
+   "x": 2120,
+   "y": 2610,
+   "r": 100
+  },
+  {
+   "type": "standing",
+   "x": 1250,
+   "y": 3720,
+   "r": 110
+  },
+  {
+   "type": "grass",
+   "x": 500,
+   "y": 2900,
+   "r": 110,
+   "label": "Little Mustang flats"
+  },
+  {
+   "type": "grass",
+   "x": 650,
+   "y": 3500,
+   "r": 90
+  },
+  {
+   "type": "grass",
+   "x": 3350,
+   "y": 2540,
+   "r": 90,
+   "label": "Glade Bay"
+  },
+  {
+   "type": "grass",
+   "x": 400,
+   "y": 1080,
+   "r": 90
+  },
+  {
+   "type": "grass",
+   "x": 1390,
+   "y": 500,
+   "r": 80
+  },
+  {
+   "type": "grass",
+   "x": 3400,
+   "y": 1800,
+   "r": 80
+  },
+  {
+   "type": "grass",
+   "x": 1500,
+   "y": 2950,
+   "r": 70
+  },
+  {
+   "type": "dock",
+   "x": 930,
+   "y": 2480,
+   "r": 45,
+   "label": "Lake Fork Marina"
+  },
+  {
+   "type": "dock",
+   "x": 920,
+   "y": 2300,
+   "r": 35
+  },
+  {
+   "type": "dock",
+   "x": 2920,
+   "y": 1340,
+   "r": 40,
+   "label": "Oak Ridge Marina"
+  },
+  {
+   "type": "rock",
+   "x": 1550,
+   "y": 3840,
+   "r": 50,
+   "label": "Dam riprap"
+  },
+  {
+   "type": "rock",
+   "x": 1700,
+   "y": 3845,
+   "r": 50
+  },
+  {
+   "type": "rock",
+   "x": 1850,
+   "y": 3845,
+   "r": 50
+  },
+  {
+   "type": "rock",
+   "x": 1980,
+   "y": 3840,
+   "r": 50
+  },
+  {
+   "type": "rock",
+   "x": 840,
+   "y": 2250,
+   "r": 45,
+   "label": "West 515 bridge"
+  },
+  {
+   "type": "rock",
+   "x": 1380,
+   "y": 2250,
+   "r": 45
+  },
+  {
+   "type": "rock",
+   "x": 2420,
+   "y": 2300,
+   "r": 45,
+   "label": "East 515 bridge"
+  },
+  {
+   "type": "rock",
+   "x": 2935,
+   "y": 2300,
+   "r": 45
+  },
+  {
+   "type": "timber",
+   "x": 1420,
+   "y": 3420,
+   "r": 35
+  },
+  {
+   "type": "timber",
+   "x": 2180,
+   "y": 3480,
+   "r": 35
+  }
+ ],
+ "lanes": [
+  [
+   [
+    1750,
+    3700
+   ],
+   [
+    1600,
+    3350
+   ],
+   [
+    1400,
+    2950
+   ],
+   [
+    1180,
+    2450
+   ],
+   [
+    980,
+    1950
+   ],
+   [
+    820,
+    1450
+   ],
+   [
+    660,
+    950
+   ],
+   [
+    520,
+    500
+   ]
+  ],
+  [
+   [
+    1850,
+    3650
+   ],
+   [
+    2150,
+    3250
+   ],
+   [
+    2480,
+    2800
+   ],
+   [
+    2740,
+    2300
+   ],
+   [
+    2960,
+    1800
+   ],
+   [
+    3140,
+    1250
+   ],
+   [
+    3260,
+    700
+   ]
+  ],
+  [
+   [
+    1800,
+    3300
+   ],
+   [
+    1850,
+    2700
+   ],
+   [
+    1900,
+    2100
+   ],
+   [
+    1950,
+    1600
+   ]
+  ],
+  [
+   [
+    930,
+    1800
+   ],
+   [
+    1180,
+    1500
+   ],
+   [
+    1300,
+    1100
+   ]
+  ],
+  [
+   [
+    960,
+    2470
+   ],
+   [
+    1180,
+    2450
+   ]
+  ]
+ ],
+ "laneWidthM": 50,
+ "stumpZones": [
+  {
+   "x": 900,
+   "y": 1600,
+   "r": 500
+  },
+  {
+   "x": 650,
+   "y": 900,
+   "r": 420
+  },
+  {
+   "x": 1250,
+   "y": 2600,
+   "r": 330
+  },
+  {
+   "x": 1300,
+   "y": 1100,
+   "r": 300
+  },
+  {
+   "x": 2600,
+   "y": 2500,
+   "r": 380
+  },
+  {
+   "x": 2950,
+   "y": 1750,
+   "r": 380
+  },
+  {
+   "x": 3200,
+   "y": 1000,
+   "r": 320
+  },
+  {
+   "x": 1880,
+   "y": 2400,
+   "r": 300
+  },
+  {
+   "x": 700,
+   "y": 2850,
+   "r": 250
+  },
+  {
+   "x": 900,
+   "y": 3350,
+   "r": 230
+  },
+  {
+   "x": 3200,
+   "y": 2470,
+   "r": 180
+  }
+ ],
+ "waypoints": [
+  {
+   "id": "birch",
+   "name": "Birch Creek · Big Bass Point",
+   "x": 1120,
+   "y": 1960,
+   "tip": "A main-creek junction with a pipeline crossing. Drag a Carolina rig or a big worm on the 10-16 ft points.",
+   "visible": true
+  },
+  {
+   "id": "hwy17",
+   "name": "Old Hwy 17 Bridge",
+   "x": 820,
+   "y": 2770,
+   "tip": "Drowned roadbed and bridge: 14 ft on top, 28 in the channel. Crank the edges or hop a jig down the pilings.",
+   "visible": true
+  },
+  {
+   "id": "mustangCove",
+   "name": "Little Mustang North Cove",
+   "x": 520,
+   "y": 2900,
+   "tip": "The best spawning water in the arm. When it warms, drag a lizard or a fluke across the flats.",
+   "visible": true
+  },
+  {
+   "id": "pony",
+   "name": "Pony Island",
+   "x": 1230,
+   "y": 2835,
+   "tip": "Grass and timber mid-lake. Walk a topwater early, then grind a squarebill around the edges.",
+   "visible": true
+  },
+  {
+   "id": "jigAlley",
+   "name": "Little Caney · Jig Alley",
+   "x": 1850,
+   "y": 2290,
+   "tip": "Some of Fork's biggest bass came out of this timber. Pitch a jig tight to the trunks and use heavy line.",
+   "visible": true
+  },
+  {
+   "id": "daleHump",
+   "name": "Dale Creek Hump",
+   "x": 2120,
+   "y": 2615,
+   "tip": "Dense submerged timber on a hump. Slow down and fish the shade.",
+   "visible": true
+  },
+  {
+   "id": "bridgeWest",
+   "name": "West 515 Bridge",
+   "x": 1370,
+   "y": 2250,
+   "tip": "Pilings and the old roadbed drop into the channel. Best in the fall when the shad move up.",
+   "visible": true
+  },
+  {
+   "id": "glade",
+   "name": "Glade Bay",
+   "x": 3150,
+   "y": 2430,
+   "tip": "Spawning flats off the East 515 bridge. Soft plastics around the beds and lily pads.",
+   "visible": true
+  },
+  {
+   "id": "bellHump",
+   "name": "Bell Hump",
+   "x": 2910,
+   "y": 1830,
+   "tip": "Offshore hump off the Caney channel. Summer ledge fish eat a deep crankbait or a football jig.",
+   "visible": true
+  },
+  {
+   "id": "dam",
+   "name": "The Dam",
+   "x": 1700,
+   "y": 3810,
+   "tip": "Deepest water on the lake along the riprap. Winter fish hold here, and the lake record came near the dam.",
+   "visible": true
+  }
+ ],
+ "regions": [
+  {
+   "name": "Lake Fork Creek",
+   "x": 700,
+   "y": 1300
+  },
+  {
+   "name": "Birch Creek",
+   "x": 1330,
+   "y": 800
+  },
+  {
+   "name": "Little Caney",
+   "x": 1950,
+   "y": 1900
+  },
+  {
+   "name": "Caney Creek",
+   "x": 3000,
+   "y": 1500
+  },
+  {
+   "name": "Mustang",
+   "x": 750,
+   "y": 3050
+  },
+  {
+   "name": "Glade Bay",
+   "x": 3250,
+   "y": 2650
+  },
+  {
+   "name": "Dam",
+   "x": 1750,
+   "y": 3600
+  }
+ ],
+ "species": {
+  "default": {
+   "largemouth": 0.88,
+   "bowfin": 0.04,
+   "drum": 0.08
+  },
+  "zones": [],
+  "sizes": {
+   "largemouth": {
+    "medianIn": 16.5,
+    "sigma": 0.2,
+    "maxIn": 28
+   },
+   "bowfin": {
+    "medianIn": 21,
+    "sigma": 0.15,
+    "maxIn": 30
+   },
+   "drum": {
+    "medianIn": 15,
+    "sigma": 0.2,
+    "maxIn": 26
+   }
+  },
+  "count": 6500,
+  "condition": 1.08
+ },
+ "climate": {
+  "waterTempFByMonth": [
+   49,
+   51,
+   58,
+   65,
+   73,
+   79,
+   86,
+   86,
+   84,
+   76,
+   65,
+   57
+  ],
+  "tournamentMonths": [
+   2,
+   3,
+   4,
+   5,
+   10,
+   11
+  ],
+  "weatherOdds": {
+   "Bluebird": 0.3,
+   "Overcast": 0.28,
+   "Windy": 0.27,
+   "Rain": 0.15
+  }
+ },
+ "field": {
+  "medianBagLb": {
+   "Amateur": 13,
+   "SemiPro": 16,
+   "Pro": 19,
+   "Elite": 24
+  },
+  "sigma": 0.3
+ },
+ "regs": {
+  "minIn": 12,
+  "slot": {
+   "minIn": 16,
+   "maxIn": 24,
+   "mode": "catchWeighRelease"
+  }
+ }
+}

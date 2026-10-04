@@ -181,6 +181,19 @@ function drawCoverCell(ctx: CanvasRenderingContext2D, type: string, px: number, 
         ctx.lineTo(hx + s * 2, hy + s);
         ctx.stroke();
         break;
+      case 'standing': {
+        // Dead trunks breaking the surface: a dark bole with a weathered grey top.
+        const rr = Math.max(0.7, s * 0.55);
+        ctx.fillStyle = PAL.standing;
+        ctx.beginPath();
+        ctx.arc(hx, hy, rr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = PAL.standingTop;
+        ctx.beginPath();
+        ctx.arc(hx - rr * 0.25, hy - rr * 0.25, rr * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
       case 'dock':
         // Piers are drawn per marina in drawDocks.
         break;
@@ -211,6 +224,40 @@ function drawContours(ctx: CanvasRenderingContext2D, g: LakeGrid, toPx: (x: numb
   ctx.stroke();
 }
 
+/** Buoyed boat lanes: a dashed run line with white/orange buoys every ~120 m. */
+function drawLanes(ctx: CanvasRenderingContext2D, g: LakeGrid, toPx: (x: number, y: number) => [number, number], pxPerM: number) {
+  const lanes = g.def.lanes ?? [];
+  if (!lanes.length) return;
+  ctx.save();
+  ctx.strokeStyle = PAL.lane;
+  ctx.lineWidth = Math.max(1, pxPerM * 3);
+  ctx.setLineDash([pxPerM * 30, pxPerM * 22]);
+  for (const pl of lanes) {
+    ctx.beginPath();
+    ctx.moveTo(...toPx(pl[0][0], pl[0][1]));
+    for (const [x, y] of pl.slice(1)) ctx.lineTo(...toPx(x, y));
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  const r = Math.max(1.6, pxPerM * 7);
+  for (const pl of lanes)
+    for (let k = 1; k < pl.length; k++) {
+      const [ax, ay] = pl[k - 1];
+      const [bx, by] = pl[k];
+      const n = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / 120));
+      for (let i = 0; i < n; i++) {
+        const [x, y] = toPx(ax + ((bx - ax) * i) / n, ay + ((by - ay) * i) / n);
+        ctx.fillStyle = PAL.buoy;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = PAL.buoyStripe;
+        ctx.fillRect(x - r, y - r * 0.25, r * 2, r * 0.5);
+      }
+    }
+  ctx.restore();
+}
+
 /** Whole-lake chart for the navigation map (and minimap). */
 export function paintLakeCanvas(g: LakeGrid, pxPerM: number): HTMLCanvasElement {
   const w = g.def.sizeM.w * pxPerM;
@@ -226,6 +273,7 @@ export function paintLakeCanvas(g: LakeGrid, pxPerM: number): HTMLCanvasElement 
       const i = r * g.cols + c;
       if (g.water[i] && g.cover[i]) drawCoverCell(ctx, COVER_CODES[g.cover[i]], c * cellPx, r * cellPx, cellPx, c, r, 3);
     }
+  drawLanes(ctx, g, toPx, pxPerM);
   drawDocks(ctx, g, toPx, pxPerM);
   drawLand(ctx, g, toPx, w, h);
   return canvas;
@@ -252,9 +300,10 @@ export function paintLocalCanvas(g: LakeGrid, center: Vec2, sizeM: number, pxPer
       const i = r * g.cols + c;
       if (g.water[i] && g.cover[i]) {
         const [x, y] = toPx(c * g.cellM, r * g.cellM);
-        drawCoverCell(ctx, COVER_CODES[g.cover[i]], x, y, cellPx, c, r, 40, pxPerM);
+        drawCoverCell(ctx, COVER_CODES[g.cover[i]], x, y, cellPx, c, r, COVER_CODES[g.cover[i]] === 'standing' ? 10 : 40, pxPerM);
       }
     }
+  drawLanes(ctx, g, toPx, pxPerM);
   drawDocks(ctx, g, toPx, pxPerM);
   drawLand(ctx, g, toPx, px, px);
   return canvas;

@@ -11,12 +11,18 @@ export const TUNING = {
     unhookBassMin: 1.5,
     unhookBycatchMin: 6,
     shoreSnagMin: 3,
+    /** Stump strike: check the lower unit, trim up, idle back to a lane. */
+    stumpMin: 8,
     popAttemptMin: 0.5,
   },
 
   boat: {
     /** (game) World speeds are compressed so a lake crossing takes ~40 real seconds. */
     outboardMaxSpeed: 75,
+    /** On plane above this speed a stump field outside the lanes is dangerous. */
+    stumpSpeed: 28,
+    /** Per-second chance of hitting a stump while running a stump field off-lane on plane. */
+    stumpChancePerSec: 0.35,
     trollingMaxSpeed: 4,
     /** Stick magnitude below this uses the quiet trolling motor. */
     trollingStickMax: 0.4,
@@ -111,6 +117,12 @@ export const TUNING = {
 
   fight: {
     knotStrength: 0.9,
+    /** Standing timber: above this tension a running fish can wrap the line around a trunk. */
+    wrapTension: 0.62,
+    /** Per-second wrap chance at full tension on 12 lb line; scales down with heavier line. */
+    wrapChancePerSec: 0.55,
+    /** Braid saws through wood instead of fraying on it. */
+    wrapBraidFactor: 0.35,
     /** Pull vs body weight: sustained ~0.3-0.5x, bursts ~1-2x (estimates; no hard data exists). */
     sustainedPullMult: 0.38,
     burstPullMult: 1.2,
@@ -145,6 +157,7 @@ export const TUNING = {
   population: {
     /** Fraction of fish placed away from obvious cover (TPWD: ~40% of time on featureless flats). */
     offStructureFrac: 0.3,
+    /** Default minimum length; lakes can override with `regs.minIn`. */
     keeperMinIn: 12,
     trophyStructureBias: 0.12,
     wanderM: 6,

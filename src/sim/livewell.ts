@@ -1,3 +1,5 @@
+import { LAKES } from '../data/lakes';
+import type { LakeDef } from '../data/lakes/types';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { activeTackle, emit } from './context';
@@ -6,14 +8,23 @@ import type { CaughtFish, FishEntity, TournamentState } from './types';
 
 export const LIVEWELL_LIMIT = 5;
 
-export const isKeeper = (c: Pick<CaughtFish, 'species' | 'lengthIn'>) =>
-  SPECIES[c.species].isBass && c.lengthIn >= TUNING.population.keeperMinIn;
+export const keeperMinIn = (lake?: LakeDef) => lake?.regs?.minIn ?? TUNING.population.keeperMinIn;
+
+export const isKeeper = (c: Pick<CaughtFish, 'species' | 'lengthIn'>, lake?: LakeDef) =>
+  SPECIES[c.species].isBass && c.lengthIn >= keeperMinIn(lake);
+
+/** Protected-slot bass (e.g. Lake Fork 16-24"). Under catch-weigh-release they still count. */
+export const inSlot = (c: Pick<CaughtFish, 'species' | 'lengthIn'>, lake?: LakeDef) => {
+  const slot = lake?.regs?.slot;
+  return !!slot && c.species === 'largemouth' && c.lengthIn >= slot.minIn && c.lengthIn < slot.maxIn;
+};
 
 export const bagWeight = (fish: CaughtFish[]) => Math.round(fish.reduce((a, f) => a + f.weightLb, 0) * 100) / 100;
 
 /** Land the fish on the line and decide what happens to it. */
 export function landFish(s: TournamentState, f: FishEntity): void {
   const { setup } = activeTackle(s);
+  const lake = LAKES[s.lakeId];
   const caught: CaughtFish = {
     fishId: f.id,
     species: f.species,
@@ -31,11 +42,12 @@ export function landFish(s: TournamentState, f: FishEntity): void {
     s.stats.bycatch++;
     s.clockMin += TUNING.clock.unhookBycatchMin;
     emit(s, 'landed', `${SPECIES[f.species].name}. Doesn't count, and it cost you ${TUNING.clock.unhookBycatchMin} minutes.`);
-  } else if (!isKeeper(caught)) {
+  } else if (!isKeeper(caught, lake)) {
     s.clockMin += TUNING.clock.unhookBassMin;
-    emit(s, 'landed', `Short fish: ${caught.lengthIn}" is under the ${TUNING.population.keeperMinIn}" limit.`);
+    emit(s, 'landed', `Short fish: ${caught.lengthIn}" is under the ${keeperMinIn(lake)}" limit.`);
   } else {
     s.clockMin += TUNING.clock.unhookBassMin;
+    if (inSlot(caught, lake)) caught.cwr = true;
     s.stats.bigFishLb = Math.max(s.stats.bigFishLb, caught.weightLb);
     if (s.livewell.length < LIVEWELL_LIMIT) {
       s.livewell.push(caught);

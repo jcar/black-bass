@@ -1,7 +1,8 @@
 import type { LakeDef, Pt } from '../data/lakes/types';
 import type { CoverType, Vec2 } from './types';
 
-export const COVER_CODES: CoverType[] = ['none', 'rock', 'grass', 'dock', 'timber', 'reeds'];
+// Append-only: codes are stored in the grid.
+export const COVER_CODES: CoverType[] = ['none', 'rock', 'grass', 'dock', 'timber', 'reeds', 'standing'];
 /** Hard cover: a lure landing on it crashes and spooks fish. */
 export const HARD_COVER: ReadonlySet<CoverType> = new Set(['dock', 'timber']);
 
@@ -16,6 +17,17 @@ export interface LakeGrid {
   cover: Uint8Array;
   secchiFt: Float32Array;
   shoreDistM: Float32Array;
+  /** 1 inside a buoyed boat lane (cleared of standing timber). */
+  lane: Uint8Array;
+  /** 1 where stumps sit just under the surface (outboard hazard outside lanes). */
+  stump: Uint8Array;
+}
+
+function segDist(x: number, y: number, [ax, ay]: Pt, [bx, by]: Pt): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(x - (ax + t * dx), y - (ay + t * dy));
 }
 
 function pointInPoly(x: number, y: number, poly: Pt[]): boolean {
@@ -45,6 +57,9 @@ export function buildLakeGrid(def: LakeDef): LakeGrid {
   const cover = new Uint8Array(n);
   const secchiFt = new Float32Array(n);
   const shoreDistM = new Float32Array(n);
+  const lane = new Uint8Array(n);
+  const stump = new Uint8Array(n);
+  const laneHalf = (def.laneWidthM ?? 40) / 2;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -104,10 +119,16 @@ export function buildLakeGrid(def: LakeDef): LakeGrid {
         const d = Math.hypot(p.x - x, p.y - y);
         if (d < p.r * (0.7 + 0.35 * hash01(c, r))) cover[i] = COVER_CODES.indexOf(p.type);
       }
+
+      for (const pl of def.lanes ?? [])
+        for (let k = 1; k < pl.length; k++) if (segDist(x, y, pl[k - 1], pl[k]) <= laneHalf) lane[i] = 1;
+      // Lanes are cut through the timber.
+      if (lane[i] && COVER_CODES[cover[i]] === 'standing') cover[i] = 0;
+      for (const z of def.stumpZones ?? []) if (Math.hypot(z.x - x, z.y - y) < z.r) stump[i] = 1;
     }
   }
 
-  return { def, cols, rows, cellM, water, depthFt, cover, secchiFt, shoreDistM };
+  return { def, cols, rows, cellM, water, depthFt, cover, secchiFt, shoreDistM, lane, stump };
 }
 
 export function cellIndex(g: LakeGrid, x: number, y: number): number {
@@ -130,6 +151,17 @@ export function depthAt(g: LakeGrid, x: number, y: number): number {
 export function coverAt(g: LakeGrid, x: number, y: number): CoverType {
   const i = cellIndex(g, x, y);
   return i >= 0 && g.water[i] ? COVER_CODES[g.cover[i]] : 'none';
+}
+
+export function inLane(g: LakeGrid, x: number, y: number): boolean {
+  const i = cellIndex(g, x, y);
+  return i >= 0 && g.lane[i] === 1;
+}
+
+/** Stump field outside a boat lane: unsafe to run on plane. */
+export function stumpHazardAt(g: LakeGrid, x: number, y: number): boolean {
+  const i = cellIndex(g, x, y);
+  return i >= 0 && g.water[i] === 1 && g.stump[i] === 1 && g.lane[i] === 0;
 }
 
 export function secchiAt(g: LakeGrid, x: number, y: number): number {

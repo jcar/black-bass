@@ -1,14 +1,17 @@
 import type { Tier } from '../../sim/types';
 import champlain from './champlain.json';
+import lakefork from './lakefork.json';
 import type { LakeDef } from './types';
 
 export const LAKES: Record<string, LakeDef> = {
   champlain: champlain as unknown as LakeDef,
+  lakefork: lakefork as unknown as LakeDef,
 };
 
 /** Career ladder. Lakes without data yet are listed so the progression UI is complete. */
 export const LAKE_LADDER: { id: string; name: string; region: string; tier: Tier; available: boolean }[] = [
   { id: 'champlain', name: 'Lake Champlain', region: 'NY / VT', tier: 'Amateur', available: true },
+  { id: 'lakefork', name: 'Lake Fork', region: 'Texas', tier: 'SemiPro', available: true },
   { id: 'guntersville', name: 'Lake Guntersville', region: 'Alabama', tier: 'SemiPro', available: false },
   { id: 'toledobend', name: 'Toledo Bend Reservoir', region: 'TX / LA', tier: 'Pro', available: false },
   { id: 'okeechobee', name: 'Lake Okeechobee', region: 'Florida', tier: 'Elite', available: false },

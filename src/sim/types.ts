@@ -2,7 +2,8 @@
 // World units: metres on the horizontal plane, feet for water depth (anglers think in feet).
 
 export type SpeciesId = 'largemouth' | 'smallmouth' | 'spotted' | 'pike' | 'pickerel' | 'bowfin' | 'drum';
-export type CoverType = 'none' | 'rock' | 'grass' | 'dock' | 'timber' | 'reeds';
+/** 'timber' = laydowns/stumps (hard: lures crash); 'standing' = flooded standing timber you can fish through. */
+export type CoverType = 'none' | 'rock' | 'grass' | 'dock' | 'timber' | 'reeds' | 'standing';
 export type Season = 'Prespawn' | 'Spawn' | 'Postspawn' | 'Summer' | 'Fall' | 'Turnover' | 'Winter';
 export type Weather = 'Bluebird' | 'Overcast' | 'Windy' | 'Rain';
 export type PressureTrend = 'falling' | 'steady' | 'rising';
@@ -76,6 +77,8 @@ export interface CaughtFish {
   lengthIn: number;
   caughtAtMin: number;
   lureId: string;
+  /** Protected-slot fish under catch-weigh-release: weighed by the marshal, counted, released. */
+  cwr?: boolean;
 }
 
 export interface Rival {
@@ -83,8 +86,10 @@ export interface Rival {
   name: string;
   hometown: string;
   skill: number;
-  /** Pre-sampled catches for the current day: game minute + weight. */
-  catches: { atMin: number; weightLb: number }[];
+  /** Pre-sampled catches for the current day: game minute + weight (+ species for the broadcast feed). */
+  catches: { atMin: number; weightLb: number; species?: SpeciesId }[];
+  /** Feed cursor: index of the next catch not yet seen by the broadcast feed. */
+  feedCursor?: number;
   dayWeights: number[];
   cut: boolean;
 }
@@ -185,9 +190,24 @@ export interface TournamentEvent {
     | 'spooked'
     | 'timeWarning'
     | 'dayOver'
+    | 'stump'
+    | 'rivalCatch'
+    | 'leaderChange'
+    | 'playerPlace'
     | 'message';
   text?: string;
   at?: Vec2;
+  /** Structured payload for the broadcast feed (rival name, weight, place...). */
+  data?: { name?: string; weightLb?: number; species?: SpeciesId; place?: number; big?: boolean };
+}
+
+/** Running state of the live broadcast feed (leader, player place, rate limiting). */
+export interface BroadcastState {
+  /** Rival fish at or above this weight are worth reporting (top ~8% of today's field catches). */
+  notableLb: number;
+  lastReportMin: number;
+  leaderId: number | null;
+  lastPlace: number;
 }
 
 export interface BoatState {
@@ -232,6 +252,8 @@ export interface TournamentState {
   lastAimAngle: number;
   /** Round-robin cursor for population updates. */
   popCursor: number;
+  /** Optional so tournaments saved before the feed existed still load. */
+  broadcast?: BroadcastState;
 }
 
 /** One frame of player input, produced by touch controls or keyboard. */
