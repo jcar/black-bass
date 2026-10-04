@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { LAKES } from '../data/lakes';
 import { PURSE } from '../data/lakes';
-import { COLORS, LURES } from '../data/lures';
+import { LURES } from '../data/lures';
 import { SPECIES } from '../data/species';
 import { formatClock } from '../sim/conditions';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
@@ -43,10 +43,22 @@ export interface Hud {
   lastLanded: CaughtFish | null;
 }
 
-export interface Toast {
+/**
+ * In-game notices, by priority (broadcast-graphics rules: the more urgent, the more disruptive):
+ * - banner: centre screen, rare moments (line break, stump, time). One at a time, short.
+ * - bug:    the scorebug expands with a strip (30-minute warning, place change). Replaces the last.
+ * - ticker: the live feed (rival catches, lead changes). Queued, shown one at a time, held during
+ *           fights and the catch card.
+ * Cast results are spatial callouts in the scene, not notices.
+ */
+export type NoticeKind = 'banner' | 'bug' | 'ticker';
+export type NoticeTone = 'info' | 'good' | 'bad' | 'gold';
+export interface Notice {
   id: number;
-  text: string;
-  tone: 'info' | 'good' | 'bad';
+  kind: NoticeKind;
+  title: string;
+  sub?: string;
+  tone: NoticeTone;
 }
 
 interface StoreState {
@@ -55,7 +67,7 @@ interface StoreState {
   selectedLake: string;
   tournament: TournamentState | null;
   hud: Hud | null;
-  toasts: Toast[];
+  notices: Notice[];
   paused: boolean;
   lastResult: { result: TournamentResult; promoted: string | null } | null;
 
@@ -67,7 +79,8 @@ interface StoreState {
   resumeTournament: () => void;
   abandonTournament: () => void;
   setHud: (h: Hud) => void;
-  toast: (text: string, tone?: Toast['tone']) => void;
+  notify: (n: Omit<Notice, 'id'>) => void;
+  dismissNotice: (id: number) => void;
   setPaused: (p: boolean) => void;
   cull: (releaseIndex: number) => void;
   continueFishing: () => void;
@@ -77,7 +90,9 @@ interface StoreState {
   completeTournament: () => void;
 }
 
-let toastId = 1;
+let noticeId = 1;
+const NOTICE_MS: Partial<Record<NoticeKind, number>> = { banner: 2300, bug: 3200 };
+const MAX_TICKER_QUEUE = 3;
 
 export const useStore = create<StoreState>((set, get) => ({
   save: loadSave(),
@@ -85,7 +100,7 @@ export const useStore = create<StoreState>((set, get) => ({
   selectedLake: 'champlain',
   tournament: null,
   hud: null,
-  toasts: [],
+  notices: [],
   paused: false,
   lastResult: null,
 
@@ -130,11 +145,19 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ save, tournament: null, screen: 'hub', hud: null });
   },
   setHud: (hud) => set({ hud }),
-  toast: (text, tone = 'info') => {
-    const id = toastId++;
-    set({ toasts: [...get().toasts.slice(-3), { id, text, tone }] });
-    setTimeout(() => set({ toasts: get().toasts.filter((x) => x.id !== id) }), 2600);
+  notify: (n) => {
+    const id = noticeId++;
+    let list = get().notices;
+    if (n.kind === 'ticker') {
+      // A stale feed is worse than a short one: keep only the newest few.
+      const tickers = list.filter((x) => x.kind === 'ticker');
+      if (tickers.length >= MAX_TICKER_QUEUE) list = list.filter((x) => x !== tickers[0]);
+    } else list = list.filter((x) => x.kind !== n.kind);
+    set({ notices: [...list, { ...n, id }] });
+    const ms = NOTICE_MS[n.kind];
+    if (ms) setTimeout(() => get().dismissNotice(id), ms);
   },
+  dismissNotice: (id) => set({ notices: get().notices.filter((x) => x.id !== id) }),
   setPaused: (paused) => {
     set({ paused });
     if (paused) get().persist();
@@ -142,8 +165,7 @@ export const useStore = create<StoreState>((set, get) => ({
   cull: (releaseIndex) => {
     const t = get().tournament;
     if (!t) return;
-    const released = resolveCull(t, releaseIndex);
-    if (released) get().toast(`Released a ${released.weightLb.toFixed(2)} lb fish.`);
+    resolveCull(t, releaseIndex);
     continueAfterLanded(t);
     get().persist();
   },
@@ -155,15 +177,12 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   selectRod: (i) => {
     const t = get().tournament;
-    if (t && switchRod(t, i)) {
-      const d = t.deck[i];
-      get().toast(`${LURES[d.lureId].name} (${COLORS[d.colorId].name})`);
-    }
+    if (t) switchRod(t, i);
   },
   finishDay: () => {
     get().persist();
-    // In-game toasts ("head to the weigh-in") have done their job; the weigh-in has its own show.
-    set({ screen: 'results', toasts: [] });
+    // In-game notices have done their job; the weigh-in has its own show.
+    set({ screen: 'results', notices: [] });
   },
   nextDay: () => {
     const t = get().tournament;

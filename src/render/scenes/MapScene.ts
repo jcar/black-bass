@@ -1,9 +1,9 @@
 import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { LakeGrid } from '../../sim/lake';
-import type { TournamentState } from '../../sim/types';
+import type { TournamentState, Vec2 } from '../../sim/types';
 import { paintLakeCanvas } from '../lakeTexture';
 import { PAL } from '../palette';
-import type { Scene, View } from './types';
+import { HUD_FONT, type Scene, type View } from './types';
 
 const MAP_PX_PER_M = 0.5;
 const SONAR_RANGE = 45;
@@ -12,7 +12,10 @@ const SONAR_HALF = 0.5;
 /** Phase 1: top-down lake chart, bass boat, forward-facing sonar. */
 export class MapScene implements Scene {
   root = new Container();
+  overlay = new Container();
   private world = new Container();
+  /** Waypoint ring + label groups, kept a constant size on screen whatever the zoom. */
+  private pins: Container[] = [];
   private lake?: Sprite;
   private markers = new Container();
   private regionLabels: Text[] = [];
@@ -28,9 +31,15 @@ export class MapScene implements Scene {
 
   constructor() {
     this.world.addChild(this.wake, this.markers, this.sonar, this.boat);
-    this.root.addChild(this.world, this.mini);
+    this.root.addChild(this.world);
+    this.overlay.addChild(this.mini);
     this.mini.addChild(this.miniDots);
     this.drawBoat();
+  }
+
+  toScreen(_t: TournamentState, _view: View, p: Vec2) {
+    const q = this.world.toGlobal({ x: p.x, y: p.y });
+    return { x: q.x, y: q.y };
   }
 
   private drawBoat() {
@@ -57,19 +66,23 @@ export class MapScene implements Scene {
     this.markers.removeChildren().forEach((c) => c.destroy());
     this.regionLabels = [];
     for (const r of grid.def.regions) {
-      const label = new Text({ text: r.name.toUpperCase(), style: { fill: 0xffffff, fontSize: 28, fontFamily: 'system-ui, sans-serif', fontWeight: '700', letterSpacing: 3 } });
+      const label = new Text({ text: r.name.toUpperCase(), style: { fill: 0xffffff, fontSize: 30, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 4 } });
       label.anchor.set(0.5);
       label.position.set(r.x, r.y);
       this.markers.addChild(label);
       this.regionLabels.push(label);
     }
+    this.pins = [];
     for (const w of grid.def.waypoints) {
       if (!w.visible) continue;
-      const g = new Graphics().circle(0, 0, 9).stroke({ width: 3, color: 0xffd34d }).circle(0, 0, 3).fill(0xffd34d);
-      g.position.set(w.x, w.y);
-      const label = new Text({ text: w.name, style: { fill: 0xffe9a8, fontSize: 13, fontFamily: 'system-ui, sans-serif', fontWeight: '600', stroke: { color: 0x0b1d26, width: 4 } } });
-      label.position.set(w.x + 12, w.y - 8);
-      this.markers.addChild(g, label);
+      const pin = new Container();
+      pin.position.set(w.x, w.y);
+      const g = new Graphics().circle(0, 0, 8).stroke({ width: 2.5, color: 0xffd34d }).circle(0, 0, 2.5).fill(0xffd34d);
+      const label = new Text({ text: w.name.toUpperCase(), style: { fill: 0xffe9a8, fontSize: 15, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
+      label.position.set(12, -9);
+      pin.addChild(g, label);
+      this.markers.addChild(pin);
+      this.pins.push(pin);
     }
     const ramp = new Graphics().rect(-6, -6, 12, 12).fill(0xffffff).rect(-3, -3, 6, 6).fill(0x2a6fdb);
     ramp.position.set(grid.def.launch.x, grid.def.launch.y);
@@ -87,6 +100,7 @@ export class MapScene implements Scene {
     this.zoom += (targetZoom - this.zoom) * Math.min(1, dt * 2);
     const z = this.zoom * Math.min(view.w, view.h) / 390;
     this.world.scale.set(z);
+    for (const p of this.pins) p.scale.set(1 / z);
     const lead = Math.min(80, boat.speed * 0.9);
     this.world.position.set(
       view.w / 2 - (boat.pos.x + Math.cos(boat.heading) * lead) * z,
@@ -138,14 +152,15 @@ export class MapScene implements Scene {
 
   private updateMinimap(t: TournamentState, grid: LakeGrid, view: View) {
     if (!this.miniLake) return;
-    const mh = Math.min(140, view.h * 0.36);
+    // Top-right under the pause button, inside the notch-safe area, clear of the FISH button.
+    const mh = Math.min(118, view.h * 0.3);
     const scale = mh / grid.def.sizeM.h;
     this.miniLake.scale.set(scale / MAP_PX_PER_M);
     const mw = grid.def.sizeM.w * scale;
-    this.mini.position.set(view.w - mw - 12, 64);
-    this.miniLake.alpha = 0.9;
+    this.mini.position.set(view.w - mw - 14 - view.safe.r, view.safe.t + 64);
+    this.miniLake.alpha = 0.92;
     const g = this.miniDots.clear();
-    g.rect(-2, -2, mw + 4, mh + 4).stroke({ width: 2, color: 0xffffff, alpha: 0.6 });
+    g.roundRect(-4, -4, mw + 8, mh + 8, 6).stroke({ width: 1, color: 0xffffff, alpha: 0.28 });
     for (const w of grid.def.waypoints) if (w.visible) g.circle(w.x * scale, w.y * scale, 2.2).fill(0xffd34d);
     g.circle(t.boat.pos.x * scale, t.boat.pos.y * scale, 3.5).fill(0xff4433).stroke({ width: 1.5, color: 0xffffff });
   }

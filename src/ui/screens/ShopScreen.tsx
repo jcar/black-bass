@@ -26,7 +26,6 @@ export function ShopScreen() {
   const save = useStore((s) => s.save);
   const mutateSave = useStore((s) => s.mutateSave);
   const setScreen = useStore((s) => s.setScreen);
-  const toast = useStore((s) => s.toast);
   const [tab, setTab] = useState<Tab>('lures');
   const [lureId, setLureId] = useState(Object.keys(LURES)[0]);
   const [colorId, setColorId] = useState(LURES[Object.keys(LURES)[0]].colors[0]);
@@ -50,11 +49,7 @@ export function ShopScreen() {
   const heroSrc = tab === 'lures' ? assetUrl(lureIconId(lureId, colorId)) : assetUrl(rodIconId(rodId));
 
   const buy = () => {
-    mutateSave((s) => {
-      if (tab === 'lures') {
-        if (buyLure(s, lureId, colorId)) toast(`${lure.name} · ${COLORS[colorId].name} added`, 'good');
-      } else if (buyRod(s, rodId)) toast(`${rod.name} added`, 'good');
-    });
+    mutateSave((s) => void (tab === 'lures' ? buyLure(s, lureId, colorId) : buyRod(s, rodId)));
     fly(heroSrc);
   };
 

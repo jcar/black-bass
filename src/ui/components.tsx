@@ -3,11 +3,7 @@ import { assetUrl, lureIconId, portraitId } from '../game/assets';
 import { COLORS, LURES } from '../data/lures';
 import type { SpeciesId } from '../sim/types';
 
-export function lbOz(lb: number): string {
-  const whole = Math.floor(lb);
-  const oz = Math.round((lb - whole) * 16);
-  return oz === 16 ? `${whole + 1}-00` : `${whole}-${String(oz).padStart(2, '0')}`;
-}
+export { lbOzText as lbOz } from '../sim/format';
 
 export const money = (n: number) => `$${n.toLocaleString('en-US')}`;
 

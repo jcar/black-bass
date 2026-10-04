@@ -32,7 +32,7 @@ const sortRows = (rows: Standing[]) => rows.sort((a, b) => Number(a.cut) - Numbe
 function FishThumb({ f, small }: { f: CaughtFish; small?: boolean }) {
   const url = assetUrl(portraitId(f.species, f.weightLb));
   return (
-    <div className="fish-thumb" style={small ? { width: 70, height: 50 } : undefined} title={SPECIES[f.species].name}>
+    <div className={`fish-thumb ${f.cwr ? 'cwr' : ''}`} style={small ? { width: 70, height: 50 } : undefined} title={f.cwr ? `${SPECIES[f.species].name} (slot fish: weighed and released)` : SPECIES[f.species].name}>
       {url && <img src={url} alt="" />}
       <span className="fw">{lbOz(f.weightLb)}</span>
     </div>
@@ -62,7 +62,12 @@ export function WeighInScreen() {
     const idx = LAKE_LADDER.findIndex((l) => l.id === t.lakeId);
     const next = LAKE_LADDER[idx + 1];
     const big = bag[bag.length - 1];
+    // Big Bass of the day across the whole field (rivals catch real fish now).
+    let fieldBig = { name: 'You', weightLb: big?.weightLb ?? 0, isPlayer: true };
+    for (const r of t.rivals)
+      for (const c of r.catches) if (!r.cut && c.weightLb > fieldBig.weightLb) fieldBig = { name: r.name, weightLb: c.weightLb, isPlayer: false };
     return {
+      fieldBig,
       final,
       before,
       me,
@@ -281,6 +286,11 @@ export function WeighInScreen() {
             </AnimatePresence>
             {phase >= Phase.Payout && (
               <m.div className="row" style={{ gap: 6, flexWrap: 'wrap' }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.5 }}>
+                {data.fieldBig.weightLb > 0 && (
+                  <Slug tone={data.fieldBig.isPlayer ? 'gold' : 'dark'}>
+                    Big bass · {data.fieldBig.isPlayer ? 'You' : data.fieldBig.name} {lbOz(data.fieldBig.weightLb)}
+                  </Slug>
+                )}
                 {data.promotes && <Slug tone="gold">Promoted · {data.promotes} unlocked</Slug>}
                 {data.recordBag && <Slug tone="good">Personal best bag</Slug>}
                 {data.recordFish && <Slug tone="good">Personal best fish</Slug>}

@@ -7,6 +7,7 @@ import { Button, Icon } from '../kit';
 import { SettingsSheet } from '../Settings';
 import { Hud } from './Hud';
 import { LandedModal } from './LandedModal';
+import { Banner, NoticeLive } from './Notices';
 import { TouchControls } from './TouchControls';
 
 function PauseMenu({ open }: { open: boolean }) {
@@ -52,11 +53,22 @@ export function GameScreen() {
       <div className="canvas-host" ref={host} />
       {hud && (
         <>
-          {hud.phase !== 'Landed' && !paused && <TouchControls hud={hud} leftHanded={settings.leftHanded} />}
+          {hud.phase !== 'Landed' && !paused && (
+            <TouchControls
+              phase={hud.phase}
+              canFish={hud.canFish}
+              castFlying={hud.castFlying}
+              castCharging={hud.castCharging}
+              tension={Math.round(hud.tension * 50) / 50}
+              leftHanded={settings.leftHanded}
+            />
+          )}
           <Hud hud={hud} debug={settings.debugMeter} />
           <AnimatePresence>{hud.phase === 'Landed' && hud.lastLanded && <LandedModal key={hud.lastLanded.weightLb} fish={hud.lastLanded} livewell={hud.livewell} pending={hud.pendingCull} />}</AnimatePresence>
         </>
       )}
+      <Banner />
+      <NoticeLive />
       <PauseMenu open={paused} />
     </div>
   );

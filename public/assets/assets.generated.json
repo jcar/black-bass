@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T21:44:46.425Z",
+  "generatedAt": "2026-10-04T22:38:33.231Z",
   "assets": [
     {
       "id": "plate_champlain_bluebird_open",
@@ -120,6 +120,126 @@
       "id": "plate_champlain_rain_timber",
       "kind": "plate",
       "path": "assets/plates/plate_champlain_rain_timber.webp"
+    },
+    {
+      "id": "plate_lakefork_bluebird_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_bluebird_open.webp"
+    },
+    {
+      "id": "plate_lakefork_bluebird_standing",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_bluebird_standing.webp"
+    },
+    {
+      "id": "plate_lakefork_bluebird_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_bluebird_grass.webp"
+    },
+    {
+      "id": "plate_lakefork_bluebird_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_bluebird_dock.webp"
+    },
+    {
+      "id": "plate_lakefork_bluebird_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_bluebird_rock.webp"
+    },
+    {
+      "id": "plate_lakefork_bluebird_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_bluebird_timber.webp"
+    },
+    {
+      "id": "plate_lakefork_overcast_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_overcast_open.webp"
+    },
+    {
+      "id": "plate_lakefork_overcast_standing",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_overcast_standing.webp"
+    },
+    {
+      "id": "plate_lakefork_overcast_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_overcast_grass.webp"
+    },
+    {
+      "id": "plate_lakefork_overcast_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_overcast_dock.webp"
+    },
+    {
+      "id": "plate_lakefork_overcast_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_overcast_rock.webp"
+    },
+    {
+      "id": "plate_lakefork_overcast_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_overcast_timber.webp"
+    },
+    {
+      "id": "plate_lakefork_windy_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_windy_open.webp"
+    },
+    {
+      "id": "plate_lakefork_windy_standing",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_windy_standing.webp"
+    },
+    {
+      "id": "plate_lakefork_windy_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_windy_grass.webp"
+    },
+    {
+      "id": "plate_lakefork_windy_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_windy_dock.webp"
+    },
+    {
+      "id": "plate_lakefork_windy_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_windy_rock.webp"
+    },
+    {
+      "id": "plate_lakefork_windy_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_windy_timber.webp"
+    },
+    {
+      "id": "plate_lakefork_rain_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_rain_open.webp"
+    },
+    {
+      "id": "plate_lakefork_rain_standing",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_rain_standing.webp"
+    },
+    {
+      "id": "plate_lakefork_rain_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_rain_grass.webp"
+    },
+    {
+      "id": "plate_lakefork_rain_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_rain_dock.webp"
+    },
+    {
+      "id": "plate_lakefork_rain_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_rain_rock.webp"
+    },
+    {
+      "id": "plate_lakefork_rain_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_lakefork_rain_timber.webp"
     },
     {
       "id": "portrait_largemouth_small",

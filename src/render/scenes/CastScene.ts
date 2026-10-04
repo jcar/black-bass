@@ -1,13 +1,28 @@
-import { Container, Graphics, Sprite } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { plateId, texture } from '../../game/assets';
 import { maxCastDistance, powerToDistanceFrac } from '../../sim/cast';
 import { activeTackle } from '../../sim/context';
 import { COVER_CODES, isWater, nearCover, type LakeGrid } from '../../sim/lake';
-import type { TournamentState } from '../../sim/types';
+import type { TournamentState, Vec2 } from '../../sim/types';
 import { PAL, SKY } from '../palette';
-import type { Scene, View } from './types';
+import { HUD_FONT, type Scene, type View } from './types';
 
 const CAM_H = 3.5;
+/**
+ * Plates are composed with the horizon in the upper third and near water (sometimes the bow) below.
+ * The cast view only shows the plate above its own horizon band, so crop to the sky, far shore and
+ * mid-water: the top PLATE_CROP of the image, with its bottom edge sitting just below the horizon.
+ */
+const PLATE_CROP = 0.46;
+const cropped = new Map<Texture, Texture>();
+function plateCrop(tex: Texture): Texture {
+  let c = cropped.get(tex);
+  if (!c) {
+    c = new Texture({ source: tex.source, frame: new Rectangle(tex.frame.x, tex.frame.y, tex.frame.width, Math.round(tex.frame.height * PLATE_CROP)) });
+    cropped.set(tex, c);
+  }
+  return c;
+}
 const FAN = 1.35; // radians either side of heading that we draw
 
 function lerpColor(a: number, b: number, t: number): number {
@@ -19,6 +34,8 @@ function lerpColor(a: number, b: number, t: number): number {
 /** Phase 2: looking out from the casting deck. Aim, power, and thumb the spool. */
 export class CastScene implements Scene {
   root = new Container();
+  overlay = new Container();
+  private powerLabel = new Text({ text: 'POWER', style: { fontFamily: HUD_FONT, fontWeight: '600', fontSize: 12, fill: 0x9fb6c2, letterSpacing: 2 } });
   private plate = new Sprite();
   private bg = new Graphics();
   private world = new Graphics();
@@ -28,7 +45,13 @@ export class CastScene implements Scene {
   private plateKey = '';
 
   constructor() {
-    this.root.addChild(this.bg, this.plate, this.world, this.fx, this.hud);
+    this.root.addChild(this.bg, this.plate, this.world, this.fx);
+    this.overlay.addChild(this.hud, this.powerLabel);
+  }
+
+  toScreen(t: TournamentState, view: View, p: Vec2) {
+    const q = this.project(t, view, p.x, p.y);
+    return q ? { x: q.sx, y: q.sy } : null;
   }
 
   enter(t: TournamentState, grid: LakeGrid) {
@@ -56,9 +79,10 @@ export class CastScene implements Scene {
     const sky = SKY[t.conditions.weather];
 
     // Generated plate if available, else a procedural sky + water.
-    const tex = texture(this.plateKey);
-    this.plate.visible = !!tex;
-    if (tex) {
+    const full = texture(this.plateKey);
+    this.plate.visible = !!full;
+    if (full) {
+      const tex = plateCrop(full);
       this.plate.texture = tex;
       const sc = Math.max(w / tex.width, (horizon * 1.25) / tex.height);
       this.plate.scale.set(sc);
@@ -178,16 +202,20 @@ export class CastScene implements Scene {
     // Rod from the bottom of the screen.
     fx.moveTo(w * 0.7, h + 10).lineTo(tipX, tipY).stroke({ width: 5, color: 0x222222 });
 
-    // Power meter: horizontal, bottom centre (clear of both thumbs).
+    // Power meter: horizontal, bottom centre (clear of both thumbs and the home indicator).
     const hud = this.hud.clear();
-    if (cs && (cs.powerCharging || cs.flying)) {
+    const showPower = !!cs && (cs.powerCharging || cs.flying);
+    this.powerLabel.visible = showPower;
+    if (cs && showPower) {
       const bw = Math.min(300, w * 0.36);
       const bx = (w - bw) / 2;
-      const by = h - 40;
-      hud.roundRect(bx, by, bw, 20, 8).fill({ color: 0x000000, alpha: 0.5 }).stroke({ width: 2, color: 0xffffff, alpha: 0.7 });
-      hud.rect(bx + bw * 0.92, by + 3, bw * 0.08 - 3, 14).fill({ color: 0x5cf27a, alpha: 0.45 });
-      const fill = (bw - 6) * (cs.flying ? 0 : cs.power);
-      if (fill > 0) hud.roundRect(bx + 3, by + 3, fill, 14, 5).fill(cs.power > 0.92 ? 0x5cf27a : 0xffd34d);
+      const by = h - 42 - view.safe.b;
+      this.powerLabel.position.set(bx, by - 16);
+      hud.roundRect(bx, by, bw, 18, 4).fill({ color: 0x081820, alpha: 0.88 }).stroke({ width: 1, color: 0xffffff, alpha: 0.28 });
+      // Sweet spot: the last 8% is a full-length cast.
+      hud.rect(bx + bw * 0.92, by + 2, bw * 0.08 - 2, 14).fill({ color: 0x5cf27a, alpha: 0.35 });
+      const fill = (bw - 4) * (cs.flying ? 0 : cs.power);
+      if (fill > 0) hud.rect(bx + 2, by + 2, fill, 14).fill(cs.power > 0.92 ? 0x5cf27a : 0xffd34d);
     }
   }
 

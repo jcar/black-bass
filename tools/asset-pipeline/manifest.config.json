@@ -12,7 +12,8 @@
     "outWidth": 1920,
     "template": "First-person view from the casting deck of a bass boat looking out across {lake}, toward {cover}. {weather} Wide landscape composition: horizon in the upper third, open water filling the lower two thirds, nothing in the immediate foreground (the game draws lures and the fishing line on top). No boat, no fishing rod, no people.",
     "lakes": {
-      "champlain": "Lake Champlain between New York and Vermont: clear blue-green water, forested shorelines, distant Adirondack and Green Mountain ridgelines, granite outcrops"
+      "champlain": "Lake Champlain between New York and Vermont: clear blue-green water, forested shorelines, distant Adirondack and Green Mountain ridgelines, granite outcrops",
+      "lakefork": "Lake Fork in East Texas: a sprawling reservoir with stained green water, low rolling post-oak and pine hills, flooded creek arms and thousands of dead standing trees left in the lake"
     },
     "covers": {
       "open": "open water and a distant tree-lined shoreline",
@@ -20,14 +21,26 @@
       "grass": "a shallow weedy bay with milfoil beds and lily pads near the surface",
       "dock": "a small marina with weathered wooden boat docks, pilings and a few moored boats",
       "reeds": "a shoreline lined with tall reeds and bulrushes",
-      "timber": "fallen trees and standing dead timber along a steep bank"
+      "timber": "fallen trees and standing dead timber along a steep bank",
+      "standing": "a flooded forest of bare grey dead trees standing up out of the water, trunks and broken limbs in every direction"
     },
     "weathers": {
       "bluebird": "Bright bluebird sky, crisp high sun, calm surface with gentle ripples and sparkling highlights.",
       "overcast": "Flat grey overcast sky, soft diffuse light, muted cool colours, glassy water.",
       "windy": "Breezy day with fast scattered clouds and wind-chopped water with small whitecaps.",
       "rain": "Light steady rain under dark low clouds, rain-dimpled water surface, misty distance."
-    }
+    },
+    "lakeCovers": {
+      "lakefork": {
+        "open": "a wide creek arm with a distant low wooded shoreline and a few lone dead trees standing in the water",
+        "standing": "a dense drowned forest of tall bare grey dead trees standing out of calm water, a narrow open boat lane winding through it marked by small white buoys",
+        "grass": "a shallow creek-arm flat with patches of hydrilla and lily pads near the surface and scattered dead stumps",
+        "dock": "a small Texas marina with covered metal boat docks, slips and moored bass boats along a wooded bank",
+        "rock": "the riprap rock face of an earthen dam (or a highway bridge embankment) sloping into the water",
+        "timber": "a muddy bank with fallen trees and stumps lying out into the water"
+      }
+    },
+    "$comment": "Per-lake cover descriptions in lakeCovers override the generic covers for that lake."
   },
   "portraits": {
     "aspect": "4:3",

@@ -1,12 +1,30 @@
-import { useRef, useState } from 'react';
+import { memo, useRef, useState, type ReactNode } from 'react';
 import { inputHub } from '../../game/input';
 import { unlockAudio } from '../../audio/sound';
-import type { Hud } from '../../state/store';
+import type { GamePhase } from '../../sim/types';
+import { IOS, switchProps, vibrate } from '../kit/haptics';
 
 const STICK_R = 60;
 
+/**
+ * Line tension as a ring around the REEL button, right under the thumb that controls it. Colour,
+ * fill and a pulse near breaking strength, so it never relies on colour alone.
+ */
+function TensionRing({ tension }: { tension: number }) {
+  const t = Math.min(1, tension);
+  const R = 64;
+  const C = 2 * Math.PI * R;
+  const cls = t > 0.85 ? 'danger' : t > 0.6 ? 'warn' : '';
+  return (
+    <svg className={`tension-ring ${cls}`} viewBox="0 0 140 140" aria-hidden="true">
+      <circle cx="70" cy="70" r={R} className="track" />
+      <circle cx="70" cy="70" r={R} className="fill" strokeDasharray={`${C * t} ${C}`} transform="rotate(-90 70 70)" />
+    </svg>
+  );
+}
+
 /** Hold-to-act button (REEL, THUMB): pointer capture so sliding a thumb off doesn't stick it on. */
-function HoldButton({ label, size, onChange }: { label: string; size: 'xl' | 'lg' | 'md'; onChange: (down: boolean) => void }) {
+function HoldButton({ label, size, onChange, children }: { label: string; size: 'xl' | 'lg' | 'md'; onChange: (down: boolean) => void; children?: ReactNode }) {
   const [held, setHeld] = useState(false);
   const set = (v: boolean) => {
     setHeld(v);
@@ -24,12 +42,30 @@ function HoldButton({ label, size, onChange }: { label: string; size: 'xl' | 'lg
       onPointerCancel={() => set(false)}
       onLostPointerCapture={() => set(false)}
     >
+      {children}
       {label}
     </button>
   );
 }
 
-function TapButton({ label, size, onTap, disabled, accent }: { label: string; size: 'xl' | 'lg' | 'md'; onTap: () => void; disabled?: boolean; accent?: boolean }) {
+function TapButton({ label, size, onTap, disabled, accent, haptic }: { label: string; size: 'xl' | 'lg' | 'md'; onTap: () => void; disabled?: boolean; accent?: boolean; haptic?: boolean }) {
+  // On iPhone the haptic comes from the user's own tap toggling a switch inside a label; the action
+  // itself still fires on pointerdown so there's no tap delay.
+  if (haptic && IOS)
+    return (
+      <label
+        role="button"
+        aria-disabled={disabled}
+        className={`tbtn ${size} ${accent ? 'accent' : ''} ${disabled ? 'disabled' : ''}`}
+        onPointerDown={() => {
+          unlockAudio();
+          if (!disabled) onTap();
+        }}
+      >
+        <input {...switchProps} className="haptic-switch" tabIndex={-1} aria-hidden="true" disabled={disabled} />
+        {label}
+      </label>
+    );
   return (
     <button
       className={`tbtn ${size} ${accent ? 'accent' : ''}`}
@@ -37,7 +73,10 @@ function TapButton({ label, size, onTap, disabled, accent }: { label: string; si
       onPointerDown={(e) => {
         e.preventDefault();
         unlockAudio();
-        if (!disabled) onTap();
+        if (!disabled) {
+          if (haptic) vibrate();
+          onTap();
+        }
       }}
     >
       {label}
@@ -50,10 +89,20 @@ function TapButton({ label, size, onTap, disabled, accent }: { label: string; si
  * contextual buttons on the right. Gestures only where they feel natural: tap the left side
  * to twitch, flick down to bow to a jumping fish.
  */
-export function TouchControls({ hud, leftHanded }: { hud: Hud; leftHanded: boolean }) {
+interface ControlsProps {
+  phase: GamePhase;
+  canFish: boolean;
+  castFlying: boolean;
+  castCharging: boolean;
+  /** Rounded to 2 decimals by the caller so the memo holds between meaningful changes. */
+  tension: number;
+  leftHanded: boolean;
+}
+
+/** Memoised: the HUD snapshot ticks at 10 Hz, but the controls only change with these props. */
+export const TouchControls = memo(function TouchControls({ phase, canFish, castFlying, castCharging, tension, leftHanded }: ControlsProps) {
   const [stick, setStick] = useState<{ ox: number; oy: number; x: number; y: number } | null>(null);
   const touch = useRef<{ id: number; t0: number; x0: number; y0: number } | null>(null);
-  const phase = hud.phase;
 
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (touch.current) return;
@@ -114,15 +163,15 @@ export function TouchControls({ hud, leftHanded }: { hud: Hud; leftHanded: boole
         {!stick && <div className="stick-hint">{hint}</div>}
       </div>
       <div className="btn-zone">
-        {phase === 'Navigate' && <TapButton label="FISH" size="xl" accent disabled={!hud.canFish} onTap={() => inputHub.tap('fishHere')} />}
+        {phase === 'Navigate' && <TapButton label="FISH" size="xl" accent haptic disabled={!canFish} onTap={() => inputHub.tap('fishHere')} />}
         {phase === 'Cast' && (
           <>
-            {!hud.castFlying && <TapButton label="MOVE" size="md" onTap={() => inputHub.tap('moveOn')} />}
+            {!castFlying && <TapButton label="MOVE" size="md" onTap={() => inputHub.tap('moveOn')} />}
             <div className="btn-row">
-              {hud.castFlying ? (
+              {castFlying ? (
                 <HoldButton label="THUMB" size="xl" onChange={(v) => (inputHub.brake = v)} />
               ) : (
-                <TapButton label={hud.castCharging ? 'RELEASE' : 'CAST'} size="xl" accent onTap={() => inputHub.tap('castTap')} />
+                <TapButton label={castCharging ? 'RELEASE' : 'CAST'} size="xl" accent haptic onTap={() => inputHub.tap('castTap')} />
               )}
             </div>
           </>
@@ -141,11 +190,13 @@ export function TouchControls({ hud, leftHanded }: { hud: Hud; leftHanded: boole
             <TapButton label="POP" size="md" onTap={() => inputHub.tap('popTap')} />
             <div className="btn-row">
               <HoldButton label="THUMB" size="lg" onChange={(v) => (inputHub.brake = v)} />
-              <HoldButton label="REEL" size="xl" onChange={(v) => (inputHub.reel = v)} />
+              <HoldButton label="REEL" size="xl" onChange={(v) => (inputHub.reel = v)}>
+                <TensionRing tension={tension} />
+              </HoldButton>
             </div>
           </>
         )}
       </div>
     </div>
   );
-}
+});

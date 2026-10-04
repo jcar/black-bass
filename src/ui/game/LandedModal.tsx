@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { playUi } from '../../audio/sound';
 import { SPECIES } from '../../data/species';
 import { TUNING } from '../../data/tuning';
-import { isKeeper } from '../../sim/livewell';
+import { LAKES } from '../../data/lakes';
+import { isKeeper, keeperMinIn } from '../../sim/livewell';
 import type { CaughtFish } from '../../sim/types';
 import { useStore } from '../../state/store';
 import { FishArt, lbOz } from '../components';
@@ -25,16 +26,19 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
   const cull = useStore((s) => s.cull);
   const cont = useStore((s) => s.continueFishing);
   const bigFishPb = useStore((s) => s.save.personalBests.bigFishLb);
+  const lake = useStore((s) => (s.tournament ? LAKES[s.tournament.lakeId] : undefined));
   const all = pending ? [...livewell, pending] : [];
   const smallest = all.reduce((mi, f, i) => (f.weightLb < all[mi].weightLb ? i : mi), 0);
   const [release, setRelease] = useState(smallest);
   const sp = SPECIES[fish.species];
-  const keeper = isKeeper(fish);
+  const keeper = isKeeper(fish, lake);
   const pb = keeper && fish.weightLb > bigFishPb;
+  // Texas Parks & Wildlife's ShareLunker program: 13 lb and up.
+  const lunker = keeper && fish.species === 'largemouth' && fish.weightLb >= 13;
 
   useEffect(() => {
-    if (pb) setTimeout(() => playUi('record'), 1300);
-  }, [pb]);
+    if (pb || lunker) setTimeout(() => playUi(lunker ? 'promote' : 'record'), 1300);
+  }, [pb, lunker]);
 
   return (
     <m.div className="catch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
@@ -56,17 +60,19 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
           <CountUp value={fish.weightLb} from={0} format={lbOz} duration={0.7} delay={0.2} settle />
           <span className="unit">lb</span>
         </div>
-        <div className="row" style={{ gap: 8 }}>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <span className="badge">{fish.lengthIn}" long</span>
-          {pb && (
+          {fish.cwr && <span className="badge warn">Slot fish · weighed &amp; released</span>}
+          {(pb || lunker) && (
             <m.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 1.3 }}>
-              <Slug tone="gold">Personal best</Slug>
+              <Slug tone="gold">{lunker ? 'ShareLunker class' : 'Personal best'}</Slug>
             </m.span>
           )}
         </div>
+        {fish.cwr && <p className="small muted">A marshal weighs it in the boat and it goes straight back: it still counts toward your bag.</p>}
         {!keeper && (
           <p className="small" style={{ color: '#ff8a7d' }}>
-            {sp.isBass ? `Under the ${TUNING.population.keeperMinIn}" minimum: back in the lake.` : `Only bass count. Unhooking cost ${TUNING.clock.unhookBycatchMin} minutes.`}
+            {sp.isBass ? `Under the ${keeperMinIn(lake)}" minimum: back in the lake.` : `Only bass count. Unhooking cost ${TUNING.clock.unhookBycatchMin} minutes.`}
           </p>
         )}
 

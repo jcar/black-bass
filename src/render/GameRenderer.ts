@@ -1,10 +1,10 @@
-import { Application, ColorMatrixFilter, Container, Graphics, type ColorMatrix } from 'pixi.js';
+import { Application, ColorMatrixFilter, Container, Graphics, Text, type ColorMatrix } from 'pixi.js';
 import { lightLevel } from '../sim/conditions';
 import type { LakeGrid } from '../sim/lake';
-import type { GamePhase, TournamentState } from '../sim/types';
+import type { GamePhase, TournamentState, Vec2 } from '../sim/types';
 import { CastScene } from './scenes/CastScene';
 import { MapScene } from './scenes/MapScene';
-import type { Scene, View } from './scenes/types';
+import { HUD_FONT, type Insets, type Scene, type View } from './scenes/types';
 import { WaterScene } from './scenes/WaterScene';
 
 type SceneKey = 'map' | 'cast' | 'water';
@@ -31,6 +31,12 @@ export class GameRenderer {
   private time = 0;
   private gradeTimer = 0;
   private drops: { x: number; y: number; v: number }[] = [];
+  private overlay = new Container();
+  private calloutLayer = new Container();
+  private callouts: { label: Text; at: Vec2; age: number }[] = [];
+  private safe: Insets = { l: 0, r: 0, t: 0, b: 0 };
+  private safeProbe: HTMLDivElement | null = null;
+  private lastT: TournamentState | null = null;
   debug = false;
 
   async init(host: HTMLElement) {
@@ -44,13 +50,57 @@ export class GameRenderer {
     });
     host.appendChild(this.app.canvas);
     this.app.canvas.style.touchAction = 'none';
+    // Overlay text uses the broadcast face; make sure it's decoded before the first Text is built.
+    await Promise.race([document.fonts?.load(`700 20px ${HUD_FONT}`), new Promise((r) => setTimeout(r, 800))]).catch(() => {});
     this.scenes = { map: new MapScene(), cast: new CastScene(), water: new WaterScene() };
-    this.app.stage.addChild(this.layer, this.weather);
+    // World (graded) -> weather -> HUD overlay -> callouts: the HUD is never tinted or rained on.
+    this.app.stage.addChild(this.layer, this.weather, this.overlay, this.calloutLayer);
     this.layer.filters = [this.grade];
+    this.safeProbe = document.createElement('div');
+    this.safeProbe.style.cssText =
+      'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+    document.body.appendChild(this.safeProbe);
+    this.readSafe();
+    this.app.renderer.on('resize', () => this.readSafe());
+  }
+
+  private readSafe() {
+    if (!this.safeProbe) return;
+    const cs = getComputedStyle(this.safeProbe);
+    this.safe = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
   }
 
   get view(): View {
-    return { w: this.app.screen.width, h: this.app.screen.height, time: this.time, debug: this.debug };
+    return { w: this.app.screen.width, h: this.app.screen.height, time: this.time, debug: this.debug, safe: this.safe };
+  }
+
+  /** A short word that pops up where the lure landed ("EDGE", "CRASH") and floats away. */
+  callout(text: string, color: number, at: Vec2) {
+    const label = new Text({
+      text,
+      style: { fontFamily: HUD_FONT, fontWeight: '700', fontStyle: 'italic', fontSize: 30, fill: color, letterSpacing: 1, stroke: { color: 0x07141a, width: 5 } },
+    });
+    label.anchor.set(0.5, 1);
+    label.visible = false;
+    this.calloutLayer.addChild(label);
+    this.callouts.push({ label, at: { ...at }, age: 0 });
+  }
+
+  private updateCallouts(dt: number) {
+    const t = this.lastT;
+    const scene = this.active ? this.scenes[this.active] : null;
+    for (const c of this.callouts) {
+      c.age += dt;
+      const p = t && scene ? scene.toScreen(t, this.view, c.at) : null;
+      c.label.visible = !!p;
+      if (!p) continue;
+      const k = Math.min(1, c.age / 0.12);
+      c.label.position.set(p.x, p.y - 16 - c.age * 34);
+      c.label.scale.set(0.7 + 0.3 * k);
+      c.label.alpha = c.age < 0.8 ? 1 : Math.max(0, 1 - (c.age - 0.8) / 0.4);
+    }
+    for (const c of this.callouts.filter((c) => c.age > 1.2)) c.label.destroy();
+    this.callouts = this.callouts.filter((c) => c.age <= 1.2);
   }
 
   render(t: TournamentState, grid: LakeGrid, dt: number) {
@@ -61,6 +111,8 @@ export class GameRenderer {
       if (key !== this.active) {
         this.layer.removeChildren();
         this.layer.addChild(this.scenes[key].root);
+        this.overlay.removeChildren();
+        this.overlay.addChild(this.scenes[key].overlay);
         this.active = key;
       }
       this.scenes[key].enter(t, grid, view);
@@ -72,6 +124,8 @@ export class GameRenderer {
       this.gradeTimer = 1;
     }
     this.drawWeather(t, dt);
+    this.lastT = t;
+    this.updateCallouts(dt);
   }
 
   private presentStamp: number | null = null;
@@ -124,6 +178,7 @@ export class GameRenderer {
   }
 
   destroy() {
+    this.safeProbe?.remove();
     this.app.destroy(true, { children: true, texture: true });
   }
 }

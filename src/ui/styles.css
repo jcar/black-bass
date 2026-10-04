@@ -683,44 +683,106 @@ p {
 }
 
 /* ---------- Toasts ---------- */
-.toasts {
+/* ---------- In-game notices ---------- */
+.sr-only {
   position: absolute;
-  top: calc(64px + var(--safe-t));
-  left: 50%;
-  transform: translateX(-50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30%;
+  z-index: 26;
   display: flex;
   flex-direction: column;
-  gap: 6px;
   align-items: center;
+  gap: 6px;
   pointer-events: none;
-  z-index: 60;
 }
-.toast > div {
-  padding: 6px 16px 5px;
+.banner-title {
+  padding: 6px 30px 4px;
   transform: skewX(var(--skew));
   background: var(--panel-solid);
-  border-left: 4px solid var(--accent);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-left: 6px solid var(--accent);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.04em;
+  font-style: italic;
+  font-size: clamp(38px, 7vw, 64px);
+  line-height: 1;
   text-transform: uppercase;
-  max-width: 80vw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.toast > div > span {
+.banner-title > span {
   display: block;
   transform: skewX(calc(var(--skew) * -1));
 }
-.toast.good > div {
-  border-left-color: var(--good);
+.banner.bad .banner-title {
+  background: #8f1f16;
+  border-left-color: #ff5d4d;
 }
-.toast.bad > div {
+.banner.gold .banner-title {
+  background: var(--gold);
+  color: #241a00;
+  border-left-color: #fff3c4;
+}
+.banner-sub {
+  padding: 3px 12px;
+  background: rgba(6, 18, 24, 0.85);
+  font-weight: 600;
+  font-size: 15px;
+}
+.notice-strip {
+  min-height: 30px;
+  margin-top: 4px;
+  pointer-events: none;
+}
+.strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(520px, 62vw);
+  padding: 3px 12px 3px 4px;
+  background: rgba(6, 18, 24, 0.9);
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0 6px 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.strip.bug {
+  padding-left: 10px;
+  border-left-color: var(--accent);
+}
+.strip.bad {
   border-left-color: var(--bad);
 }
+.strip.good {
+  border-left-color: var(--good);
+}
+.strip.gold {
+  border-left-color: var(--gold);
+}
+.strip-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.strip.bug.bad .strip-title {
+  color: #ff8a7d;
+}
+.strip-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 
 /* ---------- Splash / rotate ---------- */
 .rotate {
@@ -1117,6 +1179,20 @@ p {
   height: 100%;
   object-fit: cover;
 }
+.fish-thumb.cwr::after {
+  content: 'SLOT';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--gold);
+  color: #241a00;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
 .fish-thumb .fw {
   position: absolute;
   left: 0;
@@ -1233,8 +1309,63 @@ p {
   align-items: flex-start;
   pointer-events: none;
 }
+.hud-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
 .hud-top .scorebug {
   pointer-events: auto;
+}
+.sb-cell.clock {
+  position: relative;
+}
+.sb-value.late {
+  color: #ff8a7d;
+}
+.time-left {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform 0.4s linear;
+}
+.time-left.late {
+  background: var(--bad);
+}
+.trend {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 13px;
+}
+.trend.up {
+  color: var(--good);
+}
+.trend.down {
+  color: var(--bad);
+}
+.lw-slot.cwr {
+  position: relative;
+  border-color: rgba(233, 185, 73, 0.8);
+  background: rgba(233, 185, 73, 0.16);
+}
+.lw-slot.cwr::after {
+  content: 'S';
+  position: absolute;
+  top: -6px;
+  right: -5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: var(--gold);
+  color: #241a00;
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
 }
 .hud-box {
   background: var(--panel);
@@ -1284,6 +1415,9 @@ p {
   transform: translateX(-50%);
   display: flex;
   gap: 6px;
+  pointer-events: none;
+}
+.rod-bar .rod-chip {
   pointer-events: auto;
 }
 .rod-chip {
@@ -1314,7 +1448,7 @@ p {
 .tip-card {
   position: absolute;
   left: calc(12px + var(--safe-l));
-  bottom: calc(70px + var(--safe-b));
+  bottom: calc(96px + var(--safe-b));
   max-width: min(360px, 42vw);
   pointer-events: none;
 }
@@ -1327,17 +1461,81 @@ p {
 }
 .meter > div {
   height: 100%;
+  width: 100%;
   border-radius: 3px;
-  transition: width 0.1s linear;
+  transform-origin: left center;
+  transition: transform 0.1s linear;
 }
 
+/* Top-right during a fight (the minimap is hidden then), clear of the scorebug strip. */
 .fight-panel {
   position: absolute;
-  left: 50%;
-  top: calc(60px + var(--safe-t));
-  transform: translateX(-50%);
-  width: min(360px, 46vw);
+  right: calc(10px + var(--safe-r));
+  top: calc(62px + var(--safe-t));
+  width: min(270px, 33vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   pointer-events: none;
+}
+.fight-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fight-line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fight-line.warn {
+  color: var(--accent);
+}
+.fight-line.danger {
+  color: #ff8a7d;
+}
+
+/* Line tension around the REEL button. */
+.tension-ring {
+  position: absolute;
+  inset: -14px;
+  width: calc(100% + 28px);
+  height: calc(100% + 28px);
+  pointer-events: none;
+  overflow: visible;
+}
+.tension-ring circle {
+  fill: none;
+  stroke-width: 7;
+}
+.tension-ring .track {
+  stroke: rgba(255, 255, 255, 0.18);
+}
+.tension-ring .fill {
+  stroke: var(--good);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.1s linear;
+}
+.tension-ring.warn .fill {
+  stroke: var(--accent);
+}
+.tension-ring.danger .fill {
+  stroke: var(--bad);
+}
+.tension-ring.danger {
+  animation: ring-pulse 0.28s ease-in-out infinite alternate;
+}
+@keyframes ring-pulse {
+  to {
+    transform: scale(1.06);
+  }
 }
 
 /* ---------- Touch controls ---------- */
@@ -1376,7 +1574,7 @@ p {
 }
 .stick-hint {
   position: absolute;
-  bottom: calc(16px + var(--safe-b));
+  bottom: calc(66px + var(--safe-b));
   left: calc(16px + var(--safe-l));
   max-width: 30vw;
   font-size: 12px;
@@ -1399,17 +1597,22 @@ p {
   padding: 0 0 calc(64px + var(--safe-b)) calc(16px + var(--safe-l));
 }
 .tbtn {
+  position: relative;
   border-radius: 50%;
   border: 3px solid rgba(255, 255, 255, 0.55);
-  background: rgba(10, 30, 40, 0.55);
+  /* Solid translucent fill: backdrop-filter over the WebGL canvas is costly on iOS. */
+  background: rgba(10, 30, 40, 0.72);
+  color: var(--text);
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.06em;
   display: grid;
   place-items: center;
   touch-action: none;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+label.tbtn.disabled {
+  opacity: 0.35;
 }
 .tbtn.xl {
   width: 112px;
@@ -1438,6 +1641,9 @@ p {
 .tbtn:disabled {
   opacity: 0.35;
 }
+.tbtn.held .tension-ring .track {
+  stroke: rgba(43, 33, 0, 0.25);
+}
 .btn-row {
   display: flex;
   gap: 12px;
@@ -1447,7 +1653,7 @@ p {
 .bow-prompt {
   position: absolute;
   left: 50%;
-  top: 46%;
+  top: 50%;
   transform: translate(-50%, -50%);
   padding: 14px 26px;
   border-radius: 8px;
@@ -1487,23 +1693,30 @@ p {
   }
 }
 
-/* Tablets: the menu kit is sized for a phone held sideways; scale it up as a whole so the
-   composition stays the same rather than floating small in a big screen. (HUD left as is.) */
+/* Tablets: the kit is sized for a phone held sideways; scale it up as a whole so the composition
+   stays the same rather than floating small in a big screen. Touch buttons keep their size. */
 @media (min-width: 1000px) and (min-height: 700px) {
   .stage,
   .thumb-zone,
   .sheet,
-  .toasts,
   .hotspot-inner,
   .catch-info {
     zoom: 1.3;
+  }
+  .hud-top,
+  .fight-panel,
+  .tip-card,
+  .rod-bar,
+  .banner {
+    zoom: 1.25;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .scene-art.drift,
   .hotspot.goal .ring::after,
-  .bow-prompt {
+  .bow-prompt,
+  .tension-ring.danger {
     animation: none;
   }
 }

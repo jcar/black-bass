@@ -32,7 +32,7 @@ export function DeckScreen() {
   const save = useStore((s) => s.save);
   const mutateSave = useStore((s) => s.mutateSave);
   const setScreen = useStore((s) => s.setScreen);
-  const toast = useStore((s) => s.toast);
+  const [shake, setShake] = useState(0);
   const locked = !!save.activeTournament;
   const [editing, setEditing] = useState<number | null>(null);
 
@@ -52,9 +52,9 @@ export function DeckScreen() {
           <span className="small muted">Swap rods on the water with one tap.</span>
           <div className="spacer" />
           {locked && (
-            <span className="badge warn">
+            <m.span key={shake} className="badge warn" initial={false} animate={shake ? { x: [0, -8, 8, -6, 6, -3, 0] } : undefined} transition={{ duration: 0.45 }}>
               <Icon name="lock" size={13} /> Locked during a tournament
-            </span>
+            </m.span>
           )}
           <Scorebug items={[{ label: 'On deck', value: `${save.deck.length}/${MAX_DECK}` }]} />
         </div>
@@ -69,7 +69,10 @@ export function DeckScreen() {
                 className="tile rod-card"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => {
-                  if (locked) return toast('Your rods are locked until the event ends.');
+                  if (locked) {
+                    playUi('back');
+                    return setShake((n) => n + 1);
+                  }
                   playUi('open');
                   setEditing(i);
                 }}

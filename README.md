@@ -11,6 +11,7 @@ npm run dev          # https://localhost:5173 (self-signed cert)
 npm run dev:lan      # same, exposed on your LAN so you can open it on an iPhone/iPad
 npm test             # simulation unit tests
 npm run simulate     # headless bot plays tournament days; prints balance stats
+                     # e.g. npm run simulate -- 30 lakefork SemiPro
 npm run build        # typecheck + production build + zero-runtime-API guard
 ```
 
@@ -49,6 +50,24 @@ npm run assets                  # everything that's missing or whose prompt chan
   runtime; any `sfx_<event>` file added to the index takes priority.
 - Until assets exist, the game draws everything procedurally, so it's always playable.
 
+## Adding a lake
+
+Lakes are data (`src/data/lakes/<id>.json`, typed by `src/data/lakes/types.ts`). Reservoirs with many
+creek arms are easiest to author as a sketch: basins (polygons) plus arms (centre-lines with
+tapering widths), with optional shoreline wobble and generated coves.
+
+```bash
+npx tsx tools/lake-shape.ts lakefork           # tools/lakes/lakefork.sketch.json -> src/data/lakes/lakefork.json
+npx tsx tools/lake-preview.ts lakefork out.png  # depth, cover, lanes, stumps, waypoints; flags anything on land
+npm run simulate -- 30 lakefork SemiPro         # calibrate field.medianBagLb against the bot
+```
+
+Then register it in `src/data/lakes/index.ts` (`LAKES` and `LAKE_LADDER`), add a plate description
+in the asset manifest (`plates.lakes`, optional `plates.lakeCovers`), and run
+`npm run assets -- --only "plate_<id>_*" --no-anchor`. Per-lake options: `regs` (minimum length and
+protected slot with catch-weigh-release), `lanes`/`stumpZones` (boat lanes and the stump hazard), and
+`standing` timber cover (fishable; can wrap light line in a fight).
+
 ## Architecture
 
 | Path | What |
@@ -59,7 +78,7 @@ npm run assets                  # everything that's missing or whose prompt chan
 | `src/render/` | PixiJS v8 scenes: map + forward-facing sonar, cast view, top-down lure/fight view with depth inset |
 | `src/game/` | Fixed-timestep runner, input hub (touch + keyboard), runtime asset index |
 | `src/ui/` | React screens, HUD and touch controls. `src/ui/kit/` is the game UI kit (Motion-based buttons, broadcast slugs/lower-thirds, scorebug, sheets, count-ups, scenes); screens compose it |
-| `tools/` | Asset pipeline, balance simulator, icon rasteriser, build guard |
+| `tools/` | Asset pipeline, lake authoring (`lake-shape.ts`, `lake-preview.ts`, `lakes/*.sketch.json`), balance simulator, icon rasteriser, build guard |
 
 Fish behaviour is modelled on published bass research (temperature curves, dawn activity peak,
 barometric trend, boat-noise spooking, standard-weight curves, lure fall rates, line stretch). See the

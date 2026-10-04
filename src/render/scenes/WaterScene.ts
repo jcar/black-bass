@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { COLORS } from '../../data/lures';
 import { SPECIES } from '../../data/species';
 import { activeTackle } from '../../sim/context';
@@ -6,7 +6,7 @@ import { depthAt, secchiAt, type LakeGrid } from '../../sim/lake';
 import type { TournamentState, Vec2 } from '../../sim/types';
 import { paintLocalCanvas } from '../lakeTexture';
 import { hexNum, PAL } from '../palette';
-import type { Scene, View } from './types';
+import { HUD_FONT, type Scene, type View } from './types';
 
 const PATCH_M = 140;
 const PATCH_PX_PER_M = 7;
@@ -14,7 +14,12 @@ const PATCH_PX_PER_M = 7;
 /** Phases 3 & 4: top-down over the water (boat at the bottom) plus a side-profile depth inset. */
 export class WaterScene implements Scene {
   root = new Container();
+  overlay = new Container();
   private world = new Container();
+  private insetTitle = new Text({ text: 'SONAR', style: { fontFamily: HUD_FONT, fontWeight: '600', fontSize: 11, fill: 0x9fb6c2, letterSpacing: 2 } });
+  private lureReadout = new Text({ text: '', style: { fontFamily: HUD_FONT, fontWeight: '700', fontSize: 15, fill: 0xffd34d } });
+  private bottomReadout = new Text({ text: '', style: { fontFamily: HUD_FONT, fontWeight: '700', fontSize: 15, fill: 0xeef6f8 } });
+  private readouts = { lure: '', bottom: '' };
   private patch?: Sprite;
   private patchCenter: Vec2 | null = null;
   private shadows = new Graphics();
@@ -29,7 +34,21 @@ export class WaterScene implements Scene {
 
   constructor() {
     this.world.addChild(this.shadows, this.ripples, this.lineG, this.actors);
-    this.root.addChild(this.world, this.inset);
+    this.root.addChild(this.world);
+    this.overlay.addChild(this.inset, this.insetTitle, this.lureReadout, this.bottomReadout);
+    this.bottomReadout.anchor.set(1, 0);
+  }
+
+  toScreen(_t: TournamentState, _view: View, p: Vec2) {
+    const q = this.world.toGlobal({ x: p.x, y: p.y });
+    return { x: q.x, y: q.y };
+  }
+
+  /** Text re-rasterises on change, so only touch it when the rounded value moves. */
+  private setReadout(key: 'lure' | 'bottom', text: string) {
+    if (this.readouts[key] === text) return;
+    this.readouts[key] = text;
+    (key === 'lure' ? this.lureReadout : this.bottomReadout).text = text;
   }
 
   enter(t: TournamentState, grid: LakeGrid) {
@@ -160,11 +179,16 @@ export class WaterScene implements Scene {
   /** Side-profile sonar: bottom contour from the boat out past the lure, lure depth, fish arcs. */
   private drawInset(t: TournamentState, grid: LakeGrid, view: View, target: Vec2) {
     const g = this.inset.clear();
-    const W = Math.min(230, view.w * 0.3);
-    const H = Math.min(120, view.h * 0.3);
-    const x0 = 12;
-    const y0 = 70;
-    g.roundRect(x0, y0, W, H, 10).fill({ color: 0x041018, alpha: 0.8 }).stroke({ width: 1.5, color: PAL.sonar, alpha: 0.6 });
+    // Broadcast panel under the scorebug strip, inside the notch-safe area, clear of the fight panel.
+    const W = Math.min(210, view.w * 0.25);
+    const H = Math.min(124, view.h * 0.32);
+    const x0 = view.safe.l + 10;
+    const y0 = view.safe.t + 100;
+    g.roundRect(x0, y0, W, H, 8).fill({ color: 0x081820, alpha: 0.88 }).stroke({ width: 1, color: 0xffffff, alpha: 0.14 });
+    this.insetTitle.position.set(x0 + 9, y0 + 5);
+    this.lureReadout.position.set(x0 + 52, y0 + 2);
+    this.bottomReadout.position.set(x0 + W - 9, y0 + 2);
+    const head = 20;
     const b = t.boat.pos;
     const a = this.viewAngle;
     const range = Math.max(20, Math.hypot(target.x - b.x, target.y - b.y) + 8);
@@ -178,7 +202,11 @@ export class WaterScene implements Scene {
     }
     maxDepth = Math.ceil((maxDepth * 1.15) / 5) * 5;
     const px = (dd: number) => x0 + 8 + ((W - 16) * dd) / range;
-    const py = (dep: number) => y0 + 8 + ((H - 16) * dep) / maxDepth;
+    const py = (dep: number) => y0 + head + 4 + ((H - head - 10) * dep) / maxDepth;
+    const lureFt = t.present ? t.present.lureDepthFt : null;
+    const bottomFt = samples[Math.min(40, Math.round((40 * Math.hypot(target.x - b.x, target.y - b.y)) / range))];
+    this.setReadout('lure', lureFt === null ? '' : `LURE ${lureFt.toFixed(lureFt < 10 ? 1 : 0)} FT`);
+    this.setReadout('bottom', `BOTTOM ${Math.round(bottomFt)} FT`);
     const pts: number[] = [px(0), py(0)];
     samples.forEach((dep, i) => pts.push(px((range * i) / 40), py(dep)));
     pts.push(px(range), py(maxDepth), px(0), py(maxDepth));

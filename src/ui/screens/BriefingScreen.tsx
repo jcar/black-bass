@@ -7,6 +7,7 @@ import { unlockAudio } from '../../audio/sound';
 import { plateId } from '../../game/assets';
 import { useStore } from '../../state/store';
 import type { Weather } from '../../sim/types';
+import { keeperMinIn } from '../../sim/livewell';
 import { conditionsAdvice } from '../advice';
 import { LureIcon } from '../components';
 import { Button, Icon, LowerThird, Scene, Scorebug, Sheet, Slug, rise, stagger, type IconName } from '../kit';
@@ -24,7 +25,9 @@ export function BriefingScreen() {
   const c = t.conditions;
   const fmt = TIER_FORMAT[t.tier];
   const date = new Date(`${c.date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const tips = conditionsAdvice(c, lake.clarity.defaultSecchiFt).slice(0, 3);
+  const tips = conditionsAdvice(c, lake).slice(0, 3);
+  const minIn = keeperMinIn(lake);
+  const slot = lake.regs?.slot;
 
   return (
     <>
@@ -41,6 +44,11 @@ export function BriefingScreen() {
         </div>
 
         <LowerThird kicker="Today on the water" title={lake.name} sub={lake.blurb} delay={0.15} />
+        <m.div className="row" style={{ gap: 6, flexWrap: 'wrap' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
+          <span className="badge">Bass {minIn}" minimum</span>
+          {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": catch, weigh &amp; release (counts)</span>}
+          {lake.lanes?.length ? <span className="badge">Run the buoyed lanes: stumps everywhere else</span> : null}
+        </m.div>
 
         <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
           <Scorebug
@@ -109,7 +117,8 @@ export function BriefingScreen() {
             <strong>Right thumb</strong> fishes and casts, reels, and thumbs the spool as a brake.
           </p>
           <p>
-            Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under 12" and other species don't count.
+            Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under {minIn}" and other species don't count.
+            {slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") are weighed in the boat by a marshal, released, and still count.` : ''}
           </p>
         </div>
       </Sheet>

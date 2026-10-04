@@ -62,7 +62,6 @@ function Wipe({ n }: { n: number }) {
 
 export function App() {
   const screen = useStore((s) => s.screen);
-  const toasts = useStore((s) => s.toasts);
   // Generated music: menu, on-the-water, weigh-in.
   const track = screen === 'game' ? 'fishing' : screen === 'results' ? 'weighin' : 'menu';
   useEffect(() => playMusic(track), [track]);
@@ -91,25 +90,6 @@ export function App() {
           <Content />
         </m.div>
       </AnimatePresence>
-      <div className="toasts">
-        <AnimatePresence>
-          {toasts.map((t) => (
-            <m.div
-              key={t.id}
-              layout
-              className={`toast ${t.tone}`}
-              initial={{ opacity: 0, y: -10, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 36 }}
-            >
-              <div>
-                <span>{t.text}</span>
-              </div>
-            </m.div>
-          ))}
-        </AnimatePresence>
-      </div>
       <Wipe n={wipe} />
       <RotatePrompt />
     </>

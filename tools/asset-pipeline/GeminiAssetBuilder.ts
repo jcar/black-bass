@@ -79,7 +79,7 @@ function buildJobs(): Job[] {
         jobs.push({
           id,
           kind: 'plate',
-          prompt: `${cfg.style} ${fill(P.template, { lake: lakeDesc, cover: P.covers[cover], weather: wDesc })}`,
+          prompt: `${cfg.style} ${fill(P.template, { lake: lakeDesc, cover: P.lakeCovers?.[lakeId]?.[cover] ?? P.covers[cover], weather: wDesc })}`,
           out: `assets/plates/${id}.webp`,
           aspect: P.aspect,
           size: P.size,
