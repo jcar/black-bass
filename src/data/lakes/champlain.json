@@ -1,0 +1,116 @@
+{
+  "id": "champlain",
+  "name": "Lake Champlain",
+  "region": "New York / Vermont",
+  "tier": "Amateur",
+  "blurb": "Clear water, rocky reefs and docks. Smallmouth rule the north end; largemouth hide in the southern grass.",
+  "sizeM": { "w": 2400, "h": 4000 },
+  "cellM": 20,
+  "launch": { "x": 640, "y": 2330, "heading": 0, "name": "Plattsburgh Marina" },
+  "shoreline": [
+    [300, 150], [700, 80], [1200, 120], [1500, 60], [1900, 80], [2150, 250], [2120, 520], [1820, 610],
+    [2050, 800], [2200, 1200], [2150, 1600], [2300, 1750], [2250, 2000], [1950, 2060], [1720, 2300],
+    [1600, 2700], [1360, 3100], [1220, 3400], [1120, 3700], [1010, 3950], [870, 3950], [850, 3650],
+    [900, 3300], [950, 2950], [800, 2620], [500, 2330], [420, 2000], [340, 1600], [250, 1200], [200, 700]
+  ],
+  "islands": [
+    [[1250, 520], [1450, 460], [1560, 700], [1500, 1100], [1610, 1500], [1560, 1780], [1410, 1740], [1350, 1350], [1300, 900]],
+    [[640, 2030], [730, 1990], [770, 2140], [660, 2190]],
+    [[1820, 1060], [1880, 1080], [1870, 1150], [1810, 1140]]
+  ],
+  "depthPoints": [
+    [700, 420, 40], [800, 1000, 150], [1000, 1300, 24], [900, 1700, 200], [1050, 2200, 180],
+    [1250, 2700, 90], [1150, 3200, 40], [1050, 3600, 14], [960, 3860, 8],
+    [1800, 950, 55], [1900, 1400, 70], [1720, 1650, 45], [1760, 900, 22], [1900, 1300, 26],
+    [1720, 300, 8], [1950, 340, 7], [2150, 1850, 40], [400, 600, 12], [760, 2080, 18], [600, 2300, 12]
+  ],
+  "shoreSlopeFtPerM": 0.35,
+  "clarity": {
+    "defaultSecchiFt": 16,
+    "zones": [
+      { "x": 1750, "y": 300, "r": 420, "secchiFt": 4 },
+      { "x": 1120, "y": 3450, "r": 480, "secchiFt": 5 },
+      { "x": 980, "y": 3850, "r": 260, "secchiFt": 3.5 },
+      { "x": 600, "y": 2300, "r": 200, "secchiFt": 9 }
+    ]
+  },
+  "cover": [
+    { "type": "dock", "x": 610, "y": 2290, "r": 55, "label": "Plattsburgh Marina" },
+    { "type": "dock", "x": 520, "y": 2240, "r": 35 },
+    { "type": "dock", "x": 390, "y": 1500, "r": 30 },
+    { "type": "dock", "x": 300, "y": 900, "r": 30 },
+    { "type": "dock", "x": 1690, "y": 2340, "r": 55, "label": "Burlington Docks" },
+    { "type": "dock", "x": 2130, "y": 1200, "r": 35 },
+    { "type": "dock", "x": 960, "y": 3790, "r": 30 },
+    { "type": "rock", "x": 1760, "y": 910, "r": 90, "label": "Inland Sea Reef" },
+    { "type": "rock", "x": 1900, "y": 1300, "r": 80 },
+    { "type": "rock", "x": 1700, "y": 1650, "r": 70 },
+    { "type": "rock", "x": 1260, "y": 480, "r": 60 },
+    { "type": "rock", "x": 1600, "y": 1830, "r": 60 },
+    { "type": "rock", "x": 760, "y": 2080, "r": 75, "label": "Valcour Rocks" },
+    { "type": "rock", "x": 300, "y": 1300, "r": 60 },
+    { "type": "rock", "x": 450, "y": 1900, "r": 50 },
+    { "type": "rock", "x": 1000, "y": 1300, "r": 80, "label": "Mid-Lake Shoal" },
+    { "type": "rock", "x": 1500, "y": 2900, "r": 45 },
+    { "type": "grass", "x": 1720, "y": 300, "r": 240, "label": "Missisquoi Grass" },
+    { "type": "grass", "x": 1960, "y": 360, "r": 140 },
+    { "type": "grass", "x": 1150, "y": 3350, "r": 150 },
+    { "type": "grass", "x": 1050, "y": 3650, "r": 160, "label": "Ticonderoga Flats" },
+    { "type": "grass", "x": 950, "y": 3880, "r": 90 },
+    { "type": "grass", "x": 2200, "y": 1900, "r": 90 },
+    { "type": "grass", "x": 380, "y": 620, "r": 120 },
+    { "type": "reeds", "x": 2060, "y": 200, "r": 70 },
+    { "type": "reeds", "x": 910, "y": 3910, "r": 60 },
+    { "type": "reeds", "x": 1250, "y": 3300, "r": 55 },
+    { "type": "timber", "x": 1340, "y": 3150, "r": 45 },
+    { "type": "timber", "x": 900, "y": 3450, "r": 40 }
+  ],
+  "waypoints": [
+    { "id": "valcour", "name": "Valcour Island Rocks", "x": 790, "y": 2090, "visible": true,
+      "tip": "Smallmouth relate to rock. Drag a tube or Ned rig slowly along the bottom." },
+    { "id": "marina", "name": "Plattsburgh Marina Docks", "x": 640, "y": 2280, "visible": true,
+      "tip": "Bass shade under docks on bright days. Brake your cast so the lure drops at the dock edge, not on it." },
+    { "id": "reef", "name": "Inland Sea Reef", "x": 1760, "y": 960, "visible": true,
+      "tip": "Offshore boulders hold the biggest smallmouth in summer. Shake a drop shot over fish you see on sonar." },
+    { "id": "missisquoi", "name": "Missisquoi Bay Grass", "x": 1720, "y": 360, "visible": true,
+      "tip": "Shallow milfoil holds largemouth (and pike). Squarebills and topwater shine early and when it's cloudy." },
+    { "id": "ticonderoga", "name": "Ticonderoga Weed Flats", "x": 1060, "y": 3600, "visible": true,
+      "tip": "A long run south, but the grass flats hold the lake's biggest largemouth." }
+  ],
+  "regions": [
+    { "name": "Missisquoi Bay", "x": 1750, "y": 160 },
+    { "name": "Inland Sea", "x": 1800, "y": 1450 },
+    { "name": "Main Lake", "x": 900, "y": 1100 },
+    { "name": "Plattsburgh", "x": 470, "y": 2420 },
+    { "name": "Burlington", "x": 1800, "y": 2420 },
+    { "name": "South Lake", "x": 1200, "y": 3000 },
+    { "name": "Ticonderoga", "x": 1100, "y": 3880 }
+  ],
+  "species": {
+    "default": { "smallmouth": 0.62, "largemouth": 0.22, "pike": 0.06, "pickerel": 0.03, "bowfin": 0.02, "drum": 0.05 },
+    "zones": [
+      { "x": 1750, "y": 300, "r": 450, "weights": { "largemouth": 0.6, "smallmouth": 0.1, "pike": 0.15, "pickerel": 0.08, "bowfin": 0.07 } },
+      { "x": 1100, "y": 3500, "r": 650, "weights": { "largemouth": 0.68, "smallmouth": 0.08, "pike": 0.1, "pickerel": 0.07, "bowfin": 0.07 } },
+      { "x": 1800, "y": 1250, "r": 500, "weights": { "smallmouth": 0.82, "largemouth": 0.05, "drum": 0.08, "pike": 0.05 } }
+    ],
+    "sizes": {
+      "smallmouth": { "medianIn": 15.2, "sigma": 0.15, "maxIn": 22 },
+      "largemouth": { "medianIn": 14.8, "sigma": 0.19, "maxIn": 24 },
+      "pike": { "medianIn": 24, "sigma": 0.2, "maxIn": 42 },
+      "pickerel": { "medianIn": 18, "sigma": 0.15, "maxIn": 26 },
+      "bowfin": { "medianIn": 22, "sigma": 0.15, "maxIn": 30 },
+      "drum": { "medianIn": 17, "sigma": 0.17, "maxIn": 28 }
+    },
+    "count": 3200,
+    "condition": 1.0
+  },
+  "climate": {
+    "waterTempFByMonth": [34, 33, 35, 42, 54, 64, 72, 74, 66, 55, 45, 38],
+    "tournamentMonths": [6, 7, 8, 9],
+    "weatherOdds": { "Bluebird": 0.35, "Overcast": 0.3, "Windy": 0.2, "Rain": 0.15 }
+  },
+  "field": {
+    "medianBagLb": { "Amateur": 11.5, "SemiPro": 13.5, "Pro": 15.5, "Elite": 17.5 },
+    "sigma": 0.28
+  }
+}

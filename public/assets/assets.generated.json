@@ -1,0 +1,370 @@
+{
+  "generatedAt": "2026-10-04T20:28:18.636Z",
+  "assets": [
+    {
+      "id": "plate_champlain_bluebird_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_bluebird_open.webp"
+    },
+    {
+      "id": "plate_champlain_bluebird_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_bluebird_dock.webp"
+    },
+    {
+      "id": "plate_champlain_bluebird_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_bluebird_rock.webp"
+    },
+    {
+      "id": "plate_champlain_bluebird_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_bluebird_grass.webp"
+    },
+    {
+      "id": "plate_champlain_bluebird_reeds",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_bluebird_reeds.webp"
+    },
+    {
+      "id": "plate_champlain_bluebird_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_bluebird_timber.webp"
+    },
+    {
+      "id": "plate_champlain_overcast_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_overcast_open.webp"
+    },
+    {
+      "id": "plate_champlain_overcast_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_overcast_dock.webp"
+    },
+    {
+      "id": "plate_champlain_overcast_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_overcast_rock.webp"
+    },
+    {
+      "id": "plate_champlain_overcast_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_overcast_grass.webp"
+    },
+    {
+      "id": "plate_champlain_overcast_reeds",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_overcast_reeds.webp"
+    },
+    {
+      "id": "plate_champlain_overcast_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_overcast_timber.webp"
+    },
+    {
+      "id": "plate_champlain_windy_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_windy_open.webp"
+    },
+    {
+      "id": "plate_champlain_windy_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_windy_dock.webp"
+    },
+    {
+      "id": "plate_champlain_windy_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_windy_rock.webp"
+    },
+    {
+      "id": "plate_champlain_windy_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_windy_grass.webp"
+    },
+    {
+      "id": "plate_champlain_windy_reeds",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_windy_reeds.webp"
+    },
+    {
+      "id": "plate_champlain_windy_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_windy_timber.webp"
+    },
+    {
+      "id": "plate_champlain_rain_open",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_rain_open.webp"
+    },
+    {
+      "id": "plate_champlain_rain_dock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_rain_dock.webp"
+    },
+    {
+      "id": "plate_champlain_rain_rock",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_rain_rock.webp"
+    },
+    {
+      "id": "plate_champlain_rain_grass",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_rain_grass.webp"
+    },
+    {
+      "id": "plate_champlain_rain_reeds",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_rain_reeds.webp"
+    },
+    {
+      "id": "plate_champlain_rain_timber",
+      "kind": "plate",
+      "path": "assets/plates/plate_champlain_rain_timber.webp"
+    },
+    {
+      "id": "portrait_largemouth_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_largemouth_small.webp"
+    },
+    {
+      "id": "portrait_largemouth_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_largemouth_quality.webp"
+    },
+    {
+      "id": "portrait_largemouth_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_largemouth_trophy.webp"
+    },
+    {
+      "id": "portrait_smallmouth_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_smallmouth_small.webp"
+    },
+    {
+      "id": "portrait_smallmouth_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_smallmouth_quality.webp"
+    },
+    {
+      "id": "portrait_smallmouth_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_smallmouth_trophy.webp"
+    },
+    {
+      "id": "portrait_spotted_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_spotted_small.webp"
+    },
+    {
+      "id": "portrait_spotted_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_spotted_quality.webp"
+    },
+    {
+      "id": "portrait_spotted_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_spotted_trophy.webp"
+    },
+    {
+      "id": "portrait_pike_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_pike_small.webp"
+    },
+    {
+      "id": "portrait_pike_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_pike_quality.webp"
+    },
+    {
+      "id": "portrait_pike_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_pike_trophy.webp"
+    },
+    {
+      "id": "portrait_pickerel_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_pickerel_small.webp"
+    },
+    {
+      "id": "portrait_pickerel_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_pickerel_quality.webp"
+    },
+    {
+      "id": "portrait_pickerel_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_pickerel_trophy.webp"
+    },
+    {
+      "id": "portrait_bowfin_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_bowfin_small.webp"
+    },
+    {
+      "id": "portrait_bowfin_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_bowfin_quality.webp"
+    },
+    {
+      "id": "portrait_bowfin_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_bowfin_trophy.webp"
+    },
+    {
+      "id": "portrait_drum_small",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_drum_small.webp"
+    },
+    {
+      "id": "portrait_drum_quality",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_drum_quality.webp"
+    },
+    {
+      "id": "portrait_drum_trophy",
+      "kind": "portrait",
+      "path": "assets/portraits/portrait_drum_trophy.webp"
+    },
+    {
+      "id": "icon_lure_ned_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_ned_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_ned_smoke",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_ned_smoke.webp"
+    },
+    {
+      "id": "icon_lure_ned_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_ned_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_dropShot_smoke",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_dropShot_smoke.webp"
+    },
+    {
+      "id": "icon_lure_dropShot_ghostMinnow",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_dropShot_ghostMinnow.webp"
+    },
+    {
+      "id": "icon_lure_dropShot_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_dropShot_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_tube_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_tube_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_tube_smoke",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_tube_smoke.webp"
+    },
+    {
+      "id": "icon_lure_tube_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_tube_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_jerkbait_ghostMinnow",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_jerkbait_ghostMinnow.webp"
+    },
+    {
+      "id": "icon_lure_jerkbait_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_jerkbait_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_jerkbait_chartreuse",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_jerkbait_chartreuse.webp"
+    },
+    {
+      "id": "icon_lure_squarebill_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_squarebill_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_squarebill_chartreuse",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_squarebill_chartreuse.webp"
+    },
+    {
+      "id": "icon_lure_squarebill_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_squarebill_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_walker_bone",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_walker_bone.webp"
+    },
+    {
+      "id": "icon_lure_walker_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_walker_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_walker_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_walker_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_chatterbait_white",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_chatterbait_white.webp"
+    },
+    {
+      "id": "icon_lure_chatterbait_chartreuse",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_chatterbait_chartreuse.webp"
+    },
+    {
+      "id": "icon_lure_chatterbait_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_chatterbait_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_chatterbait_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_chatterbait_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_footballJig_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_footballJig_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_footballJig_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_footballJig_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_footballJig_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_footballJig_redCraw.webp"
+    },
+    {
+      "id": "music_menu",
+      "kind": "music",
+      "path": "assets/music/music_menu.mp3"
+    },
+    {
+      "id": "music_fishing",
+      "kind": "music",
+      "path": "assets/music/music_fishing.mp3"
+    },
+    {
+      "id": "music_weighin",
+      "kind": "music",
+      "path": "assets/music/music_weighin.mp3"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "$comment": "Prompt templates for the offline Gemini asset build. GeminiAssetBuilder expands these against the game data (lakes, species, lures) into concrete asset jobs. IDs must match src/game/assets.ts.",
+  "models": {
+    "image": "gemini-3.1-flash-image",
+    "music": "lyria-3-clip-preview"
+  },
+  "style": "Stylized modern illustration for a premium mobile sports game. Clean confident shapes, soft painterly shading, natural but vibrant palette, crisp readable silhouettes. Absolutely no text, letters, numbers, logos, watermarks, UI elements, or human faces.",
+  "plates": {
+    "aspect": "16:9",
+    "size": "2K",
+    "outWidth": 1920,
+    "template": "First-person view from the casting deck of a bass boat looking out across {lake}, toward {cover}. {weather} Wide landscape composition: horizon in the upper third, open water filling the lower two thirds, nothing in the immediate foreground (the game draws lures and the fishing line on top). No boat, no fishing rod, no people.",
+    "lakes": {
+      "champlain": "Lake Champlain between New York and Vermont: clear blue-green water, forested shorelines, distant Adirondack and Green Mountain ridgelines, granite outcrops"
+    },
+    "covers": {
+      "open": "open water and a distant tree-lined shoreline",
+      "rock": "a rocky point with rounded granite boulders breaking the surface near the shore",
+      "grass": "a shallow weedy bay with milfoil beds and lily pads near the surface",
+      "dock": "a small marina with weathered wooden boat docks, pilings and a few moored boats",
+      "reeds": "a shoreline lined with tall reeds and bulrushes",
+      "timber": "fallen trees and standing dead timber along a steep bank"
+    },
+    "weathers": {
+      "bluebird": "Bright bluebird sky, crisp high sun, calm surface with gentle ripples and sparkling highlights.",
+      "overcast": "Flat grey overcast sky, soft diffuse light, muted cool colours, glassy water.",
+      "windy": "Breezy day with fast scattered clouds and wind-chopped water with small whitecaps.",
+      "rain": "Light steady rain under dark low clouds, rain-dimpled water surface, misty distance."
+    }
+  },
+  "portraits": {
+    "aspect": "4:3",
+    "size": "1K",
+    "outWidth": 960,
+    "template": "Catch-of-the-day hero shot: a {sizeClass} {species} leaping clear of the water, full side profile filling the frame, mouth open, gills flared, wet glistening scales and water droplets, splash below, softly blurred lake background. {features}",
+    "classes": {
+      "small": "small, lean",
+      "quality": "solid, healthy",
+      "trophy": "huge, heavy-bellied trophy"
+    },
+    "species": {
+      "largemouth": "largemouth bass: olive-green back, dark broken lateral stripe, jaw extending past the eye",
+      "smallmouth": "smallmouth bass: bronze-brown body with dark vertical bars, red-orange eye",
+      "spotted": "spotted bass: green back with rows of dark spots below the lateral line, rough tongue patch",
+      "pike": "northern pike: long torpedo body, green with pale bean-shaped spots, duck-bill snout",
+      "pickerel": "chain pickerel: slender body with dark chain-link pattern on golden-green sides",
+      "bowfin": "bowfin: long dorsal fin running most of the back, olive mottled body, rounded tail with an eye spot",
+      "drum": "freshwater drum: silvery-grey humped back, rounded tail, blunt head"
+    }
+  },
+  "icons": {
+    "aspect": "1:1",
+    "size": "1K",
+    "outWidth": 256,
+    "template": "A single fishing lure, {lure}, in {color} colour ({hex}). Isolated product icon centred on a plain deep teal background ({bg}), soft studio lighting, slight three-quarter angle, sharp detail, fills about 70% of the frame.",
+    "background": "#0b1d26",
+    "lures": {
+      "ned": "a short buoyant soft-plastic stick bait on a small mushroom jighead",
+      "dropShot": "a slender soft-plastic finesse minnow nose-hooked on a drop-shot rig with a small cylindrical weight below",
+      "tube": "a hollow soft-plastic tube bait with a skirt of tentacles at the tail",
+      "jerkbait": "a slim hard-plastic suspending jerkbait minnow with a small diving lip and three treble hooks",
+      "squarebill": "a chunky hard-plastic squarebill crankbait with a square diving lip and two treble hooks",
+      "walker": "a cigar-shaped hard-plastic walking topwater plug with two treble hooks",
+      "chatterbait": "a bladed swim jig with a hexagonal metal blade at the nose, silicone skirt and a soft-plastic trailer",
+      "footballJig": "a tungsten football-head jig with a flowing silicone skirt, weed guard and a craw trailer"
+    }
+  },
+  "music": {
+    "tracks": {
+      "menu": "Instrumental loop: laid-back americana and southern-rock guitar groove, confident and warm, outdoor sports television feel, steady drums, seamless loop.",
+      "fishing": "Instrumental loop: calm ambient acoustic guitar with soft pads and gentle brushed percussion, early morning on a quiet lake, unobtrusive background music, seamless loop.",
+      "weighin": "Instrumental: upbeat triumphant country-rock with slide guitar and a crowd-pleasing build, tournament weigh-in stage energy."
+    }
+  }
+}
