@@ -1,17 +1,44 @@
-import { unlockAudio } from '../../audio/sound';
+import { m, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import { playUi, unlockAudio } from '../../audio/sound';
+import { assetUrl, plateId } from '../../game/assets';
 import { clearSave, newSave, writeSave } from '../../state/save';
-import { useStore } from '../../state/store';
-import { lakeName } from '../../state/store';
+import { lakeName, useStore } from '../../state/store';
+import { Button, ConfirmSheet, Icon, IconButton, rise, stagger } from '../kit';
+import { SettingsSheet } from '../Settings';
+import { TitleDiorama } from './TitleDiorama';
+
+/** "Tap to start" only once per launch: it's what unlocks audio on iOS. */
+let started = false;
+const installed = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || (navigator as { standalone?: boolean }).standalone === true;
 
 export function TitleScreen() {
   const save = useStore((s) => s.save);
   const setScreen = useStore((s) => s.setScreen);
   const resume = useStore((s) => s.resumeTournament);
+  const reduce = useReducedMotion();
+  const host = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState(started);
+  const [confirmNew, setConfirmNew] = useState(false);
+  const [settings, setSettings] = useState(false);
   const active = save.activeTournament;
   const hasCareer = save.history.length > 0 || !!active;
 
+  useEffect(() => {
+    const d = new TitleDiorama();
+    if (host.current) void d.start(host.current, assetUrl(plateId('champlain', 'Bluebird', 'none')), !!reduce);
+    return () => d.destroy();
+  }, [reduce]);
+
+  const start = () => {
+    if (menu) return;
+    unlockAudio();
+    playUi('confirm');
+    started = true;
+    setMenu(true);
+  };
+
   const startNew = () => {
-    if (hasCareer && !confirm('Start a new career? Your current progress will be erased.')) return;
     clearSave();
     const fresh = newSave();
     writeSave(fresh);
@@ -20,38 +47,75 @@ export function TitleScreen() {
   };
 
   return (
-    <div className="screen" onPointerDown={unlockAudio} style={{ display: 'grid', placeItems: 'center' }}>
-      <div className="col" style={{ alignItems: 'center', gap: 18, textAlign: 'center' }}>
-        <div style={{ fontSize: 13, letterSpacing: '0.4em', color: 'var(--accent)', fontWeight: 800 }}>PRO TOUR</div>
-        <h1 style={{ fontSize: 'clamp(36px, 8vw, 64px)', lineHeight: 1 }}>BLACK BASS</h1>
-        <p className="muted" style={{ maxWidth: 460, margin: 0 }}>
-          Climb from co-angler to the Elite series on North America's legendary bass lakes.
-        </p>
-        <div className="row wrap" style={{ justifyContent: 'center' }}>
-          {active && (
-            <button className="btn primary" onClick={resume}>
-              Resume Tournament: {lakeName(active.lakeId)}, Day {active.day}
-            </button>
-          )}
-          {hasCareer ? (
-            <button className={active ? 'btn' : 'btn primary'} onClick={() => setScreen('hub')}>
-              Continue Career
-            </button>
-          ) : (
-            <button className="btn primary" onClick={() => setScreen('hub')}>
-              Start Career
-            </button>
-          )}
-          {hasCareer && (
-            <button className="btn" onClick={startNew}>
-              New Career
-            </button>
-          )}
-        </div>
-        <p className="small muted" style={{ maxWidth: 520 }}>
-          Best played in landscape. On iPhone/iPad: Share → Add to Home Screen for full-screen, offline play.
-        </p>
+    <>
+      <div className="title-canvas" ref={host} />
+      <div className="scene-dim left" />
+      <div className="stage" onPointerDown={start} style={{ justifyContent: 'center' }}>
+        <m.div
+          className="logo"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0, scale: menu ? 0.78 : 1, y: menu ? -10 : 0 }}
+          style={{ transformOrigin: 'left center' }}
+          transition={{ type: 'spring', stiffness: 220, damping: 30 }}
+        >
+          <span className="slug lg">
+            <span>Pro Tour</span>
+          </span>
+          <div className="logo-word">Black Bass</div>
+          <div className="logo-rule" />
+        </m.div>
+
+        {!menu ? (
+          <m.div key="press" className="press-start" initial={{ opacity: 0 }} animate={{ opacity: [0.35, 1, 0.35] }} transition={{ duration: 2.4, repeat: Infinity, delay: 0.6 }} style={{ marginTop: 28 }}>
+            Tap to start
+          </m.div>
+        ) : (
+          <m.div key="menu" className="menu-stack" style={{ marginTop: 6 }} {...stagger(0.1, 0.07)}>
+            {active && (
+              <m.div {...rise}>
+                <Button variant="primary" size="lg" skew haptic onClick={resume}>
+                  <span>Resume · {lakeName(active.lakeId)} Day {active.day}</span>
+                  <Icon name="next" />
+                </Button>
+              </m.div>
+            )}
+            <m.div {...rise}>
+              <Button variant={active ? 'default' : 'primary'} size="lg" skew haptic={!active} onClick={() => setScreen('hub')}>
+                <span>{hasCareer ? 'Continue career' : 'Start career'}</span>
+                <Icon name="next" />
+              </Button>
+            </m.div>
+            {hasCareer && (
+              <m.div {...rise}>
+                <Button skew onClick={() => setConfirmNew(true)}>
+                  <span>New career</span>
+                </Button>
+              </m.div>
+            )}
+            {!installed() && (
+              <m.p {...rise} className="small muted" style={{ maxWidth: 360, marginTop: 6 }}>
+                For full-screen offline play on iPhone or iPad: Share, then Add to Home Screen.
+              </m.p>
+            )}
+          </m.div>
+        )}
       </div>
-    </div>
+
+      {menu && (
+        <div style={{ position: 'absolute', top: 'var(--gut-t)', right: 'var(--gut-r)' }}>
+          <IconButton name="gear" label="Settings" onClick={() => setSettings(true)} />
+        </div>
+      )}
+      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
+      <ConfirmSheet
+        open={confirmNew}
+        title="New career"
+        body="Start over as a co-angler? Your cash, tackle and results will be erased."
+        confirmLabel="Erase & start"
+        danger
+        onConfirm={startNew}
+        onClose={() => setConfirmNew(false)}
+      />
+    </>
   );
 }

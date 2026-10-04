@@ -30,7 +30,7 @@ export default defineConfig(({ command }) => ({
       },
       workbox: {
         // Generated art/audio are precached so a home-screen install plays fully offline.
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,json,mp3,m4a,ogg,wav}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,json,mp3,m4a,ogg,wav,woff2}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),

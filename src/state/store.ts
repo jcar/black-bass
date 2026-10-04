@@ -11,7 +11,7 @@ import { applyResult, tierOfLake } from './career';
 import type { TournamentResult } from './save';
 import { loadSave, writeSave, type SaveData } from './save';
 
-export type Screen = 'title' | 'hub' | 'shop' | 'deck' | 'briefing' | 'game' | 'results';
+export type Screen = 'title' | 'hub' | 'events' | 'trophies' | 'shop' | 'deck' | 'briefing' | 'game' | 'results';
 
 /** Coarse HUD snapshot published ~10x/sec from the game loop (React never reads sim state per frame). */
 export interface Hud {
@@ -162,7 +162,8 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   finishDay: () => {
     get().persist();
-    set({ screen: 'results' });
+    // In-game toasts ("head to the weigh-in") have done their job; the weigh-in has its own show.
+    set({ screen: 'results', toasts: [] });
   },
   nextDay: () => {
     const t = get().tournament;

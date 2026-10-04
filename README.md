@@ -30,7 +30,7 @@ Generated assets are committed, so CI never needs the Gemini key.
 
 ```bash
 cp .env.example .env.local      # then insert your own GEMINI_API_KEY
-npm run assets -- --dry-run     # list all 73 jobs and their prompts; no API calls
+npm run assets -- --dry-run     # list all 94 jobs and their prompts; no API calls
 npm run assets -- --only "plate_champlain_bluebird_*"
 npm run assets                  # everything that's missing or whose prompt changed
 ```
@@ -41,8 +41,12 @@ npm run assets                  # everything that's missing or whose prompt chan
 - Style consistency: drop up to 3 reference images per kind into `tools/asset-pipeline/styleRefs/<plate|portrait|icon>/`.
   Without references, the first generated image of each kind anchors the rest.
 - Re-runs are incremental (prompt hashes in `tools/asset-pipeline/.cache`). Use `--force` to regenerate.
-- Sound effects are synthesised at runtime: Google's generation APIs currently have no SFX model.
-  Any `sfx_<event>` file added to the index takes priority.
+- Menu art (`ui_*`: marina, weigh-in stage, tackle shop, rod locker, trophy room) and rod renders
+  come from the same pipeline. Hub hotspots are positioned against `ui_marina` in `MarinaScreen.tsx`.
+- Music uses Lyria 3.5 (~2 min tracks), made loop-seamless with an ffmpeg crossfade. Google has no
+  sound-effects model, so UI cues (`sfx_ui_*`) and broadcast stings (`sting_*`) are short Lyria clips
+  trimmed with ffmpeg (needs `ffmpeg`/`ffprobe` on PATH). In-game SFX are still synthesised at
+  runtime; any `sfx_<event>` file added to the index takes priority.
 - Until assets exist, the game draws everything procedurally, so it's always playable.
 
 ## Architecture
@@ -54,7 +58,7 @@ npm run assets                  # everything that's missing or whose prompt chan
 | `src/state/` | Zustand store, save/load (versioned localStorage), career logic |
 | `src/render/` | PixiJS v8 scenes: map + forward-facing sonar, cast view, top-down lure/fight view with depth inset |
 | `src/game/` | Fixed-timestep runner, input hub (touch + keyboard), runtime asset index |
-| `src/ui/` | React screens, HUD and touch controls |
+| `src/ui/` | React screens, HUD and touch controls. `src/ui/kit/` is the game UI kit (Motion-based buttons, broadcast slugs/lower-thirds, scorebug, sheets, count-ups, scenes); screens compose it |
 | `tools/` | Asset pipeline, balance simulator, icon rasteriser, build guard |
 
 Fish behaviour is modelled on published bass research (temperature curves, dawn activity peak,

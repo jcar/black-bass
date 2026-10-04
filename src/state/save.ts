@@ -28,7 +28,7 @@ export interface SaveData {
   deck: RodSetup[];
   personalBests: { bigFishLb: number; bestBagLb: number };
   history: TournamentResult[];
-  settings: { leftHanded: boolean; sound: boolean; debugMeter: boolean };
+  settings: { leftHanded: boolean; sound: boolean; debugMeter: boolean; seenWeighIn: boolean };
   activeTournament?: TournamentState;
 }
 
@@ -50,7 +50,7 @@ export function newSave(): SaveData {
     deck: defaultDeck(),
     personalBests: { bigFishLb: 0, bestBagLb: 0 },
     history: [],
-    settings: { leftHanded: false, sound: true, debugMeter: false },
+    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false },
   };
 }
 

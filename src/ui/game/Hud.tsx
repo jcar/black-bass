@@ -2,7 +2,8 @@ import { LIVEWELL_LIMIT } from '../../sim/livewell';
 import { inputHub } from '../../game/input';
 import type { Hud as HudData } from '../../state/store';
 import { useStore } from '../../state/store';
-import { lbOz } from '../components';
+import { lbOz, LureIcon } from '../components';
+import { Icon } from '../kit';
 
 function staminaStage(s: number) {
   // Four stages, like the NES fish icon: normal, thinner, very thin, bones.
@@ -12,6 +13,7 @@ function staminaStage(s: number) {
 export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const setPaused = useStore((s) => s.setPaused);
   const selectRod = useStore((s) => s.selectRod);
+  const deck = useStore((s) => s.tournament?.deck);
   const slots = Array.from({ length: LIVEWELL_LIMIT }, (_, i) => hud.livewell[i]);
   const showRods = hud.phase === 'Navigate' || (hud.phase === 'Cast' && !hud.castFlying && !hud.castCharging);
   const tensionColor = hud.tension > 0.85 ? 'var(--bad)' : hud.tension > 0.6 ? 'var(--accent)' : 'var(--good)';
@@ -19,30 +21,38 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   return (
     <>
       <div className="hud-top">
-        <div className="hud-box">
-          <div className="hud-clock">{hud.clock}</div>
-          <div className="small muted">
-            Day {hud.day}/{hud.totalDays} · {hud.motor === 'outboard' ? 'Outboard' : 'Trolling motor'}
+        <div className="scorebug">
+          <div className="sb-cell">
+            <span className="sb-label">
+              Day {hud.day}/{hud.totalDays} · {hud.motor === 'outboard' ? 'Outboard' : 'Trolling'}
+            </span>
+            <span className="sb-value">{hud.clock}</span>
           </div>
-        </div>
-        <div className="hud-box livewell">
-          {slots.map((f, i) => (
-            <div key={i} className={`lw-slot ${f ? 'full' : ''}`}>
-              {f ? f.weightLb.toFixed(1) : ''}
+          <div className="sb-cell">
+            <span className="sb-label">Livewell</span>
+            <div className="livewell">
+              {slots.map((f, i) => (
+                <div key={i} className={`lw-slot ${f ? 'full' : ''}`}>
+                  {f ? f.weightLb.toFixed(1) : ''}
+                </div>
+              ))}
             </div>
-          ))}
-          <div className="hud-bag">{lbOz(hud.bag)}</div>
-        </div>
-        <div className="hud-box">
-          <div style={{ fontWeight: 900, fontSize: 18 }}>
-            #{hud.place}
-            <span className="small muted">/{hud.fieldSize}</span>
           </div>
-          <div className="small muted">Leader {lbOz(hud.leaders[0]?.total ?? 0)}</div>
+          <div className="sb-cell accent">
+            <span className="sb-label">Bag</span>
+            <span className="sb-value">{lbOz(hud.bag)}</span>
+          </div>
+          <div className="sb-cell">
+            <span className="sb-label">Place · leader {lbOz(hud.leaders[0]?.total ?? 0)}</span>
+            <span className="sb-value">
+              #{hud.place}
+              <span className="unit">/{hud.fieldSize}</span>
+            </span>
+          </div>
         </div>
         <div style={{ flex: 1 }} />
         <button className="icon-btn" aria-label="Pause" onClick={() => setPaused(true)}>
-          II
+          <Icon name="pause" />
         </button>
       </div>
 
@@ -79,13 +89,15 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
 
       {hud.jumping && (
         <button className="bow-prompt" onPointerDown={() => inputHub.tap('bowFlick')}>
-          JUMP! BOW ↓
+          Jump! Bow ↓
         </button>
       )}
 
       {hud.nearWaypoint && (
         <div className="tip-card hud-box col" style={{ gap: 4 }}>
-          <strong style={{ color: 'var(--accent)' }}>📍 {hud.nearWaypoint.name}</strong>
+          <strong className="row" style={{ color: 'var(--accent)', gap: 6 }}>
+            <Icon name="pin" /> {hud.nearWaypoint.name}
+          </strong>
           <span className="small">{hud.nearWaypoint.tip}</span>
         </div>
       )}
@@ -94,6 +106,7 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
         <div className="rod-bar">
           {hud.rodLabels.map((l, i) => (
             <button key={i} className={`rod-chip ${i === hud.activeRod ? 'on' : ''}`} onClick={() => selectRod(i)}>
+              {deck?.[i] && <LureIcon lureId={deck[i].lureId} colorId={deck[i].colorId} size={34} />}
               {i + 1} {l}
             </button>
           ))}

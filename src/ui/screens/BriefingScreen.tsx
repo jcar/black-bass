@@ -1,79 +1,118 @@
+import { m } from 'motion/react';
+import { useState } from 'react';
 import { LAKES, TIER_FORMAT } from '../../data/lakes';
 import { COLORS, LURES } from '../../data/lures';
 import { lineLabel } from '../../data/rods';
 import { unlockAudio } from '../../audio/sound';
+import { plateId } from '../../game/assets';
 import { useStore } from '../../state/store';
-import { conditionsAdvice, WEATHER_LABEL } from '../advice';
-import { LureIcon, Stat } from '../components';
+import type { Weather } from '../../sim/types';
+import { conditionsAdvice } from '../advice';
+import { LureIcon } from '../components';
+import { Button, Icon, LowerThird, Scene, Scorebug, Sheet, Slug, rise, stagger, type IconName } from '../kit';
 
+const SKY_ICON: Record<Weather, IconName> = { Bluebird: 'sun', Overcast: 'cloud', Windy: 'wind', Rain: 'rain' };
+const SERIES = { Amateur: 'Co-Angler Series', SemiPro: 'Semi-Pro Series', Pro: 'Pro Series', Elite: 'Elite Series' } as const;
+
+/** Pre-show: today's lake and weather as the backdrop, conditions as a broadcast strip. */
 export function BriefingScreen() {
   const t = useStore((s) => s.tournament);
   const setScreen = useStore((s) => s.setScreen);
+  const [howTo, setHowTo] = useState(false);
   if (!t) return null;
   const lake = LAKES[t.lakeId];
   const c = t.conditions;
   const fmt = TIER_FORMAT[t.tier];
-  const date = new Date(`${c.date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  const date = new Date(`${c.date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const tips = conditionsAdvice(c, lake.clarity.defaultSecchiFt).slice(0, 3);
 
   return (
-    <div className="screen col" style={{ gap: 14 }}>
-      <div className="row wrap" style={{ justifyContent: 'space-between' }}>
-        <div>
-          <h3>
-            {t.tier === 'Amateur' ? 'Co-Angler' : t.tier} Series · Day {t.day} of {t.totalDays}
-          </h3>
-          <h1>{lake.name}</h1>
-          <div className="muted">{lake.blurb}</div>
+    <>
+      <Scene id={plateId(t.lakeId, c.weather, 'none')} dim="left" />
+      <div className="stage">
+        <div className="topbar">
+          <Slug>
+            {SERIES[t.tier]} · Day {t.day} of {t.totalDays}
+          </Slug>
+          <div className="spacer" />
+          <Button size="md" cue="open" onClick={() => setHowTo(true)}>
+            <Icon name="info" /> How to fish
+          </Button>
         </div>
-        <button
-          className="btn primary"
-          style={{ fontSize: 18, padding: '14px 28px' }}
+
+        <LowerThird kicker="Today on the water" title={lake.name} sub={lake.blurb} delay={0.15} />
+
+        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+          <Scorebug
+            items={[
+              { label: 'Date', value: date, icon: 'calendar' },
+              { label: 'Sky', value: c.weather, icon: SKY_ICON[c.weather] },
+              { label: 'Water', value: `${c.waterTempF.toFixed(0)}°${c.tempTrendFPerDay >= 0 ? '↑' : '↓'}`, icon: 'temp' },
+              { label: 'Wind', value: `${c.windMph} mph`, icon: 'wind' },
+              { label: 'Baro', value: c.postFront ? 'Post-front' : c.pressureTrend, icon: 'gauge' },
+              { label: 'Field', value: fmt.fieldSize, icon: 'users' },
+              { label: 'Weigh-in', value: '3:00', icon: 'clock' },
+            ]}
+          />
+        </m.div>
+
+        <div className="row grow" style={{ alignItems: 'flex-end', minHeight: 0, gap: 16 }}>
+          <m.div className="col tips" style={{ gap: 6, maxWidth: 'min(460px, 50vw)' }} {...stagger(0.7, 0.12)}>
+            <m.span {...rise} className="kicker" style={{ color: 'var(--accent)' }}>
+              Dock talk
+            </m.span>
+            {tips.map((tip) => (
+              <m.div key={tip} {...rise} className="panel small" style={{ padding: '7px 12px', borderLeft: '3px solid var(--accent)' }}>
+                {tip}
+              </m.div>
+            ))}
+          </m.div>
+          <div className="spacer" />
+        </div>
+      </div>
+
+      <div className="thumb-zone" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
+        <m.div className="row" style={{ gap: 6 }} {...stagger(0.9, 0.05)}>
+          <m.span {...rise} className="kicker" style={{ alignSelf: 'center', marginRight: 4 }}>
+            On deck
+          </m.span>
+          {t.deck.map((d, i) => (
+            <m.div key={d.id} {...rise} className="panel" style={{ padding: 3, position: 'relative' }} title={`${LURES[d.lureId].name} (${COLORS[d.colorId].name}) · ${lineLabel(d.line)}`}>
+              <LureIcon lureId={d.lureId} colorId={d.colorId} size={46} />
+              <span className="num" style={{ position: 'absolute', left: 4, top: 1, fontSize: 13 }}>
+                {i + 1}
+              </span>
+            </m.div>
+          ))}
+        </m.div>
+        <Button
+          variant="primary"
+          size="xl"
+          skew
+          haptic
           onClick={() => {
             unlockAudio();
             setScreen('game');
           }}
         >
-          Blast off ›
-        </button>
+          <span>Blast off</span>
+          <Icon name="next" />
+        </Button>
       </div>
-      <div className="panel row wrap" style={{ gap: 26 }}>
-        <Stat label="Date" value={date} />
-        <Stat label="Season" value={c.season} />
-        <Stat label="Water" value={`${c.waterTempF.toFixed(0)}°F ${c.tempTrendFPerDay >= 0 ? '↗' : '↘'}`} />
-        <Stat label="Sky" value={WEATHER_LABEL[c.weather]} />
-        <Stat label="Wind" value={`${c.windMph} mph`} />
-        <Stat label="Barometer" value={c.pressureTrend + (c.postFront ? ' (post-front)' : '')} />
-        <Stat label="Field" value={`${fmt.fieldSize} anglers`} />
-        <Stat label="Weigh-in" value="3:00 PM" />
-      </div>
-      <div className="row wrap" style={{ alignItems: 'stretch' }}>
-        <div className="panel col grow" style={{ minWidth: 280 }}>
-          <h3>Dock talk</h3>
-          <ul style={{ margin: 0, paddingLeft: 18 }} className="col small">
-            {conditionsAdvice(c, lake.clarity.defaultSecchiFt).map((tip) => (
-              <li key={tip}>{tip}</li>
-            ))}
-          </ul>
+
+      <Sheet open={howTo} onClose={() => setHowTo(false)} title="How to fish">
+        <div className="col small" style={{ gap: 10, fontSize: 15 }}>
+          <p>
+            <strong>Left thumb</strong> steers the boat, aims the cast and works the rod: tap to twitch, flick down to bow when a fish jumps.
+          </p>
+          <p>
+            <strong>Right thumb</strong> fishes and casts, reels, and thumbs the spool as a brake.
+          </p>
+          <p>
+            Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under 12" and other species don't count.
+          </p>
         </div>
-        <div className="panel col grow" style={{ minWidth: 260 }}>
-          <h3>On deck</h3>
-          {t.deck.map((d, i) => (
-            <div key={d.id} className="row small">
-              <LureIcon lureId={d.lureId} colorId={d.colorId} />
-              <span>
-                <strong>
-                  {i + 1}. {LURES[d.lureId].name}
-                </strong>{' '}
-                ({COLORS[d.colorId].name}) · {lineLabel(d.line)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="panel small muted">
-        Controls: left thumb steers the boat, aims and works the rod (tap to twitch, flick down to bow). Right thumb: Fish/Cast, Reel, Thumb brake. Five best
-        bass count; a sixth means you cull your smallest. Shorts under 12" and other species don't count.
-      </div>
-    </div>
+      </Sheet>
+    </>
   );
 }

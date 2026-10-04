@@ -1,135 +1,208 @@
+import { m } from 'motion/react';
+import { useState } from 'react';
 import { COLORS, LURES } from '../../data/lures';
-import { LINE_OPTIONS, RODS } from '../../data/rods';
+import { LINE_OPTIONS, lineLabel, RODS } from '../../data/rods';
+import { assetUrl, rodIconId } from '../../game/assets';
 import { MAX_DECK } from '../../state/career';
 import { useStore } from '../../state/store';
 import type { LineType, RodSetup } from '../../sim/types';
 import { LureIcon } from '../components';
+import { Button, Icon, IconButton, Rail, Scene, Scorebug, Segmented, Sheet, Slug, Stepper, rise, stagger } from '../kit';
+import { playUi } from '../../audio/sound';
 
+const LINE_NOTE: Record<LineType, string> = {
+  fluoro: 'Nearly invisible, sinks, moderate stretch.',
+  mono: 'Stretchy shock absorber: great with trebles and topwater.',
+  braid: 'No stretch, very strong, visible in clear water.',
+};
+
+const mismatchOf = (d: RodSetup) => {
+  const lure = LURES[d.lureId];
+  const rod = RODS[d.rodId];
+  return lure.weightOz < rod.lureOz[0] || lure.weightOz > rod.lureOz[1];
+};
+
+function RodArt({ rodId, height }: { rodId: string; height?: number }) {
+  const src = assetUrl(rodIconId(rodId));
+  return src ? <img className="rod-art" src={src} alt="" style={height ? { height } : undefined} /> : <div className="display" style={{ height: height ?? 62, display: 'grid', placeItems: 'center' }}>{RODS[rodId].power}</div>;
+}
+
+/** The boat's rod locker (DREDGE-style tray): rods as cards, rigging in a sheet. No <select>s. */
 export function DeckScreen() {
   const save = useStore((s) => s.save);
   const mutateSave = useStore((s) => s.mutateSave);
   const setScreen = useStore((s) => s.setScreen);
+  const toast = useStore((s) => s.toast);
   const locked = !!save.activeTournament;
+  const [editing, setEditing] = useState<number | null>(null);
 
   const update = (i: number, patch: Partial<RodSetup>) =>
     mutateSave((s) => {
       s.deck[i] = { ...s.deck[i], ...patch };
     });
+  const d = editing !== null ? save.deck[editing] : null;
 
   return (
-    <div className="screen col" style={{ gap: 14 }}>
-      <div className="row">
-        <button className="btn" onClick={() => setScreen('hub')}>
-          ‹ Back
-        </button>
-        <h1>Rod Deck</h1>
-        <span className="muted small">Rig up to {MAX_DECK} rods. Swap between them on the water with one tap.</span>
-      </div>
-      {locked && <div className="panel small">Your deck is locked while a tournament is in progress.</div>}
-      <div className="grid2">
-        {save.deck.map((d, i) => {
-          const lure = LURES[d.lureId];
-          const rod = RODS[d.rodId];
-          const mismatch = lure.weightOz < rod.lureOz[0] || lure.weightOz > rod.lureOz[1];
-          return (
-            <div key={d.id} className="panel col">
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <div className="row">
-                  <LureIcon lureId={d.lureId} colorId={d.colorId} />
-                  <h2>Rod {i + 1}</h2>
+    <>
+      <Scene id="ui_locker" dim="full" />
+      <div className="stage">
+        <div className="topbar">
+          <IconButton name="back" label="Back to marina" cue="back" onClick={() => setScreen('hub')} />
+          <Slug size="lg">Rod locker</Slug>
+          <span className="small muted">Swap rods on the water with one tap.</span>
+          <div className="spacer" />
+          {locked && (
+            <span className="badge warn">
+              <Icon name="lock" size={13} /> Locked during a tournament
+            </span>
+          )}
+          <Scorebug items={[{ label: 'On deck', value: `${save.deck.length}/${MAX_DECK}` }]} />
+        </div>
+
+        <m.div className="grow" style={{ minHeight: 0, display: 'flex' }} {...stagger(0.05, 0.06)}>
+          <Rail style={{ alignItems: 'stretch', width: '100%' }}>
+            {save.deck.map((r, i) => (
+              <m.button
+                key={r.id}
+                {...rise}
+                type="button"
+                className="tile rod-card"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  if (locked) return toast('Your rods are locked until the event ends.');
+                  playUi('open');
+                  setEditing(i);
+                }}
+              >
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <span className="kicker" style={{ color: 'var(--accent)' }}>
+                    Rod {i + 1}
+                  </span>
+                  {mismatchOf(r) && <span className="badge warn">Weight mismatch</span>}
                 </div>
-                {save.deck.length > 1 && !locked && (
-                  <button className="chip" onClick={() => mutateSave((s) => void s.deck.splice(i, 1))}>
-                    Remove
-                  </button>
-                )}
+                <RodArt rodId={r.rodId} />
+                <span className="display" style={{ fontSize: 17 }}>
+                  {RODS[r.rodId].name}
+                </span>
+                <div className="row" style={{ gap: 10, marginTop: 'auto' }}>
+                  <LureIcon lureId={r.lureId} colorId={r.colorId} size={64} />
+                  <div className="col" style={{ gap: 2, minWidth: 0 }}>
+                    <span className="display" style={{ fontSize: 18 }}>
+                      {LURES[r.lureId].name}
+                    </span>
+                    <span className="small muted">{COLORS[r.colorId].name}</span>
+                    <span className="small">{lineLabel(r.line)}</span>
+                  </div>
+                </div>
+              </m.button>
+            ))}
+            {save.deck.length < MAX_DECK && !locked && (
+              <m.button
+                {...rise}
+                type="button"
+                className="tile rod-card add"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  playUi('confirm');
+                  mutateSave((s) => {
+                    const [lureId, colorId] = s.ownedLures[0].split(':');
+                    s.deck.push({ id: `deck-${Date.now()}`, rodId: s.ownedRods[0], line: { type: 'fluoro', testLb: 10 }, lureId, colorId });
+                  });
+                }}
+              >
+                <Icon name="plus" size={34} />
+                <span className="display" style={{ fontSize: 18 }}>
+                  Rig another rod
+                </span>
+              </m.button>
+            )}
+          </Rail>
+        </m.div>
+      </div>
+
+      <Sheet
+        open={!!d}
+        onClose={() => setEditing(null)}
+        title={editing !== null ? `Rig rod ${editing + 1}` : ''}
+        footer={
+          <>
+            {save.deck.length > 1 && (
+              <Button
+                variant="danger"
+                cue="back"
+                onClick={() => {
+                  const i = editing!;
+                  setEditing(null);
+                  mutateSave((s) => void s.deck.splice(i, 1));
+                }}
+              >
+                Remove rod
+              </Button>
+            )}
+            <Button variant="primary" haptic onClick={() => setEditing(null)}>
+              Done
+            </Button>
+          </>
+        }
+      >
+        {d && editing !== null && (
+          <>
+            <section className="col" style={{ gap: 6 }}>
+              <span className="kicker">Rod</span>
+              <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
+                {save.ownedRods.map((id) => (
+                  <m.button key={id} type="button" className={`tile ${d.rodId === id ? 'sel' : ''}`} style={{ width: 132, padding: 6 }} whileTap={{ scale: 0.95 }} onClick={() => (playUi('tap'), update(editing, { rodId: id }))}>
+                    <RodArt rodId={id} height={36} />
+                    <div className="display" style={{ fontSize: 14, marginTop: 2 }}>
+                      {RODS[id].name}
+                    </div>
+                  </m.button>
+                ))}
               </div>
-              <label className="col small">
-                Rod
-                <select disabled={locked} value={d.rodId} onChange={(e) => update(i, { rodId: e.target.value })}>
-                  {save.ownedRods.map((r) => (
-                    <option key={r} value={r}>
-                      {RODS[r].name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="row">
-                <label className="col small grow">
-                  Line
-                  <select
-                    disabled={locked}
-                    value={d.line.type}
-                    onChange={(e) => {
-                      const type = e.target.value as LineType;
-                      update(i, { line: { type, testLb: LINE_OPTIONS[type][Math.floor(LINE_OPTIONS[type].length / 2)] } });
-                    }}
-                  >
-                    <option value="fluoro">Fluorocarbon</option>
-                    <option value="mono">Monofilament</option>
-                    <option value="braid">Braid</option>
-                  </select>
-                </label>
-                <label className="col small grow">
-                  Test
-                  <select disabled={locked} value={d.line.testLb} onChange={(e) => update(i, { line: { ...d.line, testLb: Number(e.target.value) } })}>
-                    {LINE_OPTIONS[d.line.type].map((lb) => (
-                      <option key={lb} value={lb}>
-                        {lb} lb
-                      </option>
-                    ))}
-                  </select>
-                </label>
+            </section>
+
+            <section className="col" style={{ gap: 6 }}>
+              <span className="kicker">Lure</span>
+              <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                {save.ownedLures.map((k) => {
+                  const [l, c] = k.split(':');
+                  const on = d.lureId === l && d.colorId === c;
+                  return (
+                    <m.button key={k} type="button" className={`tile color-tile ${on ? 'sel' : ''}`} style={{ width: 64, height: 64 }} whileTap={{ scale: 0.92 }} aria-label={`${LURES[l].name} ${COLORS[c].name}`} onClick={() => (playUi('tap'), update(editing, { lureId: l, colorId: c }))}>
+                      <LureIcon lureId={l} colorId={c} size={58} />
+                    </m.button>
+                  );
+                })}
               </div>
-              <label className="col small">
-                Lure
-                <select
-                  disabled={locked}
-                  value={`${d.lureId}:${d.colorId}`}
-                  onChange={(e) => {
-                    const [lureId, colorId] = e.target.value.split(':');
-                    update(i, { lureId, colorId });
-                  }}
-                >
-                  {save.ownedLures.map((k) => {
-                    const [l, c] = k.split(':');
-                    return (
-                      <option key={k} value={k}>
-                        {LURES[l].name}: {COLORS[c].name}
-                      </option>
-                    );
-                  })}
-                </select>
-              </label>
-              {mismatch && (
-                <span className="small" style={{ color: 'var(--accent)' }}>
-                  A {lure.weightOz} oz lure is outside this rod's {rod.lureOz[0]}-{rod.lureOz[1]} oz range: casts will be shorter.
+              <span className="small">
+                <strong>{LURES[d.lureId].name}</strong> · {COLORS[d.colorId].name} · {LURES[d.lureId].weightOz} oz
+              </span>
+              {mismatchOf(d) && (
+                <span className="badge warn" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>
+                  Outside this rod's {RODS[d.rodId].lureOz[0]}–{RODS[d.rodId].lureOz[1]} oz range: shorter casts
                 </span>
               )}
-              <span className="small muted">
-                {d.line.type === 'braid'
-                  ? 'Braid: no stretch, very strong, visible in clear water.'
-                  : d.line.type === 'mono'
-                    ? 'Mono: stretchy shock absorber, great with treble hooks and topwater.'
-                    : 'Fluoro: nearly invisible, sinks, moderate stretch.'}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {save.deck.length < MAX_DECK && !locked && (
-        <button
-          className="btn"
-          onClick={() =>
-            mutateSave((s) => {
-              const [lureId, colorId] = s.ownedLures[0].split(':');
-              s.deck.push({ id: `deck-${Date.now()}`, rodId: s.ownedRods[0], line: { type: 'fluoro', testLb: 10 }, lureId, colorId });
-            })
-          }
-        >
-          + Add rod
-        </button>
-      )}
-    </div>
+            </section>
+
+            <section className="col" style={{ gap: 8 }}>
+              <span className="kicker">Line</span>
+              <div className="row" style={{ flexWrap: 'wrap' }}>
+                <Segmented<LineType>
+                  value={d.line.type}
+                  onChange={(type) => update(editing, { line: { type, testLb: LINE_OPTIONS[type][Math.floor(LINE_OPTIONS[type].length / 2)] } })}
+                  options={[
+                    { value: 'fluoro', label: 'Fluoro' },
+                    { value: 'mono', label: 'Mono' },
+                    { value: 'braid', label: 'Braid' },
+                  ]}
+                />
+                <Stepper values={LINE_OPTIONS[d.line.type]} value={d.line.testLb} onChange={(testLb) => update(editing, { line: { ...d.line, testLb } })} format={(v) => `${v} lb`} />
+              </div>
+              <span className="small muted">{LINE_NOTE[d.line.type]}</span>
+            </section>
+          </>
+        )}
+      </Sheet>
+    </>
   );
 }

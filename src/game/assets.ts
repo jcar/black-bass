@@ -45,4 +45,5 @@ export const plateId = (lakeId: string, weather: Weather, cover: CoverType) =>
 export const portraitId = (species: SpeciesId, weightLb: number) =>
   `portrait_${species}_${weightLb >= 5 ? 'trophy' : weightLb >= 2.5 ? 'quality' : 'small'}`;
 export const lureIconId = (lureId: string, colorId: string) => `icon_lure_${lureId}_${colorId}`;
+export const rodIconId = (rodId: string) => `icon_rod_${rodId}`;
 export const musicId = (name: string) => `music_${name}`;

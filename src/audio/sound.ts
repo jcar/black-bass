@@ -1,6 +1,7 @@
 // Audio: generated music (from the offline pipeline, via Howler) plus small procedural
-// WebAudio effects. Google's current generation APIs have no sound-effects model, so SFX are
-// synthesised at runtime; any generated SFX file listed in the asset index takes priority.
+// WebAudio effects. Google's generation APIs have no sound-effects model, so in-game SFX are
+// synthesised at runtime; UI cues and stings are short musical hits generated with Lyria.
+// Any generated file listed in the asset index takes priority over the synth fallback.
 import { Howl, Howler } from 'howler';
 import { assetUrl, musicId } from '../game/assets';
 import type { TournamentEvent } from '../sim/types';
@@ -11,8 +12,15 @@ let music: Howl | null = null;
 const sfxFiles = new Map<string, Howl>();
 
 export function setSoundEnabled(on: boolean) {
+  const was = enabled;
   enabled = on;
   Howler.mute(!on);
+  // Music is skipped entirely while muted, so start the current track when sound comes back.
+  if (on && !was && !music && musicName) {
+    const name = musicName;
+    musicName = '';
+    playMusic(name);
+  }
 }
 
 /** iOS only allows audio after a user gesture: call this from the first tap. */
@@ -22,6 +30,13 @@ export function unlockAudio() {
     if (AC) ctx = new AC();
   }
   void ctx?.resume();
+}
+
+// iOS suspends ("interrupts") the context when the app is backgrounded; resume on return and on
+// the next touch, not just the first one.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && void ctx?.resume());
+  document.addEventListener('pointerdown', () => ctx && ctx.state !== 'running' && void ctx.resume(), { passive: true });
 }
 
 function noiseBurst(dur: number, freq: number, q: number, gain: number, sweepTo?: number) {
@@ -120,6 +135,70 @@ export function dragTick(tension: number, reeling: boolean, now: number) {
   }
 }
 
+// ---------- UI cues and stings ----------
+export type UiCue = 'tap' | 'back' | 'confirm' | 'buy' | 'open' | 'tick' | 'hotseat' | 'hold' | 'promote' | 'record' | 'build';
+const STINGS = new Set<UiCue>(['hotseat', 'hold', 'promote', 'record', 'build']);
+
+const UI_SYNTH: Record<UiCue, () => void> = {
+  tap: () => tone(1320, 0.05, 0.05, 'triangle'),
+  back: () => tone(520, 0.08, 0.06, 'triangle', 390),
+  confirm: () => {
+    tone(784, 0.08, 0.06, 'triangle');
+    setTimeout(() => tone(1175, 0.12, 0.06, 'triangle'), 70);
+  },
+  buy: () => {
+    tone(988, 0.1, 0.06, 'triangle');
+    setTimeout(() => tone(1319, 0.18, 0.06, 'triangle'), 80);
+  },
+  open: () => tone(660, 0.09, 0.04, 'sine', 990),
+  tick: () => noiseBurst(0.03, 4000, 6, 0.12),
+  hotseat: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.4, 0.08, 'triangle'), i * 90)),
+  hold: () => tone(330, 0.6, 0.08, 'triangle', 311),
+  promote: () => [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.5, 0.08, 'triangle'), i * 110)),
+  record: () => [1047, 1319, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.35, 0.05, 'sine'), i * 70)),
+  build: () => tone(220, 1.6, 0.06, 'sawtooth', 440),
+};
+
+const uiFiles = new Map<UiCue, Howl | null>();
+function uiHowl(cue: UiCue): Howl | null {
+  if (uiFiles.has(cue)) return uiFiles.get(cue)!;
+  const url = assetUrl(STINGS.has(cue) ? `sting_${cue}` : `sfx_ui_${cue}`);
+  const h = url ? new Howl({ src: [url], volume: STINGS.has(cue) ? 0.75 : 0.45 }) : null;
+  uiFiles.set(cue, h);
+  return h;
+}
+
+/** Menu/UI feedback. Stings briefly duck the music so they read like a broadcast cue. */
+export function playUi(cue: UiCue) {
+  if (!enabled) return;
+  if (STINGS.has(cue)) duckMusic(cue === 'build' ? 2600 : 2200);
+  const h = uiHowl(cue);
+  if (h) {
+    if (cue === 'build') h.stop();
+    h.play();
+    return;
+  }
+  UI_SYNTH[cue]();
+}
+
+/** Preload UI cues so the first tap isn't silent while the file decodes. */
+export function preloadUi() {
+  (Object.keys(UI_SYNTH) as UiCue[]).forEach(uiHowl);
+}
+
+export function stopUi(cue: UiCue) {
+  uiFiles.get(cue)?.stop();
+}
+
+const MUSIC_VOL = 0.35;
+let duckTimer: ReturnType<typeof setTimeout> | undefined;
+function duckMusic(ms: number) {
+  if (!music) return;
+  music.fade(music.volume(), MUSIC_VOL * 0.3, 150);
+  clearTimeout(duckTimer);
+  duckTimer = setTimeout(() => music?.fade(music.volume(), MUSIC_VOL, 600), ms);
+}
+
 let musicName = '';
 export function playMusic(name: string) {
   if (name === musicName) return;
@@ -134,5 +213,5 @@ export function playMusic(name: string) {
   if (!url || !enabled) return;
   music = new Howl({ src: [url], loop: true, volume: 0, html5: false });
   music.play();
-  music.fade(0, 0.35, 1200);
+  music.fade(0, MUSIC_VOL, 1200);
 }

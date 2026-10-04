@@ -42,4 +42,3 @@ export function conditionsAdvice(c: Conditions, secchiFt: number): string[] {
   return tips;
 }
 
-export const WEATHER_LABEL = { Bluebird: '☀️ Bluebird', Overcast: '☁️ Overcast', Windy: '💨 Windy', Rain: '🌧️ Rain' } as const;

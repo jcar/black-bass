@@ -11,9 +11,17 @@
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Black Bass Pro Tour</title>
+    <style>
+      /* Shown until React mounts (asset index + fonts); replaced on first render. */
+      html, body { margin: 0; height: 100%; background: #0b1d26; }
+      .splash { position: fixed; inset: 0; display: grid; place-items: center; color: #eef6f8;
+        font: italic 700 clamp(40px, 9vw, 84px)/0.85 'Arial Narrow', system-ui, sans-serif; letter-spacing: -0.01em; }
+      .splash span { display: block; border-bottom: 4px solid #ffd34d; padding-bottom: 8px; animation: sp 1.2s ease-in-out infinite alternate; }
+      @keyframes sp { from { opacity: 0.55; } to { opacity: 1; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="splash"><span>BLACK BASS</span></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

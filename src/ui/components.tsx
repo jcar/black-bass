@@ -65,12 +65,3 @@ export function LureIcon({ lureId, colorId, size = 28 }: { lureId: string; color
     </span>
   );
 }
-
-export function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="col" style={{ gap: 2 }}>
-      <span className="small muted">{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
