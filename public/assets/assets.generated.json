@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T20:28:18.636Z",
+  "generatedAt": "2026-10-04T21:44:46.425Z",
   "assets": [
     {
       "id": "plate_champlain_bluebird_open",
@@ -352,6 +352,56 @@
       "path": "assets/icons/icon_lure_footballJig_redCraw.webp"
     },
     {
+      "id": "ui_marina",
+      "kind": "ui",
+      "path": "assets/ui/ui_marina.webp"
+    },
+    {
+      "id": "ui_stage",
+      "kind": "ui",
+      "path": "assets/ui/ui_stage.webp"
+    },
+    {
+      "id": "ui_shop",
+      "kind": "ui",
+      "path": "assets/ui/ui_shop.webp"
+    },
+    {
+      "id": "ui_locker",
+      "kind": "ui",
+      "path": "assets/ui/ui_locker.webp"
+    },
+    {
+      "id": "ui_trophy",
+      "kind": "ui",
+      "path": "assets/ui/ui_trophy.webp"
+    },
+    {
+      "id": "icon_rod_rod-ml",
+      "kind": "icon",
+      "path": "assets/icons/icon_rod_rod-ml.webp"
+    },
+    {
+      "id": "icon_rod_rod-m",
+      "kind": "icon",
+      "path": "assets/icons/icon_rod_rod-m.webp"
+    },
+    {
+      "id": "icon_rod_rod-mh",
+      "kind": "icon",
+      "path": "assets/icons/icon_rod_rod-mh.webp"
+    },
+    {
+      "id": "icon_rod_rod-h",
+      "kind": "icon",
+      "path": "assets/icons/icon_rod_rod-h.webp"
+    },
+    {
+      "id": "icon_rod_rod-xh",
+      "kind": "icon",
+      "path": "assets/icons/icon_rod_rod-xh.webp"
+    },
+    {
       "id": "music_menu",
       "kind": "music",
       "path": "assets/music/music_menu.mp3"
@@ -365,6 +415,61 @@
       "id": "music_weighin",
       "kind": "music",
       "path": "assets/music/music_weighin.mp3"
+    },
+    {
+      "id": "sting_hotseat",
+      "kind": "sfx",
+      "path": "assets/sfx/sting_hotseat.mp3"
+    },
+    {
+      "id": "sting_hold",
+      "kind": "sfx",
+      "path": "assets/sfx/sting_hold.mp3"
+    },
+    {
+      "id": "sting_promote",
+      "kind": "sfx",
+      "path": "assets/sfx/sting_promote.mp3"
+    },
+    {
+      "id": "sting_record",
+      "kind": "sfx",
+      "path": "assets/sfx/sting_record.mp3"
+    },
+    {
+      "id": "sting_build",
+      "kind": "sfx",
+      "path": "assets/sfx/sting_build.mp3"
+    },
+    {
+      "id": "sfx_ui_tap",
+      "kind": "sfx",
+      "path": "assets/sfx/sfx_ui_tap.mp3"
+    },
+    {
+      "id": "sfx_ui_back",
+      "kind": "sfx",
+      "path": "assets/sfx/sfx_ui_back.mp3"
+    },
+    {
+      "id": "sfx_ui_confirm",
+      "kind": "sfx",
+      "path": "assets/sfx/sfx_ui_confirm.mp3"
+    },
+    {
+      "id": "sfx_ui_buy",
+      "kind": "sfx",
+      "path": "assets/sfx/sfx_ui_buy.mp3"
+    },
+    {
+      "id": "sfx_ui_open",
+      "kind": "sfx",
+      "path": "assets/sfx/sfx_ui_open.mp3"
+    },
+    {
+      "id": "sfx_ui_tick",
+      "kind": "sfx",
+      "path": "assets/sfx/sfx_ui_tick.mp3"
     }
   ]
 }

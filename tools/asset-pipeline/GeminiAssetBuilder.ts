@@ -6,15 +6,19 @@
 //   npm run assets -- --only "plate_champlain_*" generate a subset (glob on asset id)
 //   npm run assets -- --force                   regenerate even if unchanged
 //   npm run assets -- --concurrency 2 --limit 5
+//   npm run assets -- --no-anchor               skip the first-image style anchor (avoids layout copying)
 //
-// Needs GEMINI_API_KEY in .env.local (never commit it).
+// Needs GEMINI_API_KEY in .env.local (never commit it). Audio post-processing needs ffmpeg on PATH.
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { LAKES } from '../../src/data/lakes';
 import { COLORS, LURES } from '../../src/data/lures';
+import { RODS } from '../../src/data/rods';
 import { SPECIES } from '../../src/data/species';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -25,7 +29,7 @@ const CACHE = join(HERE, '.cache');
 const HASHES = join(CACHE, 'hashes.json');
 const STYLE_REFS = join(HERE, 'styleRefs');
 
-type Kind = 'plate' | 'portrait' | 'icon' | 'music';
+type Kind = 'plate' | 'portrait' | 'icon' | 'ui' | 'music' | 'sfx';
 interface Job {
   id: string;
   kind: Kind;
@@ -34,7 +38,10 @@ interface Job {
   aspect?: string;
   size?: string;
   outWidth?: number;
+  model?: string; // audio only: overrides cfg.models.music
+  maxSec?: number; // sfx only: keep this much audio after the first sound
 }
+const isAudio = (k: Kind) => k === 'music' || k === 'sfx';
 
 const cfg = JSON.parse(readFileSync(join(HERE, 'manifest.config.json'), 'utf8'));
 
@@ -112,15 +119,39 @@ function buildJobs(): Job[] {
       });
     }
   }
+  const S = cfg.scenes;
+  for (const [name, desc] of Object.entries<string>(S.items)) {
+    const id = `ui_${name}`;
+    jobs.push({ id, kind: 'ui', prompt: `${cfg.style} ${desc}`, out: `assets/ui/${id}.webp`, aspect: S.aspect, size: S.size, outWidth: S.outWidth });
+  }
+  const RD = cfg.rods;
+  for (const rod of Object.values(RODS)) {
+    const len = rod.name.split(' ')[0];
+    const desc = fill(RD.reels[rod.reel], { len, power: RD.powers[rod.power] ?? rod.power });
+    const id = `icon_rod_${rod.id}`;
+    jobs.push({ id, kind: 'icon', prompt: `${cfg.style} ${fill(RD.template, { desc })}`, out: `assets/icons/${id}.webp`, aspect: RD.aspect, size: RD.size, outWidth: RD.outWidth });
+  }
   for (const [name, prompt] of Object.entries<string>(cfg.music.tracks)) {
     jobs.push({ id: `music_${name}`, kind: 'music', prompt, out: `assets/music/music_${name}.mp3` });
   }
+  const cue = (prefix: string, items: Record<string, { prompt: string; maxSec: number }>) => {
+    for (const [name, { prompt, maxSec }] of Object.entries(items)) {
+      const id = `${prefix}_${name}`;
+      jobs.push({ id, kind: 'sfx', prompt, out: `assets/sfx/${id}.mp3`, model: cfg.models.clip, maxSec });
+    }
+  };
+  cue('sting', cfg.stings.items);
+  cue('sfx_ui', cfg.sfx.items);
   return jobs;
 }
 
 // ---------- Cache (prompt hash per asset) ----------
 const hashes: Record<string, string> = existsSync(HASHES) ? JSON.parse(readFileSync(HASHES, 'utf8')) : {};
-const jobHash = (j: Job) => createHash('sha256').update(JSON.stringify([j.prompt, j.aspect, j.size, j.outWidth, j.kind === 'music' ? cfg.models.music : cfg.models.image])).digest('hex');
+const jobHash = (j: Job) => {
+  const key: unknown[] = [j.prompt, j.aspect, j.size, j.outWidth, isAudio(j.kind) ? (j.model ?? cfg.models.music) : cfg.models.image];
+  if (j.maxSec !== undefined) key.push(j.maxSec); // appended only when set so older hashes stay valid
+  return createHash('sha256').update(JSON.stringify(key)).digest('hex');
+};
 
 // ---------- Style references for consistency ----------
 interface Ref {
@@ -192,7 +223,7 @@ async function generateImage(j: Job): Promise<Buffer> {
 
 async function generateMusic(j: Job): Promise<Buffer> {
   const c = await ai();
-  const res = await withRetry(j.id, () => c.interactions.create({ model: cfg.models.music, input: j.prompt } as Parameters<GenAI['interactions']['create']>[0]));
+  const res = await withRetry(j.id, () => c.interactions.create({ model: j.model ?? cfg.models.music, input: j.prompt } as Parameters<GenAI['interactions']['create']>[0]));
   const data = (res as { output_audio?: { data?: string } }).output_audio?.data;
   if (!data) throw new Error('No audio in response');
   return Buffer.from(data, 'base64');
@@ -201,8 +232,19 @@ async function generateMusic(j: Job): Promise<Buffer> {
 async function runJob(j: Job): Promise<void> {
   const dest = join(PUBLIC, j.out);
   mkdirSync(dirname(dest), { recursive: true });
-  if (j.kind === 'music') {
-    writeFileSync(dest, await generateMusic(j));
+  if (isAudio(j.kind)) {
+    const raw = join(tmpdir(), `bb-${j.id}-${process.pid}.mp3`);
+    writeFileSync(raw, await generateMusic(j));
+    // Write next to the destination and rename on success, so a failed step never clobbers a good file.
+    const tmp = `${dest}.tmp.mp3`;
+    try {
+      if (j.kind === 'music') loopify(raw, tmp);
+      else trimCue(raw, tmp, j.maxSec ?? 1);
+      renameSync(tmp, dest);
+    } finally {
+      rmSync(raw, { force: true });
+      rmSync(tmp, { force: true });
+    }
   } else {
     const img = await generateImage(j);
     await sharp(img).resize({ width: j.outWidth, withoutEnlargement: true }).webp({ quality: j.kind === 'icon' ? 90 : 80 }).toFile(dest);
@@ -212,6 +254,32 @@ async function runJob(j: Job): Promise<void> {
   hashes[j.id] = jobHash(j);
   mkdirSync(CACHE, { recursive: true });
   writeFileSync(HASHES, JSON.stringify(hashes, null, 2));
+}
+
+// ---------- Audio post-processing (ffmpeg) ----------
+const ffmpeg = (args: string[]) => execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args]);
+const duration = (file: string) =>
+  Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString().trim());
+
+/** Seamless loop: crossfade the last X seconds into the first X, then drop the tail. */
+function loopify(src: string, dest: string, x = 3) {
+  const d = duration(src);
+  // Three seeked inputs (head, tail, middle): splitting one stream with asplit stalls ffmpeg.
+  const f = `[0]afade=t=in:d=${x}[h];[1]afade=t=out:d=${x}[t];[h][t]amix=inputs=2:normalize=0:duration=longest[x];[x][2]concat=n=2:v=0:a=1[out]`;
+  ffmpeg(['-t', `${x}`, '-i', src, '-ss', `${d - x}`, '-i', src, '-ss', `${x}`, '-t', `${d - 2 * x}`, '-i', src, '-filter_complex', f, '-map', '[out]', '-c:a', 'libmp3lame', '-b:a', '160k', dest]);
+}
+
+/** UI cue / sting: start at the first sound, keep maxSec, fade the tail, normalise peak. */
+function trimCue(src: string, dest: string, maxSec: number) {
+  const fade = Math.min(0.4, maxSec * 0.35);
+  const f = [
+    'silenceremove=start_periods=1:start_threshold=-42dB:start_silence=0.005',
+    `atrim=0:${maxSec}`,
+    `afade=t=out:st=${Math.max(0, maxSec - fade)}:d=${fade}`,
+    'areverse,silenceremove=start_periods=1:start_threshold=-55dB,areverse',
+    'loudnorm=I=-16:TP=-1.5:LRA=11',
+  ].join(',');
+  ffmpeg(['-i', src, '-af', f, '-ar', '44100', '-c:a', 'libmp3lame', '-b:a', '128k', dest]);
 }
 
 // ---------- Runtime index ----------
@@ -246,7 +314,7 @@ async function main() {
   // Style anchors: reuse an already-generated image of each kind (consistency across runs);
   // otherwise generate the first image of each kind before the rest and anchor on it.
   if (!NO_ANCHOR) {
-    for (const kind of ['plate', 'portrait', 'icon'] as Kind[]) {
+    for (const kind of ['plate', 'portrait', 'icon', 'ui'] as Kind[]) {
       if (userRefs(kind).length) continue;
       const existing = all.find((j) => j.kind === kind && existsSync(join(PUBLIC, j.out)));
       if (existing) {
@@ -269,7 +337,7 @@ async function main() {
     }
   };
   const firsts: Job[] = [];
-  for (const j of jobs) if (j.kind !== 'music' && !anchors.has(j.kind) && !firsts.some((f) => f.kind === j.kind)) firsts.push(j);
+  for (const j of jobs) if (!isAudio(j.kind) && !anchors.has(j.kind) && !firsts.some((f) => f.kind === j.kind)) firsts.push(j);
   for (const j of firsts) await attempt(j, ' (style anchor)');
   const queue = jobs.filter((j) => !firsts.includes(j));
   const worker = async () => {

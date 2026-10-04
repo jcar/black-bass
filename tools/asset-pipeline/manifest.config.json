@@ -2,7 +2,8 @@
   "$comment": "Prompt templates for the offline Gemini asset build. GeminiAssetBuilder expands these against the game data (lakes, species, lures) into concrete asset jobs. IDs must match src/game/assets.ts.",
   "models": {
     "image": "gemini-3.1-flash-image",
-    "music": "lyria-3-clip-preview"
+    "music": "lyria-3.5",
+    "clip": "lyria-3-clip-preview"
   },
   "style": "Stylized modern illustration for a premium mobile sports game. Clean confident shapes, soft painterly shading, natural but vibrant palette, crisp readable silhouettes. Absolutely no text, letters, numbers, logos, watermarks, UI elements, or human faces.",
   "plates": {
@@ -67,9 +68,93 @@
   },
   "music": {
     "tracks": {
-      "menu": "Instrumental loop: laid-back americana and southern-rock guitar groove, confident and warm, outdoor sports television feel, steady drums, seamless loop.",
-      "fishing": "Instrumental loop: calm ambient acoustic guitar with soft pads and gentle brushed percussion, early morning on a quiet lake, unobtrusive background music, seamless loop.",
-      "weighin": "Instrumental: upbeat triumphant country-rock with slide guitar and a crowd-pleasing build, tournament weigh-in stage energy."
+      "menu": "Instrumental, about 2 minutes. Easygoing americana rock with warm electric guitar riffs and steady drums, confident and friendly, outdoor sports broadcast feel. Even energy throughout with no intro build and no big ending, so it can repeat smoothly.",
+      "fishing": "Instrumental, about 2 minutes. Gentle acoustic guitar and soft ambient pads with light brushed percussion. Calm, steady and unobtrusive background music for a relaxed outdoor game. No intro and no ending, so it can repeat smoothly.",
+      "weighin": "Instrumental, about 2 minutes. Upbeat confident country-rock with slide guitar and driving drums, tournament weigh-in stage energy. Steady groove throughout with no intro build and no ending, so it loops seamlessly."
+    }
+  },
+  "scenes": {
+    "aspect": "16:9",
+    "size": "2K",
+    "outWidth": 1920,
+    "$comment": "Menu backdrops (ui_<name>). Hub hotspots are positioned against these in src/ui/screens/marina.ts, so regenerate with care.",
+    "items": {
+      "marina": "A small lakeside marina on Lake Champlain at golden early morning, seen from slightly above. Left third: a modest weathered tackle shop building with a covered porch, warm light in the windows. Centre: a concrete boat launch ramp sloping into calm water. Right third: a long wooden dock with a sleek modern bass boat tied alongside, its front casting deck visible. Far right background: a small open-sided pavilion. Forested shoreline and distant mountains, light mist on the water. No people, no signs, no lettering.",
+      "stage": "An outdoor bass tournament weigh-in stage at a lakeside park at dusk. A covered stage with warm spotlights, a large digital fish scale on a stand with a plain blank display, a glass-sided aerated holding tank in front, folding chairs facing the stage, plain unmarked fabric banners, string lights, lake and treeline behind. Centre of the frame kept relatively open and dark for overlays. No people, no text, no logos.",
+      "shop": "Interior of a well-kept small-town fishing tackle shop in warm morning light: a pegboard wall of unbranded lures in plain clear packaging, rod racks along one side, a worn wooden counter, a window looking out to the lake. Calm and uncluttered, left side darker and simpler for overlays. No people, no labels, no readable text.",
+      "locker": "Looking down at the front casting deck of a modern bass boat on the water: grey marine carpet, an open rod locker hatch, a trolling motor at the bow, tackle trays neatly stowed, calm lake water around the hull. Even lighting, uncluttered composition with open carpet space in the middle. No people, no rods on the deck, no text.",
+      "trophy": "A quiet lakeside lodge trophy room at evening: dark wood-panelled wall with a few mounted bass replicas and plain blank brass plaques, a framed lake chart, warm lamp light, a window with the lake at dusk. Restrained, premium, uncluttered. No people, no readable text."
+    }
+  },
+  "rods": {
+    "aspect": "16:9",
+    "size": "1K",
+    "outWidth": 768,
+    "template": "A single {desc}, shown in full lying horizontally across the frame from left to right with the reel near the left. Isolated product shot on a plain deep teal background (#0b1d26), soft studio lighting, sharp detail, unbranded.",
+    "reels": {
+      "spinning": "{len} {power} light graphite spinning rod with cork split-grip handle and a compact silver spinning reel hanging beneath",
+      "casting": "{len} {power} graphite casting rod with a split-grip handle and a low-profile baitcasting reel mounted on top"
+    },
+    "powers": {
+      "ML": "medium-light, slim and flexible",
+      "M": "medium power",
+      "MH": "medium-heavy power",
+      "H": "heavy power, stout",
+      "XH": "extra-heavy flipping rod, very thick butt section and long handle"
+    }
+  },
+  "stings": {
+    "$comment": "Short musical cues (sting_<name>), generated with the clip model, trimmed from the start.",
+    "items": {
+      "hotseat": {
+        "maxSec": 3.5,
+        "prompt": "Instrumental. [0:00 - 0:03] A short triumphant sports-broadcast sting: punchy drum hit and a bright rising slide-guitar lick ending on a strong major chord, then let ring. [0:03 - 0:30] Silence."
+      },
+      "hold": {
+        "maxSec": 3,
+        "prompt": "Instrumental. [0:00 - 0:03] A short tense sports-broadcast sting: low tom hits and a suspended guitar chord that stays unresolved, then fade. [0:03 - 0:30] Silence."
+      },
+      "promote": {
+        "maxSec": 5,
+        "prompt": "Instrumental. [0:00 - 0:05] A short celebratory americana fanfare: full band hit, bright electric guitar and slide guitar flourish resolving on a big major chord, cymbal swell. [0:05 - 0:30] Silence."
+      },
+      "record": {
+        "maxSec": 3,
+        "prompt": "Instrumental. [0:00 - 0:03] A short bright reward sting: shimmering guitar harmonics and a soft cymbal swell rising to a clean major chord. [0:03 - 0:30] Silence."
+      },
+      "build": {
+        "maxSec": 6,
+        "prompt": "Instrumental. [0:00 - 0:06] A short suspense build for a weigh-in reveal: steady kick drum pulse and a rising tremolo electric guitar note getting louder, stopping abruptly. [0:06 - 0:30] Silence."
+      }
+    }
+  },
+  "sfx": {
+    "$comment": "UI cues (sfx_ui_<name>). Gemini has no SFX model, so these are single musical hits from the clip model, trimmed to the first sound.",
+    "items": {
+      "tap": {
+        "maxSec": 0.25,
+        "prompt": "Instrumental. [0:00 - 0:01] One single short muted electric guitar string pluck, dry, close and soft. [0:01 - 0:30] Silence."
+      },
+      "back": {
+        "maxSec": 0.35,
+        "prompt": "Instrumental. [0:00 - 0:01] One single soft low plucked guitar note falling slightly in pitch, short and dry. [0:01 - 0:30] Silence."
+      },
+      "confirm": {
+        "maxSec": 0.7,
+        "prompt": "Instrumental. [0:00 - 0:01] Two quick rising clean electric guitar notes, bright and short. [0:01 - 0:30] Silence."
+      },
+      "buy": {
+        "maxSec": 0.9,
+        "prompt": "Instrumental. [0:00 - 0:01] A single bright clean electric guitar chord strum with a light shaker, short. [0:01 - 0:30] Silence."
+      },
+      "open": {
+        "maxSec": 0.5,
+        "prompt": "Instrumental. [0:00 - 0:01] One quick soft upward slide on an acoustic guitar string, short. [0:01 - 0:30] Silence."
+      },
+      "tick": {
+        "maxSec": 0.15,
+        "prompt": "Instrumental. [0:00 - 0:01] One single dry rimshot click on a snare drum, very short. [0:01 - 0:30] Silence."
+      }
     }
   }
 }
