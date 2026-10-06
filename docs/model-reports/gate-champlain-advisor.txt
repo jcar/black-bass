@@ -1,0 +1,12 @@
+champlain (Amateur) · plan advisor · 30 paired days · 8 rigs · 189s
+
+expert
+rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag
+ned            12.20  [10.57, 13.87]      0.5     31      44%  0.72       4%       0.0   13.8
+tube           12.20  [10.70, 13.47]      0.4     27      52%  0.75       5%       0.0   14.5
+squarebill     11.57  [9.53, 13.53]       0.8     48      31%  0.88       6%       1.0   14.2
+footballJig    11.23  [9.80, 12.57]       0.4     26      49%  0.75       5%       0.0   14.5
+chatterbait    10.60  [8.63, 12.37]       0.7     46      34%  0.72       5%       1.0   13.7
+jerkbait        9.93  [7.70, 12.13]       0.6     48      30%  0.67       5%       0.3   12.8
+dropShot        7.80  [6.40, 9.07]        0.4     10      81%  0.91       4%       0.2   11.0
+walker          7.37  [5.40, 9.23]        0.5     45      21%  0.75       5%       1.9   10.9

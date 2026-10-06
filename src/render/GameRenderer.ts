@@ -38,6 +38,12 @@ export class GameRenderer {
   private safeProbe: HTMLDivElement | null = null;
   private lastT: TournamentState | null = null;
   debug = false;
+  private proStops: Vec2[] = [];
+  /** The advisor's stops to mark on the map (empty hides them). */
+  setProStops(stops: Vec2[]) {
+    this.proStops = stops;
+    (this.scenes?.map as MapScene | undefined)?.setProStops(stops);
+  }
 
   async init(host: HTMLElement) {
     await this.app.init({
@@ -53,6 +59,7 @@ export class GameRenderer {
     // Overlay text uses the broadcast face; make sure it's decoded before the first Text is built.
     await Promise.race([document.fonts?.load(`700 20px ${HUD_FONT}`), new Promise((r) => setTimeout(r, 800))]).catch(() => {});
     this.scenes = { map: new MapScene(), cast: new CastScene(), water: new WaterScene() };
+    (this.scenes.map as MapScene).setProStops(this.proStops);
     // World (graded) -> weather -> HUD overlay -> callouts: the HUD is never tinted or rained on.
     this.app.stage.addChild(this.layer, this.weather, this.overlay, this.calloutLayer);
     this.layer.filters = [this.grade];

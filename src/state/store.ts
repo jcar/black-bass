@@ -6,7 +6,6 @@ import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { proPickNow } from '../sim/advisor';
 import { formatClock } from '../sim/conditions';
-import { depthAt, getLakeGrid } from '../sim/lake';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
 import { createTournament, isTournamentOver, standings, startNextDay, switchRod } from '../sim/tournament';
 import type { CaughtFish, GamePhase, TournamentState } from '../sim/types';
@@ -56,7 +55,7 @@ export interface Hud {
  *           fights and the catch card.
  * Cast results are spatial callouts in the scene, not notices.
  */
-export type NoticeKind = 'banner' | 'bug' | 'ticker';
+export type NoticeKind = 'banner' | 'bug' | 'ticker' | 'coach';
 export type NoticeTone = 'info' | 'good' | 'bad' | 'gold';
 export interface Notice {
   id: number;
@@ -91,6 +90,9 @@ interface StoreState {
   continueFishing: () => void;
   selectRod: (i: number) => void;
   finishDay: () => void;
+  /** The coach's notes on the day just fished (weigh-in). */
+  debrief: string[];
+  setDebrief: (d: string[]) => void;
   nextDay: () => void;
   completeTournament: () => void;
   /** Copy the edited rod locker into the tournament (only before launching for the day). */
@@ -101,7 +103,7 @@ interface StoreState {
 export const canRerig = (t: TournamentState | null) => !!t && t.phase === 'Navigate' && t.clockMin === TUNING.clock.dayStartMin;
 
 let noticeId = 1;
-const NOTICE_MS: Partial<Record<NoticeKind, number>> = { banner: 2300, bug: 3200 };
+const NOTICE_MS: Partial<Record<NoticeKind, number>> = { banner: 2300, bug: 3200, coach: 9000 };
 const MAX_TICKER_QUEUE = 3;
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -111,6 +113,8 @@ export const useStore = create<StoreState>((set, get) => ({
   tournament: null,
   hud: null,
   notices: [],
+  debrief: [],
+  setDebrief: (debrief) => set({ debrief }),
   paused: false,
   lastResult: null,
 
@@ -254,7 +258,7 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint']):
     nearWaypoint,
     pendingCull: t.pendingCull,
     lastLanded: t.lastLanded,
-    proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, depthAt(getLakeGrid(lake), t.boat.pos.x, t.boat.pos.y)) : t.activeRod,
+    proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos) : t.activeRod,
   };
 }
 

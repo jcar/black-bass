@@ -42,6 +42,7 @@ function FishThumb({ f, small }: { f: CaughtFish; small?: boolean }) {
 export function WeighInScreen() {
   const t = useStore((s) => s.tournament);
   const save = useStore((s) => s.save);
+  const notes = useStore((s) => s.debrief);
   const mutateSave = useStore((s) => s.mutateSave);
   const nextDay = useStore((s) => s.nextDay);
   const complete = useStore((s) => s.completeTournament);
@@ -288,6 +289,16 @@ export function WeighInScreen() {
                 </m.div>
               )}
             </AnimatePresence>
+            {phase >= Phase.Board && save.settings.coach && notes.length > 0 && (
+              <m.div className="col coach-notes" style={{ gap: 4, pointerEvents: 'auto' }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...spring, delay: 0.4 }}>
+                <span className="kicker">Coach's notes</span>
+                {notes.map((n, i) => (
+                  <span key={i} className="small">
+                    {n}
+                  </span>
+                ))}
+              </m.div>
+            )}
             {phase >= Phase.Payout && (
               <m.div className="row" style={{ gap: 6, flexWrap: 'wrap' }} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 0.5 }}>
                 {data.fieldBig.weightLb > 0 && (

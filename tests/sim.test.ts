@@ -5,7 +5,8 @@ import { weightFromLength } from '../src/data/species';
 import { seasonFor } from '../src/sim/conditions';
 import { breakingStrengthLb, newFightState } from '../src/sim/fight';
 import { makeCtx } from '../src/sim/context';
-import { fishDepthProfile, rigIssues, scoreRig, scoreRigDay, suggestedLine } from '../src/sim/advisor';
+import { debrief } from '../src/sim/coach';
+import { advisorRoute, bitesPerDayAt, rankLures, rigIssues, spotEnv, spotsFor, strikeChance, suggestedLine } from '../src/sim/advisor';
 import { migrate, newSave } from '../src/state/save';
 import { jerkPauseWindow, presentationMatch } from '../src/sim/fish/attraction';
 import { tempFactor } from '../src/sim/fish/activity';
@@ -322,23 +323,49 @@ describe('pro advisor', () => {
   const lake = LAKES.champlain;
   const base = newT(4).conditions;
   const rig = (lureId: string, colorId: string, line: RodSetup['line'] = { type: 'fluoro', testLb: 10 }) => ({ lureId, colorId, line });
-  const profile = fishDepthProfile(lake, base.season);
+
+  it('strike chance follows the leaky meter: zero below the strike line, rising with fit', () => {
+    expect(strikeChance(0.05)).toBe(0);
+    expect(strikeChance(0.5)).toBeGreaterThan(strikeChance(0.3));
+    expect(strikeChance(5)).toBeLessThanOrEqual(1);
+  });
   it('favours topwater at dawn over midday (light fit)', () => {
     const c = { ...base, waterTempF: 72, weather: 'Bluebird' as const };
-    const dawn = scoreRig(lake, c, 400, rig('walker', 'bone', { type: 'mono', testLb: 14 }), profile).score;
-    const noon = scoreRig(lake, c, 735, rig('walker', 'bone', { type: 'mono', testLb: 14 }), profile).score;
-    expect(dawn).toBeGreaterThan(noon);
+    const at = spotsFor(lake)[0];
+    const r = rig('walker', 'bone', { type: 'mono', testLb: 14 });
+    expect(bitesPerDayAt(lake, c, 400, r, at)).toBeGreaterThan(bitesPerDayAt(lake, c, 735, r, at));
   });
   it('ranks the jerkbait above topwater in cold water (temperature fit)', () => {
     const c = { ...base, waterTempF: 45, season: 'Prespawn' as const };
-    const jerk = scoreRigDay(lake, c, rig('jerkbait', 'ghostMinnow'));
-    const walk = scoreRigDay(lake, c, rig('walker', 'bone', { type: 'mono', testLb: 14 }));
-    expect(jerk).toBeGreaterThan(walk);
+    const ranked = rankLures(lake, c).map((p) => p.lureId);
+    expect(ranked.indexOf('jerkbait')).toBeLessThan(ranked.indexOf('walker'));
   });
   it('prefers fluoro to braid for subsurface baits in clear water (line visibility)', () => {
-    const f = scoreRigDay(lake, base, rig('ned', 'greenPumpkin', { type: 'fluoro', testLb: 8 }));
-    const b = scoreRigDay(lake, base, rig('ned', 'greenPumpkin', { type: 'braid', testLb: 8 }));
+    const at = spotsFor(lake)[0];
+    const f = bitesPerDayAt(lake, base, 570, rig('ned', 'greenPumpkin', { type: 'fluoro', testLb: 8 }), at);
+    const b = bitesPerDayAt(lake, base, 570, rig('ned', 'greenPumpkin', { type: 'braid', testLb: 8 }), at);
     expect(f).toBeGreaterThan(b);
+  });
+  it('expects more bass on mapped structure than in open water', () => {
+    const fishy = (at: { x: number; y: number }) => spotEnv(lake, base.season, at).reduce((a, e) => a + Object.values(e.density).reduce((x, y) => x + (y ?? 0), 0), 0);
+    const cover = lake.cover.find((c) => c.type === 'rock')!;
+    const g = getLakeGrid(lake);
+    let open = { x: 0, y: 0 };
+    for (let i = 0; i < g.water.length; i++)
+      if (g.water[i] && g.cover[i] === 0 && g.depthFt[i] > 40) {
+        open = { x: ((i % g.cols) + 0.5) * g.cellM, y: (Math.floor(i / g.cols) + 0.5) * g.cellM };
+        break;
+      }
+    expect(fishy(cover)).toBeGreaterThan(fishy(open));
+  });
+  it('plans a milk run of distinct stops on the water', () => {
+    const route = advisorRoute(lake, base, rig('tube', 'greenPumpkin'));
+    expect(route.length).toBeGreaterThanOrEqual(4);
+    const g = getLakeGrid(lake);
+    for (const [i, a] of route.entries()) {
+      expect(isWater(g, a.spot.x, a.spot.y)).toBe(true);
+      for (const b of route.slice(i + 1)) expect(Math.hypot(a.spot.x - b.spot.x, a.spot.y - b.spot.y)).toBeGreaterThan(80);
+    }
   });
   it('asks for heavy line in standing timber and flags rod/lure mismatches', () => {
     expect(suggestedLine(LAKES.lakefork, 'footballJig').testLb).toBeGreaterThanOrEqual(15);
@@ -464,5 +491,21 @@ describe('leaky interest model', () => {
     expect(settle(0.4)).toBeGreaterThan(A.followAt);
     expect(settle(0.4)).toBeLessThan(A.strikeAt);
     expect(settle(0.2)).toBeLessThan(A.followAt);
+  });
+});
+
+describe('coach debrief', () => {
+  const base = { casts: 30, arrivals: 6, spookedArrivals: 0, crashes: 0, fishlessCasts: 0, followNoStrike: 0, strikes: 5, match: {} };
+  it('leads with the costliest mistake', () => {
+    const notes = debrief({ ...base, spookedArrivals: 5, crashes: 2 }, 70);
+    expect(notes[0]).toMatch(/5 of 6 stops/);
+    expect(notes[1]).toMatch(/crashed/);
+  });
+  it('calls out a broken retrieve with the technique tip', () => {
+    const notes = debrief({ ...base, match: { squarebill: { n: 10, sum: 3 } } }, 70);
+    expect(notes[0]).toMatch(/Squarebill Crankbait retrieve rated 30%/);
+  });
+  it('says so when the day was clean', () => {
+    expect(debrief(base, 70)[0]).toMatch(/Clean day/);
   });
 });

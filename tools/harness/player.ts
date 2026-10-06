@@ -9,11 +9,11 @@ import { SPECIES } from '../../src/data/species';
 import { TUNING } from '../../src/data/tuning';
 import { inputHub } from '../../src/game/input';
 import { jerkPauseWindow } from '../../src/sim/fish/attraction';
-import { getLakeGrid, HARD_COVER, isWater, coverAt } from '../../src/sim/lake';
+import { getLakeGrid, HARD_COVER, isWater, coverAt, depthAt } from '../../src/sim/lake';
 import { bagWeight, continueAfterLanded } from '../../src/sim/livewell';
 import { Rng } from '../../src/sim/rng';
 import { createTournament, drainEvents, stepTournament } from '../../src/sim/tournament';
-import { emptyInput, type InputFrame, type RodSetup, type Tier, type TournamentState, type Vec2 } from '../../src/sim/types';
+import { emptyInput, type InputFrame, type RodSetup, type Tier, type TournamentEvent, type TournamentState, type Vec2 } from '../../src/sim/types';
 
 const DT = 1 / 60;
 
@@ -114,6 +114,8 @@ export interface DayMetrics {
   bassLanded: number;
   bag: number;
   presentSec: number;
+  /** Where and when the player fished, and how many casts each stop got (for the advisor gate). */
+  visits: { x: number; y: number; clockMin: number; casts: number }[];
 }
 
 // ---------- Keyboard emulation through the real input mapping ----------
@@ -261,13 +263,14 @@ export function itinerary(lakeId: string, seed: number): Spot[] {
   return [...shuffle(wps), ...shuffle(cover)];
 }
 
-export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: RodSetup[]; profile: Profile; maxRealSec?: number }): DayMetrics {
+export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: RodSetup[]; profile: Profile; maxRealSec?: number; spots?: Spot[]; onStep?: (s: TournamentState, events: TournamentEvent[], t: number) => void }): DayMetrics {
   const { profile: P } = opts;
   const s = createTournament({ lakeId: opts.lakeId, tier: opts.tier, seed: opts.seed, deck: opts.deck });
   const rng = new Rng(opts.seed ^ 0xbadc0de); // the player's own randomness, separate from the sim
   const kb = P.input === 'keyboard' ? keyboard() : null;
   if (kb) inputHub.reset();
-  const spots = itinerary(opts.lakeId, opts.seed);
+  const dayGrid = getLakeGrid(LAKES[opts.lakeId]);
+  const spots = opts.spots?.length ? opts.spots : itinerary(opts.lakeId, opts.seed);
   let spotIdx = 0;
   let castsLeft = 0;
   let t = 0;
@@ -289,7 +292,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
   let castMaxInterest = 0;
   let matchSum = 0;
   let matchN = 0;
-  const m: DayMetrics = { seed: opts.seed, casts: 0, bassStrikes: 0, otherStrikes: 0, followCasts: 0, crashes: 0, snags: 0, stumps: 0, arrivals: 0, spookedAtArrival: 0, avgMatch: 0, bassLanded: 0, bag: 0, presentSec: 0 };
+  const m: DayMetrics = { seed: opts.seed, casts: 0, bassStrikes: 0, otherStrikes: 0, followCasts: 0, crashes: 0, snags: 0, stumps: 0, arrivals: 0, spookedAtArrival: 0, avgMatch: 0, bassLanded: 0, bag: 0, presentSec: 0, visits: [] };
   let spookSum = 0;
   const jit = (v: number) => v * (1 + (rng.next() * 2 - 1) * P.timingJitter);
   const maxSec = opts.maxRealSec ?? 3600;
@@ -378,6 +381,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
           arrived = false;
           castsLeft = rng.int(P.castsPerSpot[0], P.castsPerSpot[1]);
           m.arrivals++;
+          m.visits.push({ x: sp.x, y: sp.y, clockMin: s.clockMin, casts: 0 });
           if (process.env.HARNESS_TRACE) console.log('arrive', spotIdx, 'boat', s.boat.pos.x.toFixed(0), s.boat.pos.y.toFixed(0), 'spot', sp.x, sp.y, 'clock', s.clockMin.toFixed(0));
           let near = 0;
           let spooked = 0;
@@ -420,6 +424,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
           if (kb) kb.tap('c');
           else input.castTap = true;
           m.casts++;
+          if (m.visits.length) m.visits[m.visits.length - 1].casts++;
           castsLeft--;
           wait = rng.range(P.castGapSec[0], P.castGapSec[1]);
         }
@@ -439,7 +444,11 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
         let twitch = false;
         switch (lure.style) {
           case 'steady':
-            reel = phaseT > jit(0.35);
+            // A swimming bait (bladed jig) is counted down first by a player who reads the sonar, per the tip.
+            if (lure.motion === 'swimming' && P.readsBottom) {
+              if (bottomAt === null && (p.onBottom || p.lureDepthFt >= 0.7 * depthAt(dayGrid, p.lurePos.x, p.lurePos.y) || phaseT > 8)) bottomAt = phaseT;
+              reel = bottomAt !== null;
+            } else reel = phaseT > jit(0.35);
             if (reelLapse > 0) {
               reelLapse -= DT;
               reel = false;
@@ -535,7 +544,9 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
       input = k;
     }
     stepTournament(s, input, DT);
-    for (const e of drainEvents(s)) {
+    const events = drainEvents(s);
+    opts.onStep?.(s, events, t);
+    for (const e of events) {
       if (e.type === 'crash') m.crashes++;
       if (process.env.HARNESS_TRACE && (e.type === 'crash' || e.type === 'edge' || e.type === 'splash') && m.casts < 30) console.log(e.type, 'boat', s.boat.pos.x.toFixed(0), s.boat.pos.y.toFixed(0), 'at', e.at?.x.toFixed(0), e.at?.y.toFixed(0), 'spot', spots[spotIdx % spots.length].x, spots[spotIdx % spots.length].y);
       if (e.type === 'shore') m.snags++;

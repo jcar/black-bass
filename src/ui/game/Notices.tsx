@@ -69,6 +69,28 @@ export function NoticeStrip({ hold }: { hold: boolean }) {
   );
 }
 
+/** Coach tips: a wrapping card on the left, under the sonar inset, held during fights. */
+export function CoachCard({ hold }: { hold: boolean }) {
+  const coach = useStore((s) => s.notices.find((n) => n.kind === 'coach'));
+  const dismiss = useStore((s) => s.dismissNotice);
+  const show = hold ? undefined : coach;
+  return (
+    <div className="coach-card-wrap">
+      <AnimatePresence>
+        {show && (
+          <m.div key={show.id} className="coach-card hud-box" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12, transition: { duration: 0.15 } }} transition={spring} onClick={() => dismiss(show.id)}>
+            <span className="row" style={{ gap: 8, alignItems: 'center' }}>
+              <Slug tone="dark">Coach</Slug>
+              <span className="strip-title">{show.title}</span>
+            </span>
+            {show.sub && <span className="coach-text">{show.sub}</span>}
+          </m.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /** Mirrors the newest notice for screen readers. */
 export function NoticeLive() {
   const last = useStore((s) => s.notices[s.notices.length - 1]);

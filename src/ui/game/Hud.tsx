@@ -9,7 +9,7 @@ import type { Hud as HudData } from '../../state/store';
 import { useStore } from '../../state/store';
 import { lbOz, LureIcon } from '../components';
 import { Icon, spring } from '../kit';
-import { NoticeStrip } from './Notices';
+import { CoachCard, NoticeStrip } from './Notices';
 import { promotionTarget } from '../../state/career';
 
 function staminaStage(s: number) {
@@ -55,6 +55,7 @@ const RodBar = memo(function RodBar({ labels, active, pick, deck }: { labels: st
 });
 
 export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
+  const coachOn = useStore((s) => s.save.settings.coach);
   const setPaused = useStore((s) => s.setPaused);
   const deck = useStore((s) => s.tournament?.deck);
   const tier = useStore((s) => s.tournament?.tier);
@@ -129,6 +130,7 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
           </div>
           <NoticeStrip hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />
         </div>
+        <CoachCard hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />
         <div style={{ flex: 1 }} />
         <button className="icon-btn" aria-label="Pause" onClick={() => setPaused(true)}>
           <Icon name="pause" />
@@ -152,6 +154,14 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
         )}
       </AnimatePresence>
 
+      {hud.phase === 'Present' && coachOn && !debug && (
+        <div className="retrieve-meter hud-box" title="How well you're working the lure (what the fish judge)">
+          <span className="kicker">Retrieve</span>
+          <div className="meter">
+            <div style={{ transform: `scaleX(${hud.match})`, background: hud.match >= 0.75 ? 'var(--good)' : hud.match >= 0.5 ? 'var(--accent)' : 'var(--bad)' }} />
+          </div>
+        </div>
+      )}
       {hud.phase === 'Present' && debug && (
         <div className="fight-panel hud-box col" style={{ gap: 4 }}>
           <div className="row small" style={{ justifyContent: 'space-between' }}>

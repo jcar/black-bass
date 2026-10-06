@@ -66,7 +66,28 @@ the pro advice could not be meaningfully right or wrong. With the leak, fit sets
 fish can get, so the right lure, depth, cadence and spot matter, and skill separates players.
 See `docs/model-reports/` for before/after harness numbers.
 
-## 6. Known simplifications
+## 6. The pro advisor (`advisor.ts`)
+
+The advice is the strike model run forward analytically, not a separate heuristic:
+
+- **Fish at a stop:** expected bass per cell from the placement odds above (depth suitability x cover
+  preference, species zones), over the water within 40 m of the stop.
+- **Will a given fish strike?** Interest settles at `gain x fit / leak`, so a fish strikes when
+  `vulnerability x proximity x F0 >= strikeAt x leak / gain`, where F0 is the rest of the fit product
+  for that cell, hour, rig and an expert's measured cadence match. Within a visit the same fish see the
+  lure repeatedly and interest is deterministic, so a fish strikes on its closest pass or not at all:
+  with `K ~ Poisson(lambda)` passes, `P = E_vuln[1 - exp(-lambda (1 - x))]`. A fish past the follow line
+  swims at the lure and takes its depth; if the bait is slow enough to catch (follow speed vs lure
+  speed), it strikes at full proximity and depth match. This is why slow baits convert followers.
+- **Time:** cast cycle from the lure's reel speed and the pace an expert works it (measured), fall time,
+  ~60 s per move and ~15 s per fish. Expected bites per stop visit become bites per day.
+- **Outputs:** lure ranking, a milk run of distinct stops (marked PRO 1-6 on the map), best windows,
+  technique and approach tips, and the day's outlook (scaled by the measured play calibration, 0.75).
+- **Gate:** `tools/advisor-check.ts` (README, "Pro advice"). The live coach (`coach.ts`) explains
+  misses with the same rules: spooked arrivals, crashes, broken retrieves, followers that won't commit,
+  fishless water.
+
+## 7. Known simplifications
 
 - Fish don't school or relate to each other; bait (shad) isn't modelled.
 - Wind direction doesn't move fish to banks yet (wind only affects lure fit and casting).

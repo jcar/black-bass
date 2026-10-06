@@ -31,13 +31,33 @@ export class MapScene implements Scene {
   private lakeId = '';
   private wakePts: { x: number; y: number; age: number }[] = [];
   private zoom = 1.3;
+  /** The advisor's stops for the active rig (coach on): numbered green rings. */
+  private proLayer = new Container();
+  private proPins: Container[] = [];
+  private proStops: Vec2[] = [];
 
   constructor() {
-    this.world.addChild(this.wake, this.markers, this.sonar, this.boat);
+    this.world.addChild(this.wake, this.markers, this.proLayer, this.sonar, this.boat);
     this.root.addChild(this.world);
     this.overlay.addChild(this.mini);
     this.mini.addChild(this.miniDots);
     this.drawBoat();
+  }
+
+  /** Show the advisor's route (empty list hides it). */
+  setProStops(stops: Vec2[]) {
+    this.proStops = stops;
+    this.proLayer.removeChildren().forEach((c) => c.destroy());
+    this.proPins = stops.map((s, i) => {
+      const pin = new Container();
+      pin.position.set(s.x, s.y);
+      const g = new Graphics().circle(0, 0, 11).stroke({ width: 2.5, color: 0x5ee08a });
+      const label = new Text({ text: `PRO ${i + 1}`, style: { fill: 0xbaf5cf, fontSize: 14, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
+      label.position.set(-label.width / 2, 12);
+      pin.addChild(g, label);
+      this.proLayer.addChild(pin);
+      return pin;
+    });
   }
 
   toScreen(_t: TournamentState, _view: View, p: Vec2) {
@@ -108,6 +128,7 @@ export class MapScene implements Scene {
     const z = this.zoom * Math.min(view.w, view.h) / 390;
     this.world.scale.set(z);
     for (const p of this.pins) p.scale.set(1 / z);
+    for (const p of this.proPins) p.scale.set(1 / z);
     const lead = Math.min(80, boat.speed * 0.9);
     this.world.position.set(
       view.w / 2 - (boat.pos.x + Math.cos(boat.heading) * lead) * z,
@@ -177,6 +198,7 @@ export class MapScene implements Scene {
     const g = this.miniDots.clear();
     g.roundRect(-4, -4, mw + 8, mh + 8, 6).stroke({ width: 1, color: 0xffffff, alpha: 0.28 });
     for (const w of grid.def.waypoints) if (w.visible) g.circle(w.x * scale, w.y * scale, 2.2).fill(0xffd34d);
+    for (const p of this.proStops) g.circle(p.x * scale, p.y * scale, 2.6).stroke({ width: 1.5, color: 0x5ee08a });
     g.circle(t.boat.pos.x * scale, t.boat.pos.y * scale, 3.5).fill(0xff4433).stroke({ width: 1.5, color: 0xffffff });
   }
 }

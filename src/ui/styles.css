@@ -1535,6 +1535,53 @@ p {
   transition: transform 0.1s linear;
 }
 
+/* Retrieve quality while working a lure (the cadence match the fish judge). Top centre, small. */
+.retrieve-meter {
+  position: absolute;
+  left: 50%;
+  top: calc(86px + var(--safe-t));
+  transform: translateX(-50%);
+  width: min(220px, 30vw);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  pointer-events: none;
+}
+.retrieve-meter .meter {
+  flex: 1;
+  height: 8px;
+}
+.retrieve-meter .meter > div {
+  transform-origin: left;
+}
+.coach-card-wrap {
+  position: absolute;
+  left: calc(10px + var(--safe-l));
+  top: calc(236px + var(--safe-t));
+  pointer-events: none;
+}
+.coach-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(360px, 40vw);
+  padding: 8px 12px 10px 8px;
+  border-left: 3px solid var(--good);
+  pointer-events: auto;
+}
+.coach-card .strip-title {
+  font-size: 15px;
+}
+.coach-text {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text, #e8f0f2);
+}
+.coach-notes {
+  max-width: 420px;
+}
+
 /* Top-right during a fight (the minimap is hidden then), clear of the scorebug strip. */
 .fight-panel {
   position: absolute;

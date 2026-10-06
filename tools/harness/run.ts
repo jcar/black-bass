@@ -9,8 +9,11 @@ import { LAKES } from '../../src/data/lakes';
 import { COLORS, LURES } from '../../src/data/lures';
 import { RODS } from '../../src/data/rods';
 import { TUNING } from '../../src/data/tuning';
+import { advisorRoute } from '../../src/sim/advisor';
+import { coverAt, getLakeGrid, HARD_COVER } from '../../src/sim/lake';
+import { createTournament } from '../../src/sim/tournament';
 import type { RodSetup, Tier } from '../../src/sim/types';
-import { playDay, PROFILES, type DayMetrics } from './player';
+import { playDay, PROFILES, type DayMetrics, type Spot } from './player';
 import { bootstrapCI, mean } from './stats';
 
 const args = new Map<string, string>();
@@ -61,6 +64,17 @@ for (const kv of (args.get('set') ?? '').split(',').filter(Boolean)) {
 }
 
 const rigs = rigSet(args.get('rigs') ?? 'lures');
+/** --plan advisor: fish the advisor's route for each rig and day instead of the default itinerary. */
+const plan = args.get('plan') ?? 'itinerary';
+if (plan !== 'itinerary' && plan !== 'advisor') throw new Error(`unknown --plan ${plan}`);
+
+function planSpots(seed: number, rig: RodSetup): Spot[] | undefined {
+  if (plan !== 'advisor') return undefined;
+  const lake = LAKES[lakeId];
+  const grid = getLakeGrid(lake);
+  const c = createTournament({ lakeId, tier, seed, deck: [rig] }).conditions;
+  return advisorRoute(lake, c, rig).map((p) => ({ x: p.spot.x, y: p.spot.y, hard: HARD_COVER.has(coverAt(grid, p.spot.x, p.spot.y)) }));
+}
 const seeds = Array.from({ length: days }, (_, i) => firstSeed + i * 7919);
 
 interface Row {
@@ -76,7 +90,7 @@ function work(index: number, count: number): Row[] {
     for (const rig of rigs)
       for (const seed of seeds) {
         if (k++ % count !== index) continue;
-        rows.push({ profile, rig: rig.lureId, m: playDay({ lakeId, tier, seed, deck: [rig], profile: PROFILES[profile] }) });
+        rows.push({ profile, rig: rig.lureId, m: playDay({ lakeId, tier, seed, deck: [rig], profile: PROFILES[profile], spots: planSpots(seed, rig) }) });
       }
   return rows;
 }
@@ -88,6 +102,13 @@ async function main() {
   }
   if (IS_WORKER) throw new Error('worker reached coordinator code');
   const t0 = Date.now();
+  // A coordinator killed by a timeout must take its workers with it, or they run on as orphans.
+  const children: ReturnType<typeof spawn>[] = [];
+  for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const)
+    process.on(sig, () => {
+      for (const c of children) c.kill('SIGKILL');
+      process.exit(130);
+    });
   const outputs = await Promise.all(
     Array.from(
       { length: jobs },
@@ -99,6 +120,7 @@ async function main() {
             stdio: ['ignore', 'pipe', 'inherit'],
             env: { ...process.env, HARNESS_WORKER: '1' },
           });
+          children.push(child);
           let buf = '';
           child.stdout.on('data', (d) => (buf += d));
           child.on('close', (code) => (code === 0 ? resolve(JSON.parse(buf)) : reject(new Error(`shard ${i} exited ${code}`))));
@@ -111,7 +133,7 @@ async function main() {
     report[profile] = {};
     for (const rig of rigs) report[profile][rig.lureId] = summarise(rows.filter((r) => r.profile === profile && r.rig === rig.lureId).map((r) => r.m));
   }
-  console.log(`${lakeId} (${tier}) · ${days} paired days · ${rigs.length} rigs · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+  console.log(`${lakeId} (${tier}) · plan ${plan} · ${days} paired days · ${rigs.length} rigs · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
   for (const profile of profiles) {
     console.log(`\n${profile}`);
     console.log('rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag');
@@ -125,7 +147,7 @@ async function main() {
     }
   }
   const out = args.get('out');
-  if (out) writeFileSync(out, JSON.stringify({ lakeId, tier, days, firstSeed, profiles, rigs, report, rows }, null, 1));
+  if (out) writeFileSync(out, JSON.stringify({ lakeId, tier, plan, days, firstSeed, profiles, rigs, report, rows }, null, 1));
 }
 
 function summarise(ms: DayMetrics[]) {

@@ -2,6 +2,8 @@ import { LAKES } from '../data/lakes';
 import { dragTick, playEvent, playUi } from '../audio/sound';
 import { GameRenderer } from '../render/GameRenderer';
 import { getLakeGrid } from '../sim/lake';
+import { advisorRoute } from '../sim/advisor';
+import { coachStep, debrief, newCoach } from '../sim/coach';
 import { drainEvents, stepTournament } from '../sim/tournament';
 import type { TournamentEvent, TournamentState } from '../sim/types';
 import { lbOzText } from '../sim/format';
@@ -82,6 +84,10 @@ export class GameRunner {
   private initialized = false;
   private stopped = false;
   private timeUpAt: number | null = null;
+  private coach = newCoach();
+  private coachDay = -1;
+  private realT = 0;
+  private proKey = '';
 
   async start(host: HTMLElement) {
     await this.renderer.init(host);
@@ -120,7 +126,20 @@ export class GameRunner {
       this.acc = 0;
     }
 
-    this.handleEvents(t);
+    const events = this.handleEvents(t);
+    this.realT += dt;
+    if (t.day !== this.coachDay) {
+      this.coach = newCoach();
+      this.coachDay = t.day;
+    }
+    // Mark the advisor's stops for the rig in hand (recomputed when the day or rod changes).
+    const proKey = store.save.settings.coach ? `${t.day}:${t.activeRod}:${t.deck[t.activeRod]?.lureId}` : 'off';
+    if (proKey !== this.proKey) {
+      this.proKey = proKey;
+      this.renderer.setProStops(proKey === 'off' ? [] : advisorRoute(LAKES[t.lakeId], t.conditions, t.deck[t.activeRod]).map((s) => s.spot));
+    }
+    const tip = coachStep(this.coach, t, events, this.realT, blocked ? 0 : dt, store.save.settings.coach);
+    if (tip) store.notify({ kind: 'coach', title: tip.title, sub: tip.text, tone: 'info' });
     if (t.fight) dragTick(t.fight.tension, inputHub.reel, this.renderer.view.time);
     this.renderer.render(t, grid, dt);
 
@@ -140,6 +159,7 @@ export class GameRunner {
       if (this.timeUpAt === null) this.timeUpAt = now;
       else if (now - this.timeUpAt >= TIME_HOLD) {
         this.timeUpAt = null;
+        store.setDebrief(debrief(this.coach.stats, t.conditions.waterTempF));
         store.finishDay();
       }
     }
@@ -147,7 +167,8 @@ export class GameRunner {
 
   private handleEvents(t: TournamentState) {
     const store = useStore.getState();
-    for (const e of drainEvents(t)) {
+    const events = drainEvents(t);
+    for (const e of events) {
       playEvent(e.type);
       const n = noticeFor(e);
       if (n) store.notify(n);
@@ -156,6 +177,7 @@ export class GameRunner {
       if (c && e.at) this.renderer.callout(c.text, c.color, e.at);
       if (e.type === 'landed' || e.type === 'cullNeeded') store.persist();
     }
+    return events;
   }
 
   private nearWaypoint(t: TournamentState) {

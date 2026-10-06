@@ -1,0 +1,15 @@
+champlain: 30 paired days, expert, 8 lures
+
+PASS  WHERE  advisor route 13.03 vs itinerary 6.57 bass/day, diff CI [5.17, 7.80]; every lure: +2.7 to +5.7
+PASS  WHAT   top pick 13.03 vs median lure 10.62 bass/day, diff CI [1.48, 3.33]; picks: squarebill 9, jerkbait 5, tube 16
+PASS  RANK   per-day Spearman 0.62 [0.52, 0.71]; pooled over days 0.85
+        lure          advisor/day  harness/day
+        ned                 15.0         12.2
+        tube                16.3         12.2
+        squarebill          15.7         11.6
+        footballJig         15.6         11.2
+        chatterbait         12.4         10.6
+        jerkbait            14.1          9.9
+        dropShot             5.3          7.8
+        walker               9.2          7.4
+PASS  CALIB  Spearman over 480 lure-days 0.82; harness/predicted 0.75 (1.0 = calibrated)

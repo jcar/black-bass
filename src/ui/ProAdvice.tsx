@@ -1,10 +1,10 @@
-// Pro advice panels. Every recommendation comes from src/sim/advisor.ts, which scores rigs with the
-// same functions the fish use to decide whether to bite (verified by tools/advisor-check.ts).
+// Pro advice panels. Every recommendation comes from src/sim/advisor.ts, which predicts bites from the
+// same strike model the fish use, checked against human-like play by tools/advisor-check.ts.
 import { useMemo } from 'react';
 import { LAKES } from '../data/lakes';
 import { COLORS, LURES, lureKey } from '../data/lures';
 import { lineLabel, RODS } from '../data/rods';
-import { dayPlan, rigIssues, scoutLake, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
+import { APPROACH_TIP, dayOutlook, dayPlan, rigIssues, scoutLake, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
 import type { Conditions, RodSetup } from '../sim/types';
 import { useStore } from '../state/store';
 import { LureIcon, money } from './components';
@@ -48,6 +48,11 @@ export function ScoutingSheet({ lakeId, open, onClose, onRigUp }: { lakeId: stri
                     {!owned && <span className="muted"> · shop {money(LURES[p.lureId].price)}</span>}
                   </span>
                   <span className="small muted">{p.reasons.join(' · ')}</span>
+                  {p.spots.length > 0 && (
+                    <span className="small">
+                      <strong>Where:</strong> {p.spots.map((s) => s.spot.name).join(' · ')}
+                    </span>
+                  )}
                   <span className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
                     {p.windows.map((w) => (
                       <span key={w} className="badge">
@@ -64,6 +69,7 @@ export function ScoutingSheet({ lakeId, open, onClose, onRigUp }: { lakeId: stri
             {timber && <span>Standing timber: 15 lb+ fluoro or braid. Lighter line wraps and frays when a fish runs into the trunks.</span>}
             <span>{lake.clarity.defaultSecchiFt >= 8 ? 'Clear water: fluorocarbon is invisible; mono costs ~4% of bites and braid ~10% on subsurface baits.' : 'Stained water: line visibility doesn’t matter; vibration and bright or dark colours carry further.'}</span>
             <span>Match lure weight to the rod's range or casts lose 18% distance.</span>
+            <span>{APPROACH_TIP}</span>
           </div>
           <RigCheck lakeId={lakeId} deck={save.deck} />
         </>
@@ -97,6 +103,8 @@ export function RigCheck({ lakeId, deck, firstRod = 1 }: { lakeId: string; deck:
 /** Briefing plan: which of your rigs to throw in each part of today, and how to work it. */
 export function DayPlan({ lakeId, conditions, deck, compact }: { lakeId: string; conditions: Conditions; deck: RodSetup[]; compact?: boolean }) {
   const plan = useMemo(() => dayPlan(LAKES[lakeId], conditions, deck), [lakeId, conditions, deck]);
+  const coachOn = useStore((s) => s.save.settings.coach);
+  const outlook = useMemo(() => (compact ? null : dayOutlook(LAKES[lakeId], conditions, deck)), [lakeId, conditions, deck, compact]);
   if (compact)
     return (
       <div className="row plan-strip" style={{ gap: 6 }}>
@@ -111,6 +119,14 @@ export function DayPlan({ lakeId, conditions, deck, compact }: { lakeId: string;
     );
   return (
     <div className="col" style={{ gap: 8 }}>
+      {outlook && (
+        <p className="small" style={{ color: outlook.tough ? 'var(--accent)' : undefined, margin: 0 }}>
+          {outlook.text}
+        </p>
+      )}
+      <p className="small muted" style={{ margin: 0 }}>
+        {APPROACH_TIP} {coachOn && 'The best stops for the rod in your hand are marked PRO 1-6 on the map.'}
+      </p>
       {plan.map((p) => {
         const d = deck[p.best];
         const sorted = [...p.scores].sort((a, b) => b - a);
@@ -122,6 +138,9 @@ export function DayPlan({ lakeId, conditions, deck, compact }: { lakeId: string;
               <span className="display" style={{ fontSize: 17 }}>
                 {p.window.label} · Rod {p.best + 1}: {LURES[d.lureId].name}
                 {edge >= 5 && <span className="small muted"> (+{edge}% over your next best)</span>}
+              </span>
+              <span className="small">
+                <strong>Where:</strong> {p.spot.spot.name} ({p.spot.why})
               </span>
               <span className="small muted">{techniqueTip(d.lureId, conditions.waterTempF)}</span>
             </div>

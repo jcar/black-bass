@@ -12,7 +12,7 @@ npm run dev:lan      # same, exposed on your LAN so you can open it on an iPhone
 npm test             # simulation unit tests
 npm run simulate     # headless bot plays tournament days; prints balance stats
                      # e.g. npm run simulate -- 30 lakefork SemiPro
-npx tsx tools/advisor-check.ts champlain 12   # does the pro advice match how fish actually bite?
+node --import tsx tools/advisor-check.ts champlain  # pro-advice gate (see Pro advice)
 npm run build        # typecheck + production build + zero-runtime-API guard
 ```
 
@@ -54,12 +54,28 @@ npm run assets                  # everything that's missing or whose prompt chan
 
 ## Pro advice
 
-`src/sim/advisor.ts` scores rigs with the same functions the fish use to decide whether to bite
-(activity, depth match against where fish hold, lure temperature/light fit, colour vs clarity, line
-visibility, species affinity, detection reach) plus how much water a retrieve covers. It drives the
-scouting report, the briefing's day plan, the rig checks and the in-game "Pro" pick.
-`tools/advisor-check.ts` has the bot fish each lure on the same seeded days and reports how well the
-advisor's ranking predicts real bites; rerun it whenever lure, species or attraction tuning changes.
+`src/sim/advisor.ts` predicts bites from the game's own strike model (`docs/fish-model.md`): for the
+water around each candidate stop it takes how many bass the placement model puts there, their depth
+and activity at that hour, and the leaky interest meter's strike line, and works out which of them a
+rig converts over a stop's worth of casts (fish only strike on their closest pass; slow baits let
+followers close in). Cast pace and the cadence match an expert achieves are measured with the
+human-proxy harness. It tells you **what** to tie on, **where** to fish (a milk run of stops),
+**how** to work it and approach the spot, **when** each rig is best, and what to expect.
+
+`tools/advisor-check.ts` is the acceptance gate: the harness expert fishes every lure on the same
+seeded days, once on a player's default itinerary and once on the advisor's route, and the advice
+must beat the alternatives with 95% CIs that exclude zero. Rerun it whenever lure, species, lake or
+attraction tuning changes:
+
+```bash
+for plan in itinerary advisor; do node --import tsx tools/harness/run.ts --lake champlain --profile expert \
+  --rigs lures --days 30 --jobs 8 --plan $plan --out docs/model-reports/gate-champlain-$plan.json; done
+node --import tsx tools/advisor-check.ts champlain
+```
+
+The harness (`tools/harness/`) plays through the real inputs (keyboard or stick) with expert, average
+and naive-keyboard profiles; see `docs/model-reports/` for its reports. It caps itself at 8 worker
+processes and its workers refuse to spawn more.
 
 ## Adding a lake
 
