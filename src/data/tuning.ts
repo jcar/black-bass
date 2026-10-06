@@ -84,9 +84,14 @@ export const TUNING = {
     /** HBMAX-style 0..10 meter; the NES community's "6.0 or higher" target is our strike line. */
     max: 10,
     strikeAt: 6,
+    /**
+     * Leaky interest (fish time): dI/dt = gainPerSec * fit - leakPerSec * I, so interest settles at
+     * gain * fit / leak. A good fit crosses the strike line, a middling fit follows without
+     * committing, a poor fit is ignored. (The old constant decay saturated: nearly any fish in
+     * range eventually struck, so lure choice barely mattered. See docs/fish-model.md.)
+     */
     gainPerSec: 11,
-    decayPerSec: 0.4,
-    badMatchExtraDecay: 0.9,
+    leakPerSec: 1.2,
     followAt: 3,
     followSpeed: 1.1,
     strikeChargeSec: 0.55,

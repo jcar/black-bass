@@ -1,0 +1,17 @@
+champlain (Amateur) · 12 paired days · 5 rigs · 92s
+
+expert
+rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag
+tube            5.75  [4.17, 7.08]        0.8     27      28%  0.77       6%       0.0    9.5
+squarebill      4.67  [2.92, 6.83]        0.9     52      14%  0.88       6%       6.9    8.2
+jerkbait        4.00  [2.17, 6.33]        0.5     49      14%  0.67       9%       6.9    6.1
+chatterbait     3.67  [1.83, 5.67]        0.6     58      12%  0.87       7%       8.5    6.7
+walker          2.75  [1.25, 4.42]        0.5     44      10%  0.75       6%       3.9    5.6
+
+naiveKeyboard
+rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag
+tube            3.33  [2.17, 4.58]        0.5     27      18%  0.74      56%       8.0    5.8
+squarebill      2.25  [1.17, 3.42]        0.0     42       7%  0.82      57%      12.4    3.3
+chatterbait     1.42  [0.75, 2.17]        0.6     41       6%  0.80      55%      11.8    2.9
+walker          1.08  [0.33, 2.08]        0.1     39       5%  0.57      54%      12.0    1.5
+jerkbait        0.17  [0.00, 0.42]        0.3     47       3%  0.48      55%      11.9    0.5

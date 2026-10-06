@@ -50,6 +50,16 @@ function rigSet(spec: string): RodSetup[] {
   return spec.split(',').map((id) => plainRig(lakeId, id));
 }
 
+// --set attraction.leakPerSec=1.2,attraction.gainPerSec=12 : tuning experiments (applied in workers).
+for (const kv of (args.get('set') ?? '').split(',').filter(Boolean)) {
+  const [path, v] = kv.split('=');
+  const keys = path.split('.');
+  let o = TUNING as unknown as Record<string, unknown>;
+  for (const k of keys.slice(0, -1)) o = o[k] as Record<string, unknown>;
+  if (!(keys[keys.length - 1] in o)) throw new Error(`unknown tuning key ${path}`);
+  o[keys[keys.length - 1]] = Number(v);
+}
+
 const rigs = rigSet(args.get('rigs') ?? 'lures');
 const seeds = Array.from({ length: days }, (_, i) => firstSeed + i * 7919);
 

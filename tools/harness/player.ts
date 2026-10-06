@@ -162,6 +162,67 @@ function clearHeading(s: TournamentState, want: number, rayM: number): number {
   return want + Math.PI;
 }
 
+/**
+ * Route around land: BFS over water cells (8-connected), then keep only the waypoints where the
+ * straight line would leave the water. Humans steer around points and islands by eye.
+ */
+function planRoute(lakeId: string, from: Vec2, to: Vec2): Vec2[] {
+  const g = getLakeGrid(LAKES[lakeId]);
+  const cell = (p: Vec2) => Math.floor(p.y / g.cellM) * g.cols + Math.floor(p.x / g.cellM);
+  const ok = (i: number) => g.water[i] === 1 && g.shoreDistM[i] >= g.cellM;
+  const start = cell(from);
+  let goal = cell(to);
+  if (!ok(goal)) {
+    let best = -1;
+    let bd = Infinity;
+    for (let i = 0; i < g.water.length; i++)
+      if (ok(i)) {
+        const d = Math.hypot((i % g.cols) * g.cellM - to.x, Math.floor(i / g.cols) * g.cellM - to.y);
+        if (d < bd) {
+          bd = d;
+          best = i;
+        }
+      }
+    goal = best;
+  }
+  const prev = new Int32Array(g.water.length).fill(-2);
+  prev[start] = -1;
+  const q = [start];
+  for (let h = 0; h < q.length && prev[goal] === -2; h++) {
+    const i = q[h];
+    const c = i % g.cols;
+    const r = Math.floor(i / g.cols);
+    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const nc = c + dc;
+      const nr = r + dr;
+      if (nc < 0 || nr < 0 || nc >= g.cols || nr >= g.rows) continue;
+      const j = nr * g.cols + nc;
+      if (prev[j] !== -2 || !(ok(j) || j === goal)) continue;
+      prev[j] = i;
+      q.push(j);
+    }
+  }
+  if (prev[goal] === -2) return [to];
+  const cells: number[] = [];
+  for (let i = goal; i !== -1; i = prev[i]) cells.push(i);
+  cells.reverse();
+  const pts = cells.map((i) => ({ x: ((i % g.cols) + 0.5) * g.cellM, y: (Math.floor(i / g.cols) + 0.5) * g.cellM }));
+  const clear = (a: Vec2, b: Vec2) => {
+    const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 8);
+    for (let k = 1; k <= n; k++) if (!isWater(g, a.x + ((b.x - a.x) * k) / n, a.y + ((b.y - a.y) * k) / n)) return false;
+    return true;
+  };
+  const out: Vec2[] = [];
+  let anchor = from;
+  for (let k = 1; k < pts.length; k++)
+    if (!clear(anchor, pts[k])) {
+      out.push(pts[k - 1]);
+      anchor = pts[k - 1];
+    }
+  out.push(to);
+  return out;
+}
+
 /** Stick vector that makes stepNavigate head toward world heading h at magnitude m. */
 const stickFor = (h: number, m: number) => ({ x: Math.cos(h) * m, y: -Math.sin(h) * m });
 
@@ -219,8 +280,10 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
   let bottomAt: number | null = null;
   let powerTarget = 0;
   let aimTarget = 0;
-  let stuck = 0;
-  let lastPos: Vec2 = { ...s.boat.pos };
+  let route: Vec2[] = [];
+  let routeFor = -1;
+  let bestD = Infinity;
+  let sinceBest = 0;
   let bowAt: number | null = null;
   let arrived = false;
   let castMaxInterest = 0;
@@ -265,7 +328,25 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
     switch (s.phase) {
       case 'Navigate': {
         const target = standOff(sp);
+        if (routeFor !== spotIdx) {
+          route = planRoute(opts.lakeId, s.boat.pos, target);
+          routeFor = spotIdx;
+          bestD = Infinity;
+          sinceBest = 0;
+        }
+        // Advance along the route; head for the next leg's point.
+        while (route.length > 1 && Math.hypot(route[0].x - s.boat.pos.x, route[0].y - s.boat.pos.y) < 30) route.shift();
+        const leg = route[0] ?? target;
         const d = Math.hypot(target.x - s.boat.pos.x, target.y - s.boat.pos.y);
+        // No progress for 25 s (pinned on a bank, unreachable cove): give up on this spot.
+        if (d < bestD - 5) {
+          bestD = d;
+          sinceBest = 0;
+        } else if ((sinceBest += DT) > 25) {
+          spotIdx++;
+          break;
+        }
+        if (process.env.HARNESS_TRACE_NAV && Math.round(t * 60) % 300 === 0) console.log('nav', spotIdx, 'boat', s.boat.pos.x.toFixed(0), s.boat.pos.y.toFixed(0), 'tgt', target.x.toFixed(0), target.y.toFixed(0), 'd', d.toFixed(0), 'spd', s.boat.speed.toFixed(1), 'motor', s.boat.motor, 'clock', s.clockMin.toFixed(0));
         if (d < 6 || (s.boat.speed < 1 && d < 14 && phaseT > 2)) {
           // Arrived: let it coast down, then FISH.
           if (s.boat.speed <= TUNING.boat.fishHereMaxSpeed) {
@@ -274,9 +355,9 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
           }
           break;
         }
-        const want = Math.atan2(target.y - s.boat.pos.y, target.x - s.boat.pos.x);
+        const want = Math.atan2(leg.y - s.boat.pos.y, leg.x - s.boat.pos.x);
         const run = P.approach === 'run' ? d > 8 : d > P.idleFromM;
-        const h = clearHeading(s, want, run ? 60 : 20);
+        const h = clearHeading(s, want, run ? 40 : 16);
         const mag = run ? 1 : 0.32;
         if (kb) {
           // Keys give whatever speed the mapping gives; a keyboard player lets off ~a boat-stop early
@@ -288,14 +369,6 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
             if (s.boat.speed <= TUNING.boat.fishHereMaxSpeed) kb.tap('f');
           }
         } else input.stick = stickFor(h, mag);
-        // Stuck against land: move on to the next spot.
-        if (Math.hypot(s.boat.pos.x - lastPos.x, s.boat.pos.y - lastPos.y) < 0.02) stuck += DT;
-        else stuck = 0;
-        lastPos = { ...s.boat.pos };
-        if (stuck > 6) {
-          spotIdx++;
-          stuck = 0;
-        }
         break;
       }
       case 'Cast': {
@@ -358,6 +431,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
         m.presentSec += DT;
         matchSum += p.match;
         matchN++;
+        if (process.env.HARNESS_TRACE_MATCH && Math.round(t * 60) % 60 === 0) console.log('present', spotIdx, phaseT.toFixed(1), 'match', p.match.toFixed(2), 'spd', p.avgSpeed.toFixed(2), 'depth', p.lureDepthFt.toFixed(1), 'boatDist', Math.hypot(p.lurePos.x - s.boat.pos.x, p.lurePos.y - s.boat.pos.y).toFixed(0), 'clock', s.clockMin.toFixed(0));
         if (Math.round(t * 60) % 6 === 0) {
           for (const f of s.fish) if (!f.caught && f.interest > castMaxInterest && Math.abs(f.pos.x - p.lurePos.x) < 45 && Math.abs(f.pos.y - p.lurePos.y) < 45) castMaxInterest = f.interest;
         }

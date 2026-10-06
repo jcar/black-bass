@@ -254,7 +254,7 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     if (f.caught) continue;
     const d = dist(f.pos, p.lurePos);
     if (d > 45) {
-      if (f.interest > 0) f.interest = Math.max(0, f.interest - 1.5 * dt);
+      if (f.interest > 0) f.interest = Math.max(0, f.interest - A.leakPerSec * f.interest * fdt - 0.05 * fdt);
       continue;
     }
     if (f.spookUntil > s.clockMin) {
@@ -262,10 +262,9 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
       continue;
     }
     const act = fishActivity(s, f);
-    if (d < range) {
-      f.interest += interestRate(f, ctxA, act, 1 - d / range, p.lureDepthFt) * fdt;
-    }
-    f.interest -= (A.decayPerSec + (p.match < 0.3 ? A.badMatchExtraDecay : 0)) * fdt;
+    // Leaky interest: rises toward gain*fit/leak while the fish can perceive the lure, fades otherwise.
+    const gain = d < range ? interestRate(f, ctxA, act, 1 - d / range, p.lureDepthFt) : 0;
+    f.interest += (gain - A.leakPerSec * f.interest) * fdt;
     f.interest = Math.max(0, Math.min(A.max, f.interest));
 
     // Interested fish follow the lure: the shadow you see trailing your bait.

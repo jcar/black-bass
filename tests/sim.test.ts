@@ -455,3 +455,14 @@ describe('retrieve fixes', () => {
     expect(s.present!.lureDepthFt).toBeGreaterThan(counted * 0.6);
   });
 });
+
+describe('leaky interest model', () => {
+  const A = TUNING.attraction;
+  const settle = (fit: number) => (A.gainPerSec * fit) / A.leakPerSec;
+  it('good fits strike, middling fits follow without committing, poor fits are ignored', () => {
+    expect(settle(0.7)).toBeGreaterThan(A.strikeAt);
+    expect(settle(0.4)).toBeGreaterThan(A.followAt);
+    expect(settle(0.4)).toBeLessThan(A.strikeAt);
+    expect(settle(0.2)).toBeLessThan(A.followAt);
+  });
+});

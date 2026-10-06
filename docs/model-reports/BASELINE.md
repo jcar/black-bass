@@ -41,3 +41,25 @@ Hard-cover crashes: 2-16 per day for every profile (docks/laydowns; near-cover d
 - **The naive keyboard player loses most on the steady baits** (↑ also twitches; full-throttle
   arrivals spook ~55% of nearby fish), matching the player report on squarebill and bladed jig.
 - **Few casts:** 10-50 casts/day; travel and idling eat the clock, so location choice dominates.
+
+## Correction (harness navigation)
+
+The tables above were produced before the harness got route planning: its greedy steering pinned the
+boat against a peninsula for much of some days, understating casts (especially for the expert).
+`baseline2-champlain.*` is the same original model (commit `12ddae4`) re-measured with the fixed
+harness, 20 paired days:
+
+| Lure | Expert | Average | Naive keyboard |
+|---|---|---|---|
+| Ned rig | 6.65 [5.40, 7.85] | 5.60 [4.50, 6.75] | 3.80 [3.00, 4.65] |
+| Drop shot | 6.45 [4.40, 8.45] | 5.85 [4.35, 7.35] | 4.85 [3.95, 5.70] |
+| Football jig | 6.35 [5.00, 7.75] | 6.35 [5.20, 7.55] | 3.95 [3.10, 4.95] |
+| Tube | 6.20 [4.55, 7.80] | 5.70 [4.80, 6.65] | 4.45 [3.40, 5.65] |
+| Squarebill | 5.40 [4.15, 6.65] | 4.60 [3.40, 5.95] | 2.45 [1.75, 3.15] |
+| Bladed jig | 5.25 [4.10, 6.40] | 4.55 [3.40, 5.80] | 2.05 [1.45, 2.65] |
+| Jerkbait | 4.35 [3.25, 5.60] | 4.40 [3.55, 5.30] | 1.15 [0.55, 1.80] |
+| Walking topwater | 4.15 [3.05, 5.30] | 2.95 [2.00, 4.00] | 1.30 [0.80, 1.85] |
+
+Then, same harness: `fixes2-champlain.*` = bug fixes only (constant decay saturates even harder once
+fish react in game time: expert 7-11 bites/day, all lures overlapping), and `leaky-champlain.*` =
+fixes + leaky interest (leak 1.2): expert 4.4-7.1, average 3.9-6.7, naive keyboard 0.7-4.4.
