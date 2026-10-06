@@ -203,7 +203,6 @@ export function itinerary(lakeId: string, seed: number): Spot[] {
 export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: RodSetup[]; profile: Profile; maxRealSec?: number }): DayMetrics {
   const { profile: P } = opts;
   const s = createTournament({ lakeId: opts.lakeId, tier: opts.tier, seed: opts.seed, deck: opts.deck });
-  const lake = LAKES[opts.lakeId];
   const rng = new Rng(opts.seed ^ 0xbadc0de); // the player's own randomness, separate from the sim
   const kb = P.input === 'keyboard' ? keyboard() : null;
   if (kb) inputHub.reset();
@@ -283,7 +282,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
           // Keys give whatever speed the mapping gives; a keyboard player lets off ~a boat-stop early
           // and fishes where the boat coasts to a halt.
           const stopDist = (s.boat.speed * s.boat.speed) / (2 * TUNING.boat.decel) + 6;
-          if (d > stopDist) kb.set(keysFor(h));
+          if (d > stopDist) kb.set([...keysFor(h), ...(run ? ['shift'] : [])]);
           else {
             kb.set([]);
             if (s.boat.speed <= TUNING.boat.fishHereMaxSpeed) kb.tap('f');
@@ -436,18 +435,13 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
           if (bowAt === null) bowAt = rng.chance(P.bowSkill) ? phaseT + rng.range(0.15, 0.4) : Infinity;
           if (phaseT >= bowAt) {
             if (kb) kb.tap('v');
-            input.bowFlick = true;
+            else input.bowFlick = true;
             bowAt = Infinity;
           }
         } else bowAt = null;
-        let reel = false;
-        let brake = false;
-        if (P.fightSkill === 'good') {
-          reel = f.tension < 0.7;
-          brake = !reel && f.tension < 0.85 && f.stamina > 0.4;
-          input.stick = { x: -Math.sign(Math.sin(f.heading)) * 0.8, y: 0 };
-        } else if (P.fightSkill === 'ok') reel = f.tension < 0.8;
-        else reel = f.tension < 0.95;
+        const reel = f.tension < (P.fightSkill === 'good' ? 0.7 : P.fightSkill === 'ok' ? 0.8 : 0.95);
+        const brake = P.fightSkill === 'good' && !reel && f.tension < 0.85 && f.stamina > 0.4;
+        if (P.fightSkill === 'good') input.stick = { x: -Math.sign(Math.sin(f.heading)) * 0.8, y: 0 };
         if (kb) kb.set([...(reel ? [' '] : []), ...(brake ? ['b'] : [])]);
         else {
           input.reel = reel;
@@ -463,9 +457,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
     }
 
     if (kb) {
-      const k = inputHub.frame();
-      // Keep the scripted sim-only fields (none of these are keyboard-reachable otherwise).
-      k.bowFlick = k.bowFlick || input.bowFlick;
+      const k = inputHub.frame(s.phase);
       input = k;
     }
     stepTournament(s, input, DT);

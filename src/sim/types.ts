@@ -129,8 +129,6 @@ export interface PresentState {
   movingFor: number;
   /** 0..1 rolling presentation-match score (exposed for the debug overlay). */
   match: number;
-  /** Decaying reaction-strike trigger from deflection / speed change / pause. */
-  trigger: number;
   hopT: number; // >0 while a bottom bait is mid-hop
   onBottom: boolean;
   /** Active twitch impulse (seconds remaining + velocity). */

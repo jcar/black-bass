@@ -69,6 +69,9 @@ export function lureWorkingDepth(lure: LureDef, line: Line, spotFt: number): num
       return Math.min(spotFt, lure.runDepthFt * lineFactor);
     case 'sinking':
       return spotFt;
+    case 'swimming':
+      // Counted down to working depth before the retrieve.
+      return Math.min(spotFt, lure.runDepthFt);
   }
 }
 

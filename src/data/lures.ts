@@ -1,7 +1,8 @@
 import type { ColorFamily } from '../sim/types';
 
 /** How the lure behaves in the water column. */
-export type LureMotion = 'surface' | 'diving' | 'suspending' | 'sinking';
+/** 'swimming': sinks on a slack line and holds depth while reeled (bladed and swim jigs). */
+export type LureMotion = 'surface' | 'diving' | 'suspending' | 'sinking' | 'swimming';
 /** Which cadence the attraction model rewards. */
 export type LureStyle = 'walk' | 'steady' | 'twitchPause' | 'bottom' | 'shake';
 
@@ -165,12 +166,12 @@ export const LURES: Record<string, LureDef> = {
     id: 'chatterbait',
     name: 'Bladed Jig',
     short: 'CHAT',
-    description: 'A vibrating blade on a jig. Rip it through grass in wind and stained water.',
-    motion: 'diving',
+    description: 'A bladed jig: count it down on a slack line, then reel steadily. The blade thumps; bump it through grass and wood.',
+    motion: 'swimming',
     style: 'steady',
     weightOz: 0.375,
     runDepthFt: 6,
-    fallRateFtPerSec: 0,
+    fallRateFtPerSec: 1.6,
     retrieveSpeed: 1.1,
     speedBand: [0.7, 1.6],
     vibration: 1,

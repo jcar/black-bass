@@ -19,8 +19,9 @@ npm run build        # typecheck + production build + zero-runtime-API guard
 On iOS: open the LAN URL in Safari, accept the certificate, then **Share → Add to Home Screen** for
 full-screen landscape play that works offline.
 
-Desktop keyboard fallback: WASD/arrows = stick, Space = reel, Shift/B = thumb brake, Enter/C = cast,
-T/↑ = twitch, ↓ = bow, F = fish here, M = move/burn in, P = pop hook.
+Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), F = fish
+here, Enter/C = cast, Space = reel (hold it steady for moving baits), T = twitch, B = thumb brake,
+V = bow on a jump, M = move/burn in, P = pop hook. Steering keys never twitch the lure.
 
 ## Deploying
 

@@ -23,11 +23,11 @@ export function newPresentState(at: Vec2, edgeCast: boolean): PresentState {
     t: 0,
     twitchTimes: [],
     lastMoveT: 0,
-    pauseStartT: 0,
+    // Not paused at splashdown: a pause only starts once the lure has stopped (stillFor > 0.15 s).
+    pauseStartT: null,
     avgSpeed: 0,
     movingFor: 0,
     match: 0,
-    trigger: 0,
     hopT: 0,
     onBottom: false,
     strikingFishId: null,
@@ -51,7 +51,6 @@ function reactionImpulse(s: TournamentState, p: PresentState, strength: number, 
     const act = fishActivity(s, f);
     f.interest = Math.min(A.max, f.interest + A.reactionSpike * strength * Math.sqrt(act) * f.vulnerability * (1 - d / range));
   }
-  p.trigger = Math.max(p.trigger, strength);
 }
 
 export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: number): void {
@@ -161,7 +160,8 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
       p.pauseStartT = p.t - p.stillFor;
       if (lure.style === 'steady' && p.movingFor > 1.2) reactionImpulse(s, p, 0.45, 5);
     }
-    p.movingFor = 0;
+    // A momentary slip off REEL isn't a new retrieve: the steady count only resets after a real stop.
+    if (p.stillFor > L.steadyGraceSec) p.movingFor = 0;
   } else {
     if (speed > 0.1) p.pauseStartT = null;
     p.stillFor = 0;
@@ -188,6 +188,13 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     case 'suspending':
       if (moving) p.lureDepthFt = Math.min(lure.runDepthFt * lineFactor, p.lureDepthFt + L.reelDiveRateFtPerSec * vdt);
       break;
+    case 'swimming':
+      // Bladed/swim jigs sink on slack line (count them down to the depth you want) and hold
+      // depth on a steady retrieve, planing up slightly; heavier line planes them up more.
+      if (moving) p.lureDepthFt = Math.max(0, p.lureDepthFt - L.swimRiseFtPerSec * (2 - lineFactor) * vdt);
+      else p.lureDepthFt += lure.fallRateFtPerSec * vdt;
+      p.onBottom = p.lureDepthFt >= bottom;
+      break;
     case 'sinking': {
       if (p.hopT > 0) {
         p.hopT -= vdt;
@@ -212,7 +219,7 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
   if (p.lureDepthFt >= bottom) {
     p.lureDepthFt = bottom;
     // Crankbait grinding into hard cover: the classic deflection reaction strike.
-    if ((lure.motion === 'diving' || lure.motion === 'suspending') && moving && p.t - p.lastDeflectT > 0.7) {
+    if ((lure.motion === 'diving' || lure.motion === 'suspending' || lure.motion === 'swimming') && moving && p.t - p.lastDeflectT > 0.7) {
       const cov = coverAt(grid, p.lurePos.x, p.lurePos.y);
       const strength = cov === 'rock' || cov === 'timber' || cov === 'dock' ? 0.8 : 0.3;
       reactionImpulse(s, p, strength, 6);
@@ -220,7 +227,6 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     }
   }
   p.lastCover = coverAt(grid, p.lurePos.x, p.lurePos.y);
-  p.trigger = Math.max(0, p.trigger - A.reactionDecayPerSec * dt);
 
   // --- Attraction meter for every fish that can perceive the lure ---
   const light = lightLevel(s.clockMin, s.conditions.weather);
@@ -239,6 +245,9 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     clockMin: s.clockMin,
   };
   const range = detectRange(lure, secchi, light);
+  // Fish react in the same compressed game time the lure moves in (lure motion runs k x real time),
+  // so a fast bait gets the same exposure per metre it would in the real world.
+  const fdt = dt * k;
   let striker: number | null = null;
   let best = 0;
   for (const f of s.fish) {
@@ -254,16 +263,16 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     }
     const act = fishActivity(s, f);
     if (d < range) {
-      f.interest += interestRate(f, ctxA, act, 1 - d / range, p.lureDepthFt) * dt;
+      f.interest += interestRate(f, ctxA, act, 1 - d / range, p.lureDepthFt) * fdt;
     }
-    f.interest -= (A.decayPerSec + (p.match < 0.3 ? A.badMatchExtraDecay : 0)) * dt;
+    f.interest -= (A.decayPerSec + (p.match < 0.3 ? A.badMatchExtraDecay : 0)) * fdt;
     f.interest = Math.max(0, Math.min(A.max, f.interest));
 
     // Interested fish follow the lure: the shadow you see trailing your bait.
     if (f.interest >= A.followAt) {
-      const k = Math.min(1, (A.followSpeed * dt) / Math.max(0.3, d));
+      const k = Math.min(1, (A.followSpeed * fdt) / Math.max(0.3, d));
       f.pos = { x: f.pos.x + (p.lurePos.x - f.pos.x) * k * 0.9, y: f.pos.y + (p.lurePos.y - f.pos.y) * k * 0.9 };
-      f.depthFt += (p.lureDepthFt - f.depthFt) * Math.min(1, dt * 0.8);
+      f.depthFt += (p.lureDepthFt - f.depthFt) * Math.min(1, fdt * 0.8);
     }
     if (f.interest >= A.strikeAt && f.interest > best) {
       best = f.interest;

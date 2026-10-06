@@ -122,10 +122,10 @@ export function updatePopulationSlice(
   for (let k = 0; k < count && n > 0; k++) {
     const f = fish[(start + k) % n];
     if (f.caught) continue;
-    if (f.interest < TUNING.attraction.followAt) {
-      const t = wanderTarget(f, clockMin);
-      if (isWater(grid, t.x, t.y)) f.pos = t;
-    }
+    // Fish following a lure keep the position and depth they've moved to; the rest wander and settle.
+    if (f.interest >= TUNING.attraction.followAt) continue;
+    const t = wanderTarget(f, clockMin);
+    if (isWater(grid, t.x, t.y)) f.pos = t;
     f.depthFt = holdingDepth(depthAt(grid, f.pos.x, f.pos.y), light, activityOf(f));
   }
   return (start + count) % Math.max(1, n);

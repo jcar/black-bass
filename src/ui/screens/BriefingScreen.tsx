@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { LAKES, TIER_FORMAT } from '../../data/lakes';
 import { unlockAudio } from '../../audio/sound';
 import { plateId } from '../../game/assets';
+import { KEY_HINTS } from '../../game/input';
 import { canRerig, useStore } from '../../state/store';
 import { promotionTarget } from '../../state/career';
 import { DayPlan, RigCheck } from '../ProAdvice';
@@ -138,6 +139,9 @@ export function BriefingScreen() {
           </p>
           <p>
             <strong>Right thumb</strong> fishes and casts, reels, and thumbs the spool as a brake.
+          </p>
+          <p className="muted">
+            <strong>Keyboard:</strong> {KEY_HINTS}.
           </p>
           <p>
             Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under {minIn}" and other species don't count.

@@ -1,4 +1,4 @@
-import { memo, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import { inputHub } from '../../game/input';
 import { unlockAudio } from '../../audio/sound';
 import type { GamePhase } from '../../sim/types';
@@ -30,6 +30,12 @@ function HoldButton({ label, size, onChange, children }: { label: string; size: 
     setHeld(v);
     onChange(v);
   };
+  // The button disappears on a phase change while a thumb is still down: never leave REEL stuck on.
+  const release = useRef(onChange);
+  useEffect(() => {
+    release.current = onChange;
+  });
+  useEffect(() => () => release.current(false), []);
   return (
     <button
       className={`tbtn ${size} ${held ? 'held' : ''}`}
@@ -140,7 +146,19 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, castF
     setStick(null);
   };
 
-  const hint =
+  // Desktop (no touch): show the key map instead of thumb hints.
+  const keyboard = typeof window !== 'undefined' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
+  const hint = keyboard
+    ? phase === 'Navigate'
+      ? 'WASD steer (quiet) · Shift+WASD run · F fish'
+      : phase === 'Cast'
+        ? 'A/D aim · C cast, C again to release · B thumb · M move'
+        : phase === 'Present'
+          ? 'Space reel (hold steady) · T twitch · A/D steer · M burn in'
+          : phase === 'Fight'
+            ? 'Space reel · B thumb · A/D pull opposite · V bow on jumps'
+            : ''
+    :
     phase === 'Navigate'
       ? 'Drag to drive · light push = quiet trolling motor'
       : phase === 'Cast'

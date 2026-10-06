@@ -111,7 +111,7 @@ export class GameRunner {
       this.acc += dt;
       let n = 0;
       while (this.acc >= STEP && n < MAX_STEPS) {
-        stepTournament(t, inputHub.frame(), STEP);
+        stepTournament(t, inputHub.frame(t.phase), STEP);
         this.acc -= STEP;
         n++;
       }

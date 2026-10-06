@@ -103,7 +103,9 @@ export function buildLakeGrid(def: LakeDef): LakeGrid {
         den += w;
       }
       const idw = num / den;
-      depthFt[i] = Math.max(1.5, Math.min(idw, (shoreDistM[i] - cellM * 0.5) * def.shoreSlopeFtPerM + 1.5));
+      // The first water cell borders the bank: start it at ~1.5 ft (its centre is a full cell from
+      // the land cell's centre), so shallow banks, flats and cover edges exist for shallow baits.
+      depthFt[i] = Math.max(1.5, Math.min(idw, (shoreDistM[i] - cellM) * def.shoreSlopeFtPerM + 1.5));
 
       let secchi = def.clarity.defaultSecchiFt;
       for (const z of def.clarity.zones) {
@@ -169,19 +171,26 @@ export function secchiAt(g: LakeGrid, x: number, y: number): number {
   return i >= 0 ? g.secchiFt[i] || g.def.clarity.defaultSecchiFt : g.def.clarity.defaultSecchiFt;
 }
 
-/** True if cover other than 'none' is within `radiusM` (used for "edge" casts and cover bonuses). */
+/**
+ * Nearest cover within `radiusM` of a point (used for "edge" casts and cover bonuses). Distance is
+ * measured to each cover cell's square, not its centre, so radii smaller than a cell work.
+ */
 export function nearCover(g: LakeGrid, x: number, y: number, radiusM: number): CoverType {
-  const steps = Math.ceil(radiusM / g.cellM);
+  const c0 = Math.floor(x / g.cellM);
+  const r0 = Math.floor(y / g.cellM);
+  const steps = Math.ceil(radiusM / g.cellM) + 1;
   let best: CoverType = 'none';
   let bestD = Infinity;
-  for (let dr = -steps; dr <= steps; dr++)
-    for (let dc = -steps; dc <= steps; dc++) {
-      const px = x + dc * g.cellM;
-      const py = y + dr * g.cellM;
-      const cv = coverAt(g, px, py);
-      const d = Math.hypot(dc, dr) * g.cellM;
-      if (cv !== 'none' && d <= radiusM && d < bestD) {
-        best = cv;
+  for (let r = r0 - steps; r <= r0 + steps; r++)
+    for (let c = c0 - steps; c <= c0 + steps; c++) {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) continue;
+      const i = r * g.cols + c;
+      if (!g.water[i] || !g.cover[i]) continue;
+      const dx = Math.max(c * g.cellM - x, 0, x - (c + 1) * g.cellM);
+      const dy = Math.max(r * g.cellM - y, 0, y - (r + 1) * g.cellM);
+      const d = Math.hypot(dx, dy);
+      if (d <= radiusM && d < bestD) {
+        best = COVER_CODES[g.cover[i]];
         bestD = d;
       }
     }

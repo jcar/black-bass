@@ -31,7 +31,11 @@ export const TUNING = {
     turnRate: 2.4,
     /** TPWD telemetry: boats within ~30 ft displaced 40% of fish. Scaled up for the compressed world. */
     outboardSpookRadius: 28,
-    outboardSpookChance: 0.5,
+    /** Per-second chance a fish within the radius spooks as the outboard passes (was 0.5 x 1.5). */
+    outboardSpookPerSec: 0.75,
+    trollingSpookPerSec: 0.3,
+    /** Game minutes a trolling-motor bump spooks a fish for. */
+    trollingSpookMin: 5,
     trollingSpookRadius: 5,
     spookMinMin: 15,
     spookMaxMin: 40,
@@ -56,7 +60,6 @@ export const TUNING = {
     flightSecPerM: 0.022,
     crashSpookRadius: 12,
     crashSpookMin: 20,
-    edgeBonus: 1.35,
   },
 
   lure: {
@@ -71,7 +74,10 @@ export const TUNING = {
     twitchSec: 0.22,
     hopHeightFt: 1.6,
     retrieveDoneM: 2.5,
-    dropShotLeaderFt: 1.5,
+    /** Steady baits: a stop shorter than this (a slipped thumb) doesn't restart the retrieve. */
+    steadyGraceSec: 0.3,
+    /** Swimming baits plane up this fast on a steady retrieve (ft/s, 12 lb line). */
+    swimRiseFtPerSec: 0.25,
   },
 
   attraction: {
@@ -86,7 +92,6 @@ export const TUNING = {
     strikeChargeSec: 0.55,
     /** Reaction strikes: deflection / pause-after-burst adds a spike to nearby fish. */
     reactionSpike: 2.6,
-    reactionDecayPerSec: 2.5,
     depthSigmaBaseFt: 3,
     depthSigmaActiveFt: 8,
     /** Visual detection range (m) per metre of Secchi depth, clamped. */
@@ -160,7 +165,6 @@ export const TUNING = {
     /** Default minimum length; lakes can override with `regs.minIn`. */
     keeperMinIn: 12,
     trophyStructureBias: 0.12,
-    wanderM: 6,
   },
 
   multiDay: {

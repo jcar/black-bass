@@ -1,4 +1,11 @@
-import { emptyInput, type InputFrame } from '../sim/types';
+import { TUNING } from '../data/tuning';
+import { emptyInput, type GamePhase, type InputFrame } from '../sim/types';
+
+/** Stick magnitude for keyboard steering without Shift: inside the trolling-motor range. */
+const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
+
+/** Desktop key map, shown in the HUD and README. */
+export const KEY_HINTS = 'WASD/arrows steer (trolling) · Shift+steer run · F fish · C cast · Space reel · T twitch · B thumb · V bow · M move/burn in · P pop';
 
 /**
  * Shared mutable input state written by touch controls and the keyboard, read once per
@@ -17,14 +24,18 @@ class InputHub {
   }
 
   /** Consume one frame: edges fire for exactly one sim step. */
-  frame(): InputFrame {
+  frame(phase?: GamePhase): InputFrame {
     const f = emptyInput();
-    const sx = this.stick.x || this.keyStick.x;
-    const sy = this.stick.y || this.keyStick.y;
+    // Keyboard driving is the quiet trolling motor; holding Shift opens up the outboard. Other phases
+    // (aiming, steering the lure, the fight) get full deflection.
+    const km = Math.hypot(this.keyStick.x, this.keyStick.y) || 1;
+    const kbMag = phase === 'Navigate' && !this.keysDown.has('shift') ? KEY_TROLL : 1;
+    const sx = this.stick.x || (this.keyStick.x / km) * kbMag;
+    const sy = this.stick.y || (this.keyStick.y / km) * kbMag;
     const m = Math.hypot(sx, sy);
     f.stick = m > 1 ? { x: sx / m, y: sy / m } : { x: sx, y: sy };
     f.reel = this.reel || this.keysDown.has(' ');
-    f.brake = this.brake || this.keysDown.has('shift') || this.keysDown.has('b');
+    f.brake = this.brake || this.keysDown.has('b');
     for (const k of Object.keys(this.pending) as (keyof InputHub['pending'])[]) {
       if (this.pending[k] > 0) {
         f[k] = true;
@@ -62,13 +73,11 @@ class InputHub {
         case 'c':
           this.tap('castTap');
           break;
+        // Arrows/WASD only ever steer: twitching or bowing on a steering key wrecked steady retrieves.
         case 't':
           this.tap('twitch');
           break;
-        case 'arrowup':
-          this.tap('twitch');
-          break;
-        case 'arrowdown':
+        case 'v':
           this.tap('bowFlick');
           break;
         case 'f':

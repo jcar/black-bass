@@ -179,12 +179,12 @@ function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: nu
   // Outboard noise displaces fish (TPWD telemetry); the trolling motor is far quieter.
   const radius = boat.motor === 'outboard' ? B.outboardSpookRadius : B.trollingSpookRadius;
   if (boat.speed > 0.5) {
-    const pPerSec = boat.motor === 'outboard' ? B.outboardSpookChance * 1.5 : 0.3;
+    const pPerSec = boat.motor === 'outboard' ? B.outboardSpookPerSec : B.trollingSpookPerSec;
     const p = 1 - Math.pow(1 - Math.min(0.99, pPerSec), dt);
     for (const f of s.fish) {
       if (f.caught || f.spookUntil > s.clockMin) continue;
       if (dist(f.pos, boat.pos) < radius && ctx.rng.chance(p)) {
-        f.spookUntil = s.clockMin + (boat.motor === 'outboard' ? ctx.rng.range(B.spookMinMin, B.spookMaxMin) : 5);
+        f.spookUntil = s.clockMin + (boat.motor === 'outboard' ? ctx.rng.range(B.spookMinMin, B.spookMaxMin) : B.trollingSpookMin);
         f.interest = 0;
       }
     }

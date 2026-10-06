@@ -9,7 +9,9 @@ import { fishDepthProfile, rigIssues, scoreRig, scoreRigDay, suggestedLine } fro
 import { migrate, newSave } from '../src/state/save';
 import { jerkPauseWindow, presentationMatch } from '../src/sim/fish/attraction';
 import { tempFactor } from '../src/sim/fish/activity';
-import { coverAt, getLakeGrid, inLane, isWater, stumpHazardAt } from '../src/sim/lake';
+import { coverAt, depthAt, getLakeGrid, inLane, isWater, nearCover, stumpHazardAt } from '../src/sim/lake';
+import { inputHub } from '../src/game/input';
+import { TUNING } from '../src/data/tuning';
 import { continueAfterLanded, inSlot, isKeeper, resolveCull, suggestedCull } from '../src/sim/livewell';
 import { IllegalTransitionError, transition } from '../src/sim/machine';
 import { newPresentState } from '../src/sim/presentation';
@@ -343,5 +345,113 @@ describe('pro advisor', () => {
     const issues = rigIssues(LAKES.lakefork, { id: 'x', rodId: 'rod-xh', line: { type: 'fluoro', testLb: 8 }, lureId: 'ned', colorId: 'greenPumpkin' });
     expect(issues.map((i) => i.text).join(' ')).toMatch(/outside the rod/);
     expect(issues.map((i) => i.text).join(' ')).toMatch(/standing timber/);
+  });
+});
+
+// ---------- Audit fixes (docs/model-reports/BASELINE.md) ----------
+describe('keyboard mapping', () => {
+  const setup = () => {
+    const l: Record<string, (e: unknown) => void> = {};
+    const detach = inputHub.attachKeyboard({ addEventListener: (t: string, fn: (e: unknown) => void) => (l[t] = fn), removeEventListener: () => {} } as unknown as Window);
+    inputHub.reset();
+    const key = (k: string, down: boolean) => l[down ? 'keydown' : 'keyup']({ key: k, repeat: false, preventDefault() {} });
+    return { key, detach };
+  };
+  it('steering keys never twitch or bow', () => {
+    const { key, detach } = setup();
+    for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 's']) {
+      key(k, true);
+      const f = inputHub.frame('Present');
+      key(k, false);
+      expect(f.twitch || f.bowFlick).toBe(false);
+    }
+    key('t', true);
+    expect(inputHub.frame('Present').twitch).toBe(true);
+    key('t', false);
+    key('v', true);
+    expect(inputHub.frame('Fight').bowFlick).toBe(true);
+    key('v', false);
+    detach();
+  });
+  it('drives on the trolling motor by default and the outboard with Shift', () => {
+    const { key, detach } = setup();
+    key('w', true);
+    key('d', true);
+    const quiet = inputHub.frame('Navigate');
+    expect(Math.hypot(quiet.stick.x, quiet.stick.y)).toBeLessThanOrEqual(TUNING.boat.trollingStickMax);
+    key('Shift', true);
+    expect(Math.hypot(inputHub.frame('Navigate').stick.x, inputHub.frame('Navigate').stick.y)).toBeCloseTo(1, 5);
+    key('Shift', false);
+    // Aiming isn't throttled.
+    expect(Math.abs(inputHub.frame('Cast').stick.x)).toBeGreaterThan(0.6);
+    key('w', false);
+    key('d', false);
+    detach();
+  });
+});
+
+describe('lake geometry fixes', () => {
+  it('finds cover a few metres away (sub-cell distance)', () => {
+    const lake = LAKES.champlain;
+    const g = getLakeGrid(lake);
+    let tested = 0;
+    for (let i = 0; i < g.water.length && tested < 50; i++) {
+      if (!g.water[i] || !g.cover[i]) continue;
+      const c = i % g.cols;
+      const r = Math.floor(i / g.cols);
+      const j = i + 1; // the open cell east of a cover cell
+      if (c + 1 >= g.cols || !g.water[j] || g.cover[j]) continue;
+      const x = (c + 1) * g.cellM + 3; // 3 m into the open cell
+      const y = (r + 0.5) * g.cellM;
+      expect(nearCover(g, x, y, 8)).not.toBe('none');
+      expect(nearCover(g, x, y, 1)).toBe('none');
+      tested++;
+    }
+    expect(tested).toBeGreaterThan(5);
+  });
+  it('has shallow water along the banks for shallow baits', () => {
+    for (const lake of Object.values(LAKES)) {
+      const g = getLakeGrid(lake);
+      let min = Infinity;
+      for (let i = 0; i < g.water.length; i++) if (g.water[i]) min = Math.min(min, g.depthFt[i]);
+      expect(min).toBeLessThanOrEqual(2);
+    }
+  });
+});
+
+describe('retrieve fixes', () => {
+  const castAt = (lureId: string) => {
+    const s = newT(12);
+    s.deck = [{ id: 'x', rodId: 'rod-m', line: { type: 'fluoro', testLb: 12 }, lureId, colorId: LURES[lureId].colors[0] }];
+    s.activeRod = 0;
+    const lake = LAKES.champlain;
+    const g = getLakeGrid(lake);
+    // Deep open water 20 m from the boat.
+    let at = { x: 900, y: 1700 };
+    for (let k = 0; k < 400 && depthAt(g, at.x, at.y) < 15; k++) at = { x: 700 + (k % 20) * 30, y: 1500 + Math.floor(k / 20) * 30 };
+    s.boat.pos = { x: at.x - 30, y: at.y };
+    s.boat.heading = 0;
+    s.phase = 'Present';
+    s.present = newPresentState(at, false);
+    return s;
+  };
+  it('a slipped thumb on REEL does not restart a steady retrieve', () => {
+    const s = castAt('squarebill');
+    const reel = (on: boolean, n: number) => {
+      for (let i = 0; i < n && s.present; i++) stepTournament(s, { ...emptyInput(), reel: on }, DT);
+    };
+    reel(true, 90);
+    const before = s.present!.movingFor;
+    reel(false, 6); // 0.1 s slip
+    reel(true, 1);
+    expect(s.present!.movingFor).toBeGreaterThan(before * 0.9);
+  });
+  it('a bladed jig counts down on slack line and holds depth on the retrieve', () => {
+    const s = castAt('chatterbait');
+    for (let i = 0; i < 60; i++) stepTournament(s, emptyInput(), DT);
+    const counted = s.present!.lureDepthFt;
+    expect(counted).toBeGreaterThan(3);
+    for (let i = 0; i < 60 && s.present; i++) stepTournament(s, { ...emptyInput(), reel: true }, DT);
+    expect(s.present!.lureDepthFt).toBeGreaterThan(counted * 0.6);
   });
 });
