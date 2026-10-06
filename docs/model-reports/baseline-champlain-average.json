@@ -1,0 +1,5273 @@
+{
+ "lakeId": "champlain",
+ "tier": "Amateur",
+ "days": 30,
+ "firstSeed": 20000,
+ "profiles": [
+  "average"
+ ],
+ "rigs": [
+  {
+   "id": "rig-ned",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 8
+   },
+   "lureId": "ned",
+   "colorId": "greenPumpkin"
+  },
+  {
+   "id": "rig-dropShot",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 8
+   },
+   "lureId": "dropShot",
+   "colorId": "smoke"
+  },
+  {
+   "id": "rig-tube",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 12
+   },
+   "lureId": "tube",
+   "colorId": "greenPumpkin"
+  },
+  {
+   "id": "rig-jerkbait",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 12
+   },
+   "lureId": "jerkbait",
+   "colorId": "ghostMinnow"
+  },
+  {
+   "id": "rig-squarebill",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 12
+   },
+   "lureId": "squarebill",
+   "colorId": "sexyShad"
+  },
+  {
+   "id": "rig-walker",
+   "rodId": "rod-m",
+   "line": {
+    "type": "mono",
+    "testLb": 14
+   },
+   "lureId": "walker",
+   "colorId": "bone"
+  },
+  {
+   "id": "rig-chatterbait",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 12
+   },
+   "lureId": "chatterbait",
+   "colorId": "greenPumpkin"
+  },
+  {
+   "id": "rig-footballJig",
+   "rodId": "rod-ml",
+   "line": {
+    "type": "fluoro",
+    "testLb": 12
+   },
+   "lureId": "footballJig",
+   "colorId": "greenPumpkin"
+  }
+ ],
+ "report": {
+  "average": {
+   "ned": {
+    "bass": {
+     "mean": 4.166666666666667,
+     "lo": 3.3333333333333335,
+     "hi": 5.033333333333333
+    },
+    "perDay": [
+     7,
+     0,
+     5,
+     3,
+     4,
+     4,
+     3,
+     6,
+     0,
+     5,
+     1,
+     8,
+     3,
+     0,
+     3,
+     6,
+     4,
+     6,
+     5,
+     6,
+     1,
+     1,
+     8,
+     5,
+     1,
+     4,
+     4,
+     5,
+     8,
+     9
+    ],
+    "other": 0.8333333333333334,
+    "casts": 30.066666666666666,
+    "followRate": 0.17242512920587394,
+    "match": 0.6368759858508427,
+    "spooked": 0.46766163804294064,
+    "crashes": 8.733333333333333,
+    "bag": 7.072000000000001,
+    "landed": 3.7
+   },
+   "dropShot": {
+    "bass": {
+     "mean": 4,
+     "lo": 2.8666666666666667,
+     "hi": 5.2
+    },
+    "perDay": [
+     0,
+     1,
+     2,
+     8,
+     7,
+     0,
+     5,
+     2,
+     7,
+     3,
+     1,
+     0,
+     3,
+     1,
+     4,
+     7,
+     2,
+     3,
+     8,
+     6,
+     8,
+     5,
+     13,
+     0,
+     0,
+     8,
+     5,
+     1,
+     2,
+     8
+    ],
+    "other": 0.9,
+    "casts": 9.4,
+    "followRate": 0.4754091687179923,
+    "match": 0.8136695814425388,
+    "spooked": 0.472617360852655,
+    "crashes": 2,
+    "bag": 7.140000000000001,
+    "landed": 3.6
+   },
+   "tube": {
+    "bass": {
+     "mean": 4.933333333333334,
+     "lo": 3.8333333333333335,
+     "hi": 6.066666666666666
+    },
+    "perDay": [
+     4,
+     6,
+     2,
+     7,
+     2,
+     3,
+     11,
+     7,
+     3,
+     1,
+     4,
+     4,
+     10,
+     9,
+     11,
+     0,
+     3,
+     4,
+     7,
+     2,
+     6,
+     12,
+     0,
+     4,
+     6,
+     6,
+     4,
+     0,
+     3,
+     7
+    ],
+    "other": 0.8333333333333334,
+    "casts": 27.266666666666666,
+    "followRate": 0.2236348311734376,
+    "match": 0.6614715477739349,
+    "spooked": 0.44278045177537473,
+    "crashes": 7.766666666666667,
+    "bag": 8.232,
+    "landed": 4.166666666666667
+   },
+   "jerkbait": {
+    "bass": {
+     "mean": 2.7,
+     "lo": 1.7666666666666666,
+     "hi": 3.8
+    },
+    "perDay": [
+     0,
+     3,
+     2,
+     2,
+     6,
+     9,
+     7,
+     0,
+     6,
+     1,
+     7,
+     5,
+     0,
+     3,
+     0,
+     2,
+     0,
+     3,
+     1,
+     0,
+     2,
+     1,
+     1,
+     2,
+     0,
+     0,
+     3,
+     2,
+     10,
+     3
+    ],
+    "other": 0.5666666666666667,
+    "casts": 40,
+    "followRate": 0.11233797693122116,
+    "match": 0.6450558304635561,
+    "spooked": 0.4668275266142866,
+    "crashes": 11.8,
+    "bag": 4.328999999999998,
+    "landed": 2.2333333333333334
+   },
+   "squarebill": {
+    "bass": {
+     "mean": 3.933333333333333,
+     "lo": 2.7666666666666666,
+     "hi": 5.2
+    },
+    "perDay": [
+     7,
+     0,
+     6,
+     5,
+     6,
+     2,
+     0,
+     2,
+     0,
+     3,
+     1,
+     7,
+     0,
+     0,
+     2,
+     8,
+     7,
+     6,
+     0,
+     4,
+     1,
+     2,
+     11,
+     7,
+     0,
+     5,
+     3,
+     2,
+     10,
+     11
+    ],
+    "other": 0.6,
+    "casts": 43.03333333333333,
+    "followRate": 0.14921655165160788,
+    "match": 0.7430401267626142,
+    "spooked": 0.4522082106992274,
+    "crashes": 11.533333333333333,
+    "bag": 7.356666666666666,
+    "landed": 3.6
+   },
+   "walker": {
+    "bass": {
+     "mean": 2.466666666666667,
+     "lo": 1.6333333333333333,
+     "hi": 3.3666666666666667
+    },
+    "perDay": [
+     0,
+     3,
+     0,
+     4,
+     0,
+     0,
+     2,
+     5,
+     3,
+     1,
+     0,
+     0,
+     3,
+     4,
+     9,
+     1,
+     0,
+     0,
+     4,
+     2,
+     5,
+     6,
+     6,
+     0,
+     3,
+     5,
+     4,
+     4,
+     0,
+     0
+    ],
+    "other": 0.36666666666666664,
+    "casts": 40.03333333333333,
+    "followRate": 0.1179711136977466,
+    "match": 0.5851776618478851,
+    "spooked": 0.46305925172480594,
+    "crashes": 11,
+    "bag": 4.552666666666667,
+    "landed": 2.066666666666667
+   },
+   "chatterbait": {
+    "bass": {
+     "mean": 3.7,
+     "lo": 2.6666666666666665,
+     "hi": 4.8
+    },
+    "perDay": [
+     3,
+     2,
+     0,
+     1,
+     4,
+     4,
+     11,
+     5,
+     1,
+     7,
+     2,
+     5,
+     8,
+     7,
+     4,
+     0,
+     4,
+     2,
+     7,
+     6,
+     0,
+     0,
+     0,
+     8,
+     2,
+     9,
+     1,
+     0,
+     3,
+     5
+    ],
+    "other": 0.8333333333333334,
+    "casts": 44.3,
+    "followRate": 0.15580470352661602,
+    "match": 0.735691704915626,
+    "spooked": 0.4855118101944668,
+    "crashes": 12.266666666666667,
+    "bag": 7.2139999999999995,
+    "landed": 3.4
+   },
+   "footballJig": {
+    "bass": {
+     "mean": 5.066666666666666,
+     "lo": 4.133333333333334,
+     "hi": 6.066666666666666
+    },
+    "perDay": [
+     5,
+     2,
+     6,
+     10,
+     7,
+     9,
+     8,
+     0,
+     5,
+     7,
+     5,
+     5,
+     2,
+     9,
+     0,
+     6,
+     5,
+     8,
+     5,
+     0,
+     3,
+     6,
+     3,
+     4,
+     1,
+     8,
+     4,
+     5,
+     9,
+     5
+    ],
+    "other": 0.8,
+    "casts": 27.3,
+    "followRate": 0.23098159642536994,
+    "match": 0.6561320621439096,
+    "spooked": 0.4458290854479581,
+    "crashes": 8.633333333333333,
+    "bag": 8.763,
+    "landed": 4.566666666666666
+   }
+  }
+ },
+ "rows": [
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 20000,
+    "casts": 46,
+    "bassStrikes": 7,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 19,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5892857142857143,
+    "avgMatch": 0.7148979768658925,
+    "bassLanded": 6,
+    "bag": 13.47,
+    "presentSec": 455.2833333332479
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 146704,
+    "casts": 45,
+    "bassStrikes": 5,
+    "otherStrikes": 2,
+    "followCasts": 7,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.7508169934640523,
+    "avgMatch": 0.7010842491421806,
+    "bassLanded": 3,
+    "bag": 6.88,
+    "presentSec": 469.23333333323524
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.7213679577316607,
+    "bassLanded": 2,
+    "bag": 9.23,
+    "presentSec": 125.21666666666084
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 99190,
+    "casts": 12,
+    "bassStrikes": 1,
+    "otherStrikes": 2,
+    "followCasts": 3,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 3,
+    "spookedAtArrival": 0.375,
+    "avgMatch": 0.9101156649061073,
+    "bassLanded": 1,
+    "bag": 1.95,
+    "presentSec": 747.8499999996485
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 162542,
+    "casts": 6,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.5454545454545454,
+    "avgMatch": 0.9156130351549471,
+    "bassLanded": 2,
+    "bag": 4.46,
+    "presentSec": 766.1333333329652
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 225894,
+    "casts": 10,
+    "bassStrikes": 8,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.8333333333333333,
+    "avgMatch": 0.909356099352084,
+    "bassLanded": 6,
+    "bag": 7.28,
+    "presentSec": 635.4499999997507
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 51676,
+    "casts": 14,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7277298957544867,
+    "bassLanded": 3,
+    "bag": 5.44,
+    "presentSec": 67.73333333333078
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 115028,
+    "casts": 36,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 9,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.44871794871794873,
+    "avgMatch": 0.7249161919705506,
+    "bassLanded": 5,
+    "bag": 10.47,
+    "presentSec": 492.9333333332137
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 178380,
+    "casts": 27,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.4375,
+    "avgMatch": 0.7314447256317606,
+    "bassLanded": 2,
+    "bag": 3.59,
+    "presentSec": 351.68333333334215
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 241732,
+    "casts": 34,
+    "bassStrikes": 7,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.6138095238095238,
+    "avgMatch": 0.7313770770377236,
+    "bassLanded": 6,
+    "bag": 12.87,
+    "presentSec": 438.6499999999297
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 67514,
+    "casts": 59,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.41546601546601547,
+    "avgMatch": 0.7201416028553774,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 524.5499999998516
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 130866,
+    "casts": 59,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.14914772727272727,
+    "avgMatch": 0.7184697833831152,
+    "bassLanded": 2,
+    "bag": 3.28,
+    "presentSec": 463.18333333324074
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 194218,
+    "casts": 15,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.3333333333333333,
+    "avgMatch": 0.7102850162866486,
+    "bassLanded": 2,
+    "bag": 3.81,
+    "presentSec": 51.166666666665044
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 20000,
+    "casts": 43,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 11,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.41404521404521405,
+    "avgMatch": 0.8062648728322307,
+    "bassLanded": 7,
+    "bag": 12.52,
+    "presentSec": 180.66666666670258
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 146704,
+    "casts": 54,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.6115596963423051,
+    "avgMatch": 0.8310718756690685,
+    "bassLanded": 6,
+    "bag": 12.31,
+    "presentSec": 274.03333333341277
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.7928457985557948,
+    "bassLanded": 5,
+    "bag": 18.56,
+    "presentSec": 54.8833333333315
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 99190,
+    "casts": 57,
+    "bassStrikes": 3,
+    "otherStrikes": 2,
+    "followCasts": 8,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5134199134199133,
+    "avgMatch": 0.6501399811530058,
+    "bassLanded": 3,
+    "bag": 5.08,
+    "presentSec": 488.6999999998842
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 162542,
+    "casts": 29,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.6592803030303029,
+    "avgMatch": 0.6298637978597594,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 179.9000000000353
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 225894,
+    "casts": 43,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5690476190476191,
+    "avgMatch": 0.6661442185115101,
+    "bassLanded": 4,
+    "bag": 3,
+    "presentSec": 364.8666666666635
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 51676,
+    "casts": 18,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.8251894838067517,
+    "bassLanded": 3,
+    "bag": 5.2,
+    "presentSec": 56.08333333333143
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 115028,
+    "casts": 69,
+    "bassStrikes": 2,
+    "otherStrikes": 2,
+    "followCasts": 5,
+    "crashes": 25,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.4821062271062271,
+    "avgMatch": 0.803594052825738,
+    "bassLanded": 2,
+    "bag": 3.8,
+    "presentSec": 355.66666666667186
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 178380,
+    "casts": 21,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 11,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.5375,
+    "avgMatch": 0.7892622183051403,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 97.46666666666242
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 241732,
+    "casts": 69,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 18,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.5364810924369747,
+    "avgMatch": 0.8335903848603281,
+    "bassLanded": 1,
+    "bag": 1.02,
+    "presentSec": 392.7999999999714
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 67514,
+    "casts": 29,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.29166666666666663,
+    "avgMatch": 0.7361805651068011,
+    "bassLanded": 4,
+    "bag": 7.83,
+    "presentSec": 567.9666666664788
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 130866,
+    "casts": 38,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.17361111111111108,
+    "avgMatch": 0.7195692511627341,
+    "bassLanded": 2,
+    "bag": 3.32,
+    "presentSec": 526.2333333331834
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 194218,
+    "casts": 20,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.36363636363636365,
+    "avgMatch": 0.6911695631537663,
+    "bassLanded": 6,
+    "bag": 10.27,
+    "presentSec": 142.01666666667182
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 27919,
+    "casts": 37,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.4324675324675324,
+    "avgMatch": 0.7337397823151769,
+    "bassLanded": 2,
+    "bag": 2.61,
+    "presentSec": 543.2666666665012
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 91271,
+    "casts": 29,
+    "bassStrikes": 4,
+    "otherStrikes": 2,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.33212375859434684,
+    "avgMatch": 0.6977515283781236,
+    "bassLanded": 4,
+    "bag": 8.78,
+    "presentSec": 481.46666666655744
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 154623,
+    "casts": 36,
+    "bassStrikes": 3,
+    "otherStrikes": 3,
+    "followCasts": 6,
+    "crashes": 7,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.4287912087912088,
+    "avgMatch": 0.7149651887696895,
+    "bassLanded": 3,
+    "bag": 2.7,
+    "presentSec": 490.98333333321546
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 217975,
+    "casts": 37,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5861111111111111,
+    "avgMatch": 0.7175851850811338,
+    "bassLanded": 6,
+    "bag": 9.16,
+    "presentSec": 500.13333333320713
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 43757,
+    "casts": 14,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 3,
+    "spookedAtArrival": 0.34432234432234426,
+    "avgMatch": 0.8960420911771619,
+    "bassLanded": 6,
+    "bag": 17.16,
+    "presentSec": 548.0166666664969
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.8995149550025933,
+    "bassLanded": 5,
+    "bag": 14.26,
+    "presentSec": 251.86666666675924
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 233813,
+    "casts": 6,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.5454545454545454,
+    "avgMatch": 0.9158325182611777,
+    "bassLanded": 2,
+    "bag": 4.65,
+    "presentSec": 800.8833333329336
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 59595,
+    "casts": 34,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.6130514705882353,
+    "avgMatch": 0.7343770663000401,
+    "bassLanded": 2,
+    "bag": 3.23,
+    "presentSec": 633.9666666664187
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 122947,
+    "casts": 14,
+    "bassStrikes": 3,
+    "otherStrikes": 3,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.34090909090909094,
+    "avgMatch": 0.7472752704242255,
+    "bassLanded": 2,
+    "bag": 3.96,
+    "presentSec": 216.00000000006403
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 186299,
+    "casts": 38,
+    "bassStrikes": 11,
+    "otherStrikes": 0,
+    "followCasts": 11,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.5144623233908948,
+    "avgMatch": 0.7315193383868009,
+    "bassLanded": 10,
+    "bag": 12.12,
+    "presentSec": 408.8499999999568
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 249651,
+    "casts": 35,
+    "bassStrikes": 7,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.3095238095238095,
+    "avgMatch": 0.7539704549642265,
+    "bassLanded": 6,
+    "bag": 12.65,
+    "presentSec": 495.51666666654467
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 75433,
+    "casts": 63,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 18,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.5054681701740525,
+    "avgMatch": 0.7167285514590338,
+    "bassLanded": 1,
+    "bag": 1.08,
+    "presentSec": 476.9166666665616
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 138785,
+    "casts": 48,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5807291666666666,
+    "avgMatch": 0.7160196048162771,
+    "bassLanded": 5,
+    "bag": 16.27,
+    "presentSec": 377.8833333333183
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 202137,
+    "casts": 51,
+    "bassStrikes": 9,
+    "otherStrikes": 1,
+    "followCasts": 11,
+    "crashes": 15,
+    "snags": 6,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.4742063492063492,
+    "avgMatch": 0.7117132867132648,
+    "bassLanded": 8,
+    "bag": 15.65,
+    "presentSec": 262.1666666667569
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 27919,
+    "casts": 50,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 9,
+    "crashes": 11,
+    "snags": 3,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.48144152996126677,
+    "avgMatch": 0.8198738892094343,
+    "bassLanded": 4,
+    "bag": 6.91,
+    "presentSec": 259.6166666667592
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 91271,
+    "casts": 57,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5365530303030303,
+    "avgMatch": 0.850534172124202,
+    "bassLanded": 2,
+    "bag": 8.31,
+    "presentSec": 384.3499999999791
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 154623,
+    "casts": 58,
+    "bassStrikes": 0,
+    "otherStrikes": 2,
+    "followCasts": 4,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.3730261335303352,
+    "avgMatch": 0.8663060436236811,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 367.79999999999416
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 217975,
+    "casts": 67,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 10,
+    "snags": 3,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.6312896825396825,
+    "avgMatch": 0.849523562876836,
+    "bassLanded": 2,
+    "bag": 3.21,
+    "presentSec": 411.8833333332874
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 43757,
+    "casts": 60,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 21,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.5060826519159852,
+    "avgMatch": 0.6538285223240599,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 488.84999999988406
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.6529879675719573,
+    "bassLanded": 2,
+    "bag": 4.05,
+    "presentSec": 67.44999999999746
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 233813,
+    "casts": 49,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.4677669552669552,
+    "avgMatch": 0.6645293066654618,
+    "bassLanded": 3,
+    "bag": 13.64,
+    "presentSec": 423.8833333332765
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 59595,
+    "casts": 51,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 6,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.4803285256410256,
+    "avgMatch": 0.8385105782980844,
+    "bassLanded": 4,
+    "bag": 7.92,
+    "presentSec": 307.83333333338203
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 122947,
+    "casts": 14,
+    "bassStrikes": 4,
+    "otherStrikes": 3,
+    "followCasts": 8,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.41666666666666663,
+    "avgMatch": 0.8084923524658012,
+    "bassLanded": 4,
+    "bag": 9.8,
+    "presentSec": 79.28333333333012
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 186299,
+    "casts": 56,
+    "bassStrikes": 11,
+    "otherStrikes": 2,
+    "followCasts": 15,
+    "crashes": 11,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5552150974025973,
+    "avgMatch": 0.8232236255983207,
+    "bassLanded": 10,
+    "bag": 15.48,
+    "presentSec": 272.80000000008056
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 249651,
+    "casts": 59,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 22,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.45238095238095233,
+    "avgMatch": 0.8025584321101065,
+    "bassLanded": 5,
+    "bag": 5.68,
+    "presentSec": 299.7666666667227
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 75433,
+    "casts": 33,
+    "bassStrikes": 10,
+    "otherStrikes": 0,
+    "followCasts": 10,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.550462772521596,
+    "avgMatch": 0.7350531607610202,
+    "bassLanded": 8,
+    "bag": 21.93,
+    "presentSec": 356.31666666667127
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 138785,
+    "casts": 29,
+    "bassStrikes": 7,
+    "otherStrikes": 2,
+    "followCasts": 9,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.7963046757164405,
+    "avgMatch": 0.7331599957697708,
+    "bassLanded": 7,
+    "bag": 11.42,
+    "presentSec": 367.93333333332737
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 202137,
+    "casts": 43,
+    "bassStrikes": 9,
+    "otherStrikes": 0,
+    "followCasts": 9,
+    "crashes": 18,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.26296296296296295,
+    "avgMatch": 0.7255904233083647,
+    "bassLanded": 8,
+    "bag": 10.02,
+    "presentSec": 441.4499999999272
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 99190,
+    "casts": 40,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 7,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4876068376068376,
+    "avgMatch": 0.6967340448319194,
+    "bassLanded": 5,
+    "bag": 8.7,
+    "presentSec": 576.6833333331375
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 162542,
+    "casts": 32,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 1,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.5946969696969696,
+    "avgMatch": 0.7080896275778122,
+    "bassLanded": 1,
+    "bag": 2.51,
+    "presentSec": 422.3999999999445
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 225894,
+    "casts": 38,
+    "bassStrikes": 8,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.46640720390720386,
+    "avgMatch": 0.7217808606977031,
+    "bassLanded": 7,
+    "bag": 10.03,
+    "presentSec": 465.61666666657186
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 51676,
+    "casts": 15,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.4318181818181818,
+    "avgMatch": 0.8445656918376588,
+    "bassLanded": 5,
+    "bag": 11.66,
+    "presentSec": 152.73333333334702
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 115028,
+    "casts": 8,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.4,
+    "avgMatch": 0.9110462884435556,
+    "bassLanded": 3,
+    "bag": 5.01,
+    "presentSec": 746.7666666663162
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 178380,
+    "casts": 6,
+    "bassStrikes": 1,
+    "otherStrikes": 1,
+    "followCasts": 2,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.625,
+    "avgMatch": 0.9138426243340876,
+    "bassLanded": 1,
+    "bag": 7.93,
+    "presentSec": 632.0333333330872
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 241732,
+    "casts": 6,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.6666666666666666,
+    "avgMatch": 0.9166511336493515,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 851.2333333328878
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 67514,
+    "casts": 30,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 1,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.6833333333333333,
+    "avgMatch": 0.7255408781932697,
+    "bassLanded": 3,
+    "bag": 4.38,
+    "presentSec": 590.9666666664579
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 130866,
+    "casts": 39,
+    "bassStrikes": 1,
+    "otherStrikes": 2,
+    "followCasts": 3,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.125,
+    "avgMatch": 0.69902532971595,
+    "bassLanded": 1,
+    "bag": 0,
+    "presentSec": 528.1999999998483
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 194218,
+    "casts": 20,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.3333333333333333,
+    "avgMatch": 0.7166063860052754,
+    "bassLanded": 4,
+    "bag": 7.04,
+    "presentSec": 157.53333333335084
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 20000,
+    "casts": 52,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 19,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5285714285714286,
+    "avgMatch": 0.7173321127110004,
+    "bassLanded": 7,
+    "bag": 12.7,
+    "presentSec": 335.66666666669005
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 146704,
+    "casts": 49,
+    "bassStrikes": 6,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.3190785405071119,
+    "avgMatch": 0.7192154581572189,
+    "bassLanded": 5,
+    "bag": 13.8,
+    "presentSec": 350.9833333333428
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.7143877615525696,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 87.88333333332963
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 99190,
+    "casts": 60,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.563095238095238,
+    "avgMatch": 0.8449632782989285,
+    "bassLanded": 3,
+    "bag": 5.93,
+    "presentSec": 390.7833333333066
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 162542,
+    "casts": 31,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 1,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.5363636363636364,
+    "avgMatch": 0.8048306153906002,
+    "bassLanded": 1,
+    "bag": 6.44,
+    "presentSec": 155.78333333334945
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 225894,
+    "casts": 46,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5123015873015873,
+    "avgMatch": 0.8583421117358838,
+    "bassLanded": 7,
+    "bag": 11.17,
+    "presentSec": 261.53333333342414
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 51676,
+    "casts": 14,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.65,
+    "avgMatch": 0.6406072005590842,
+    "bassLanded": 3,
+    "bag": 6.93,
+    "presentSec": 50.116666666665104
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 115028,
+    "casts": 61,
+    "bassStrikes": 1,
+    "otherStrikes": 1,
+    "followCasts": 2,
+    "crashes": 21,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.43192848020434227,
+    "avgMatch": 0.6499103224899518,
+    "bassLanded": 1,
+    "bag": 2.1,
+    "presentSec": 483.79999999988866
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 178380,
+    "casts": 24,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.375,
+    "avgMatch": 0.6390455375894093,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 165.1333333333569
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 241732,
+    "casts": 55,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.4236111111111111,
+    "avgMatch": 0.6626336868992786,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 491.3833333332151
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 67514,
+    "casts": 71,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.4757834757834758,
+    "avgMatch": 0.8157435182225993,
+    "bassLanded": 1,
+    "bag": 6.79,
+    "presentSec": 434.89999999993313
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 130866,
+    "casts": 66,
+    "bassStrikes": 7,
+    "otherStrikes": 1,
+    "followCasts": 12,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.2829861111111111,
+    "avgMatch": 0.8100054480805551,
+    "bassLanded": 7,
+    "bag": 7.58,
+    "presentSec": 332.7000000000261
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 194218,
+    "casts": 16,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.3333333333333333,
+    "avgMatch": 0.7632998383636842,
+    "bassLanded": 2,
+    "bag": 3.81,
+    "presentSec": 44.083333333332114
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 20000,
+    "casts": 37,
+    "bassStrikes": 8,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.3527777777777777,
+    "avgMatch": 0.7335423683905861,
+    "bassLanded": 7,
+    "bag": 11.72,
+    "presentSec": 419.8833333332801
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 146704,
+    "casts": 38,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.6236111111111112,
+    "avgMatch": 0.7236732121463907,
+    "bassLanded": 3,
+    "bag": 9.02,
+    "presentSec": 478.1499999998938
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.7144966671286652,
+    "bassLanded": 6,
+    "bag": 15.3,
+    "presentSec": 102.01666666666216
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 43757,
+    "casts": 38,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.2858796296296296,
+    "avgMatch": 0.7227273312476343,
+    "bassLanded": 3,
+    "bag": 7.76,
+    "presentSec": 544.6499999998333
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7406818727973145,
+    "bassLanded": 3,
+    "bag": 5.3,
+    "presentSec": 101.4166666666622
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 233813,
+    "casts": 39,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 7,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.44454156954156954,
+    "avgMatch": 0.7305707308727005,
+    "bassLanded": 6,
+    "bag": 13.49,
+    "presentSec": 484.86666666655435
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 59595,
+    "casts": 7,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.48713235294117646,
+    "avgMatch": 0.9120708737370739,
+    "bassLanded": 2,
+    "bag": 5.05,
+    "presentSec": 656.5666666663982
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 122947,
+    "casts": 7,
+    "bassStrikes": 1,
+    "otherStrikes": 1,
+    "followCasts": 2,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.5,
+    "avgMatch": 0.9128134670904532,
+    "bassLanded": 1,
+    "bag": 3.92,
+    "presentSec": 802.4499999995988
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 186299,
+    "casts": 9,
+    "bassStrikes": 4,
+    "otherStrikes": 2,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.46875,
+    "avgMatch": 0.9094260594685384,
+    "bassLanded": 3,
+    "bag": 9.08,
+    "presentSec": 674.8666666663815
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 249651,
+    "casts": 11,
+    "bassStrikes": 7,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.3571428571428571,
+    "avgMatch": 0.9054311598253993,
+    "bassLanded": 7,
+    "bag": 9.96,
+    "presentSec": 596.0666666664532
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 75433,
+    "casts": 33,
+    "bassStrikes": 4,
+    "otherStrikes": 4,
+    "followCasts": 9,
+    "crashes": 7,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.4368131868131868,
+    "avgMatch": 0.7538027950367456,
+    "bassLanded": 4,
+    "bag": 11.06,
+    "presentSec": 450.69999999991876
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 138785,
+    "casts": 29,
+    "bassStrikes": 10,
+    "otherStrikes": 0,
+    "followCasts": 10,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.5444444444444445,
+    "avgMatch": 0.7281758908083602,
+    "bassLanded": 9,
+    "bag": 16.44,
+    "presentSec": 347.08333333334633
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 202137,
+    "casts": 38,
+    "bassStrikes": 9,
+    "otherStrikes": 0,
+    "followCasts": 9,
+    "crashes": 11,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4980639730639731,
+    "avgMatch": 0.713588907205407,
+    "bassLanded": 8,
+    "bag": 14.13,
+    "presentSec": 461.783333333242
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 27919,
+    "casts": 46,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 9,
+    "crashes": 8,
+    "snags": 3,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.423758697442908,
+    "avgMatch": 0.7193120132844488,
+    "bassLanded": 7,
+    "bag": 9.46,
+    "presentSec": 363.8333333333311
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 91271,
+    "casts": 47,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.4814883529169243,
+    "avgMatch": 0.7155686784061199,
+    "bassLanded": 4,
+    "bag": 6.3,
+    "presentSec": 429.69999999993786
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 154623,
+    "casts": 48,
+    "bassStrikes": 0,
+    "otherStrikes": 3,
+    "followCasts": 4,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.6,
+    "avgMatch": 0.7225280067332219,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 430.69999999993695
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 217975,
+    "casts": 55,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 10,
+    "snags": 3,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.6193722943722945,
+    "avgMatch": 0.7202284257229806,
+    "bassLanded": 3,
+    "bag": 4.8,
+    "presentSec": 471.43333333323324
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 43757,
+    "casts": 72,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 27,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.5172627372627372,
+    "avgMatch": 0.8238134361097127,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 438.733333333263
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.8566112934192712,
+    "bassLanded": 2,
+    "bag": 4.05,
+    "presentSec": 43.7499999999988
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 233813,
+    "casts": 57,
+    "bassStrikes": 8,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.53008658008658,
+    "avgMatch": 0.8358717966507107,
+    "bassLanded": 7,
+    "bag": 20.36,
+    "presentSec": 325.6500000000325
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 59595,
+    "casts": 50,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 9,
+    "snags": 3,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.40747773468361703,
+    "avgMatch": 0.6627294394351598,
+    "bassLanded": 3,
+    "bag": 4.19,
+    "presentSec": 448.6499999999206
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 122947,
+    "casts": 18,
+    "bassStrikes": 4,
+    "otherStrikes": 2,
+    "followCasts": 7,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.5,
+    "avgMatch": 0.6515845306045386,
+    "bassLanded": 3,
+    "bag": 6.08,
+    "presentSec": 172.28333333336258
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 186299,
+    "casts": 54,
+    "bassStrikes": 9,
+    "otherStrikes": 0,
+    "followCasts": 10,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5548082126207126,
+    "avgMatch": 0.6502800382046221,
+    "bassLanded": 8,
+    "bag": 8.38,
+    "presentSec": 397.43333333330054
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 249651,
+    "casts": 65,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 24,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.6128306878306878,
+    "avgMatch": 0.6445723876077006,
+    "bassLanded": 1,
+    "bag": 1.56,
+    "presentSec": 491.7999999998814
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 75433,
+    "casts": 73,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 10,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.443150124729072,
+    "avgMatch": 0.8335032358080369,
+    "bassLanded": 5,
+    "bag": 14.03,
+    "presentSec": 393.33333333330427
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 138785,
+    "casts": 62,
+    "bassStrikes": 8,
+    "otherStrikes": 2,
+    "followCasts": 16,
+    "crashes": 28,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.6010732323232323,
+    "avgMatch": 0.8160842365670734,
+    "bassLanded": 7,
+    "bag": 13.82,
+    "presentSec": 301.2166666667214
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 202137,
+    "casts": 45,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 19,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5677609427609428,
+    "avgMatch": 0.8200295094627662,
+    "bassLanded": 5,
+    "bag": 14.39,
+    "presentSec": 150.6666666666787
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 27919,
+    "casts": 35,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.40829725829725827,
+    "avgMatch": 0.7403691122373166,
+    "bassLanded": 5,
+    "bag": 10.66,
+    "presentSec": 542.1999999998355
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 91271,
+    "casts": 28,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.45337995337995335,
+    "avgMatch": 0.7258922666961483,
+    "bassLanded": 5,
+    "bag": 11.88,
+    "presentSec": 519.6166666665227
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 154623,
+    "casts": 32,
+    "bassStrikes": 2,
+    "otherStrikes": 3,
+    "followCasts": 6,
+    "crashes": 7,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.4755769230769231,
+    "avgMatch": 0.7434087561463404,
+    "bassLanded": 2,
+    "bag": 3.79,
+    "presentSec": 517.5333333331913
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 217975,
+    "casts": 32,
+    "bassStrikes": 9,
+    "otherStrikes": 0,
+    "followCasts": 11,
+    "crashes": 5,
+    "snags": 1,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.5066666666666667,
+    "avgMatch": 0.7401277603710581,
+    "bassLanded": 9,
+    "bag": 10.51,
+    "presentSec": 467.8666666665698
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 51676,
+    "casts": 16,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.6925449166389773,
+    "bassLanded": 3,
+    "bag": 4.75,
+    "presentSec": 99.69999999999563
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 115028,
+    "casts": 43,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 8,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.5279166666666667,
+    "avgMatch": 0.7046146853856833,
+    "bassLanded": 5,
+    "bag": 10.29,
+    "presentSec": 529.266666666514
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 178380,
+    "casts": 26,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 11,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.625,
+    "avgMatch": 0.7160280651198943,
+    "bassLanded": 5,
+    "bag": 13.86,
+    "presentSec": 358.18333333333624
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 241732,
+    "casts": 36,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 8,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.6038095238095238,
+    "avgMatch": 0.7152245762014372,
+    "bassLanded": 5,
+    "bag": 14.27,
+    "presentSec": 468.1833333332362
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 67514,
+    "casts": 8,
+    "bassStrikes": 2,
+    "otherStrikes": 2,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.5,
+    "avgMatch": 0.9137818464462184,
+    "bassLanded": 2,
+    "bag": 0,
+    "presentSec": 771.9333333329599
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 130866,
+    "casts": 17,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 3,
+    "spookedAtArrival": 0.4583333333333333,
+    "avgMatch": 0.9009372490814386,
+    "bassLanded": 3,
+    "bag": 4.62,
+    "presentSec": 684.983333333039
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 194218,
+    "casts": 20,
+    "bassStrikes": 8,
+    "otherStrikes": 2,
+    "followCasts": 10,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.3181818181818182,
+    "avgMatch": 0.8668503377176592,
+    "bassLanded": 8,
+    "bag": 9.6,
+    "presentSec": 281.3000000000728
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 20000,
+    "casts": 41,
+    "bassStrikes": 11,
+    "otherStrikes": 1,
+    "followCasts": 12,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.3904761904761904,
+    "avgMatch": 0.7328233705993773,
+    "bassLanded": 7,
+    "bag": 11.61,
+    "presentSec": 395.39999999996905
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 146704,
+    "casts": 40,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.43118686868686873,
+    "avgMatch": 0.7342254957703075,
+    "bassLanded": 2,
+    "bag": 4.21,
+    "presentSec": 553.5166666664919
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.7444474821914925,
+    "bassLanded": 4,
+    "bag": 15.7,
+    "presentSec": 136.93333333333445
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 99190,
+    "casts": 57,
+    "bassStrikes": 2,
+    "otherStrikes": 2,
+    "followCasts": 5,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.47106227106227105,
+    "avgMatch": 0.7169305786942652,
+    "bassLanded": 2,
+    "bag": 5.55,
+    "presentSec": 530.2166666665131
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 162542,
+    "casts": 30,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.5196969696969697,
+    "avgMatch": 0.7102791116446455,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 180.4833333333691
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 225894,
+    "casts": 43,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 6,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5125000000000001,
+    "avgMatch": 0.7195559623884011,
+    "bassLanded": 2,
+    "bag": 0,
+    "presentSec": 384.6333333333122
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 51676,
+    "casts": 17,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7958082152905545,
+    "bassLanded": 6,
+    "bag": 9.01,
+    "presentSec": 47.33333333333193
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 115028,
+    "casts": 61,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 10,
+    "crashes": 24,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.3661607142857143,
+    "avgMatch": 0.8152506434973584,
+    "bassLanded": 6,
+    "bag": 13.13,
+    "presentSec": 315.8166666667081
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 178380,
+    "casts": 26,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.38749999999999996,
+    "avgMatch": 0.8024432921113479,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 142.73333333333906
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 241732,
+    "casts": 57,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.46726190476190477,
+    "avgMatch": 0.8500538001838654,
+    "bassLanded": 4,
+    "bag": 11.4,
+    "presentSec": 354.9000000000059
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 67514,
+    "casts": 54,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.5701917130488559,
+    "avgMatch": 0.6556884196109022,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 577.183333333137
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 130866,
+    "casts": 62,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 20,
+    "snags": 1,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.3478395061728395,
+    "avgMatch": 0.6567604606546148,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 478.4166666665602
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 194218,
+    "casts": 15,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.2916666666666667,
+    "avgMatch": 0.5785696718367502,
+    "bassLanded": 3,
+    "bag": 5.81,
+    "presentSec": 37.79999999999914
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 20000,
+    "casts": 41,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 8,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.6269230769230769,
+    "avgMatch": 0.806718305757071,
+    "bassLanded": 4,
+    "bag": 12.93,
+    "presentSec": 163.06666666668858
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 146704,
+    "casts": 61,
+    "bassStrikes": 4,
+    "otherStrikes": 3,
+    "followCasts": 12,
+    "crashes": 18,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5720476827094474,
+    "avgMatch": 0.8276249527406735,
+    "bassLanded": 3,
+    "bag": 7.49,
+    "presentSec": 283.28333333340436
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.7833519673836894,
+    "bassLanded": 1,
+    "bag": 4.97,
+    "presentSec": 55.03333333333149
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 99190,
+    "casts": 34,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 8,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.558994708994709,
+    "avgMatch": 0.725457718833148,
+    "bassLanded": 5,
+    "bag": 8.2,
+    "presentSec": 492.966666666547
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 162542,
+    "casts": 34,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.32386363636363635,
+    "avgMatch": 0.7179846056227033,
+    "bassLanded": 5,
+    "bag": 8.8,
+    "presentSec": 447.33333333325515
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 225894,
+    "casts": 33,
+    "bassStrikes": 8,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4744949494949495,
+    "avgMatch": 0.7364576837058608,
+    "bassLanded": 6,
+    "bag": 4.53,
+    "presentSec": 442.749999999926
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 59595,
+    "casts": 34,
+    "bassStrikes": 1,
+    "otherStrikes": 2,
+    "followCasts": 3,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.4841666666666667,
+    "avgMatch": 0.6954018516635134,
+    "bassLanded": 1,
+    "bag": 1.32,
+    "presentSec": 555.56666666649
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 122947,
+    "casts": 13,
+    "bassStrikes": 1,
+    "otherStrikes": 3,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.5681818181818181,
+    "avgMatch": 0.7276336132712092,
+    "bassLanded": 1,
+    "bag": 1.53,
+    "presentSec": 195.41666666671432
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 186299,
+    "casts": 48,
+    "bassStrikes": 8,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 19,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4654990842490842,
+    "avgMatch": 0.7035288378943846,
+    "bassLanded": 8,
+    "bag": 13.69,
+    "presentSec": 443.9499999999249
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 249651,
+    "casts": 45,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 22,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.36964285714285716,
+    "avgMatch": 0.7089876184838245,
+    "bassLanded": 4,
+    "bag": 4.88,
+    "presentSec": 482.4166666665566
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 75433,
+    "casts": 18,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 7,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 3,
+    "spookedAtArrival": 0.5760683760683761,
+    "avgMatch": 0.9030740140463418,
+    "bassLanded": 6,
+    "bag": 14.45,
+    "presentSec": 524.4499999998517
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 138785,
+    "casts": 10,
+    "bassStrikes": 8,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.7083333333333334,
+    "avgMatch": 0.9062277798927072,
+    "bassLanded": 8,
+    "bag": 13.88,
+    "presentSec": 569.1166666664777
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 202137,
+    "casts": 8,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.6111111111111112,
+    "avgMatch": 0.9117398222722469,
+    "bassLanded": 4,
+    "bag": 8.82,
+    "presentSec": 680.8166666663761
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 27919,
+    "casts": 36,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.48640183346065696,
+    "avgMatch": 0.7471009212620663,
+    "bassLanded": 6,
+    "bag": 11.84,
+    "presentSec": 517.549999999858
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 91271,
+    "casts": 29,
+    "bassStrikes": 2,
+    "otherStrikes": 3,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.47147950089126556,
+    "avgMatch": 0.7200446153982152,
+    "bassLanded": 2,
+    "bag": 4.21,
+    "presentSec": 547.9999999998303
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 154623,
+    "casts": 34,
+    "bassStrikes": 6,
+    "otherStrikes": 0,
+    "followCasts": 6,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.46613247863247864,
+    "avgMatch": 0.751046486566737,
+    "bassLanded": 5,
+    "bag": 8.6,
+    "presentSec": 588.56666666646
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 217975,
+    "casts": 33,
+    "bassStrikes": 12,
+    "otherStrikes": 1,
+    "followCasts": 14,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.6377492877492879,
+    "avgMatch": 0.727323210904204,
+    "bassLanded": 7,
+    "bag": 9.67,
+    "presentSec": 432.1666666666023
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 43757,
+    "casts": 60,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 1,
+    "crashes": 27,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.4643246187363834,
+    "avgMatch": 0.7153175205283878,
+    "bassLanded": 1,
+    "bag": 2.3,
+    "presentSec": 466.8333333332374
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7276439044257446,
+    "bassLanded": 2,
+    "bag": 4.05,
+    "presentSec": 61.38333333333113
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 233813,
+    "casts": 54,
+    "bassStrikes": 1,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.6043425324675324,
+    "avgMatch": 0.7172173440152884,
+    "bassLanded": 0,
+    "bag": 3.81,
+    "presentSec": 471.1999999999001
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 59595,
+    "casts": 60,
+    "bassStrikes": 1,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.47345669036845506,
+    "avgMatch": 0.8519055302503598,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 418.14999999994836
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 122947,
+    "casts": 13,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.4722222222222222,
+    "avgMatch": 0.8066728835675977,
+    "bassLanded": 1,
+    "bag": 3.92,
+    "presentSec": 90.2833333333295
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 186299,
+    "casts": 57,
+    "bassStrikes": 11,
+    "otherStrikes": 0,
+    "followCasts": 13,
+    "crashes": 13,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5643601190476191,
+    "avgMatch": 0.8351773645482966,
+    "bassLanded": 10,
+    "bag": 14.13,
+    "presentSec": 315.4000000000418
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 249651,
+    "casts": 62,
+    "bassStrikes": 7,
+    "otherStrikes": 0,
+    "followCasts": 9,
+    "crashes": 21,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.4977513227513227,
+    "avgMatch": 0.8245612594942273,
+    "bassLanded": 6,
+    "bag": 9.17,
+    "presentSec": 330.16666666669505
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 75433,
+    "casts": 66,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 20,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.4902827392765473,
+    "avgMatch": 0.6570788440763008,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 514.3999999998608
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 138785,
+    "casts": 53,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 21,
+    "snags": 1,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.6236721611721612,
+    "avgMatch": 0.6632002662901377,
+    "bassLanded": 5,
+    "bag": 15.31,
+    "presentSec": 365.03333333333
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 202137,
+    "casts": 53,
+    "bassStrikes": 6,
+    "otherStrikes": 2,
+    "followCasts": 11,
+    "crashes": 14,
+    "snags": 2,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.51747557997558,
+    "avgMatch": 0.6488176026952607,
+    "bassLanded": 5,
+    "bag": 11.33,
+    "presentSec": 354.416666666673
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 27919,
+    "casts": 56,
+    "bassStrikes": 7,
+    "otherStrikes": 2,
+    "followCasts": 12,
+    "crashes": 16,
+    "snags": 2,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.6983901515151516,
+    "avgMatch": 0.8121769737237047,
+    "bassLanded": 7,
+    "bag": 14.02,
+    "presentSec": 253.38333333342712
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 91271,
+    "casts": 53,
+    "bassStrikes": 6,
+    "otherStrikes": 0,
+    "followCasts": 6,
+    "crashes": 6,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5957375957375958,
+    "avgMatch": 0.8267818359001257,
+    "bassLanded": 5,
+    "bag": 9.26,
+    "presentSec": 335.46666666669023
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 154623,
+    "casts": 62,
+    "bassStrikes": 0,
+    "otherStrikes": 3,
+    "followCasts": 4,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5182220965309201,
+    "avgMatch": 0.8432833040798491,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 345.28333333334797
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 217975,
+    "casts": 76,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 11,
+    "snags": 1,
+    "stumps": 0,
+    "arrivals": 11,
+    "spookedAtArrival": 0.6057604012149467,
+    "avgMatch": 0.8366778942439251,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 440.5166666665947
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 43757,
+    "casts": 32,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 6,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.5031565656565657,
+    "avgMatch": 0.7407337142102187,
+    "bassLanded": 5,
+    "bag": 9.77,
+    "presentSec": 565.1666666664813
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7419349244681142,
+    "bassLanded": 3,
+    "bag": 5.97,
+    "presentSec": 111.44999999999496
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 233813,
+    "casts": 35,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 7,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.6045454545454545,
+    "avgMatch": 0.7409687333111443,
+    "bassLanded": 5,
+    "bag": 8.77,
+    "presentSec": 537.8333333331728
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 67514,
+    "casts": 36,
+    "bassStrikes": 1,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 1,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.6090909090909091,
+    "avgMatch": 0.6961423261009535,
+    "bassLanded": 1,
+    "bag": 1.37,
+    "presentSec": 639.9166666664133
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 130866,
+    "casts": 40,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.2261904761904762,
+    "avgMatch": 0.6541667503764177,
+    "bassLanded": 3,
+    "bag": 1.74,
+    "presentSec": 515.1166666665268
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 194218,
+    "casts": 19,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.4,
+    "avgMatch": 0.6548514351237946,
+    "bassLanded": 4,
+    "bag": 6.85,
+    "presentSec": 134.19999999999894
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 20000,
+    "casts": 20,
+    "bassStrikes": 13,
+    "otherStrikes": 0,
+    "followCasts": 13,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 3,
+    "spookedAtArrival": 0.2948717948717949,
+    "avgMatch": 0.8825849939350767,
+    "bassLanded": 11,
+    "bag": 13.74,
+    "presentSec": 480.91666666655794
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 146704,
+    "casts": 8,
+    "bassStrikes": 0,
+    "otherStrikes": 5,
+    "followCasts": 5,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.4166666666666667,
+    "avgMatch": 0.9120341082818543,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 632.2999999997536
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 8,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.9027619507483089,
+    "bassLanded": 7,
+    "bag": 18.8,
+    "presentSec": 517.7499999998578
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 99190,
+    "casts": 36,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 7,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.40196078431372545,
+    "avgMatch": 0.7259037215357006,
+    "bassLanded": 4,
+    "bag": 5.6,
+    "presentSec": 593.8833333331219
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 162542,
+    "casts": 32,
+    "bassStrikes": 6,
+    "otherStrikes": 0,
+    "followCasts": 8,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.553030303030303,
+    "avgMatch": 0.7186577436053743,
+    "bassLanded": 4,
+    "bag": 15.78,
+    "presentSec": 401.2999999999637
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 225894,
+    "casts": 33,
+    "bassStrikes": 6,
+    "otherStrikes": 0,
+    "followCasts": 6,
+    "crashes": 6,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.46497326203208555,
+    "avgMatch": 0.7556996836754599,
+    "bassLanded": 6,
+    "bag": 10.85,
+    "presentSec": 499.94999999987397
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 51676,
+    "casts": 14,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7116939131558592,
+    "bassLanded": 1,
+    "bag": 1.24,
+    "presentSec": 64.48333333333096
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 115028,
+    "casts": 68,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 3,
+    "crashes": 30,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5909391534391535,
+    "avgMatch": 0.7153445499092035,
+    "bassLanded": 1,
+    "bag": 2.8,
+    "presentSec": 486.38333333321964
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 178380,
+    "casts": 28,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.4375,
+    "avgMatch": 0.718677670783301,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 192.98333333337905
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 241732,
+    "casts": 56,
+    "bassStrikes": 0,
+    "otherStrikes": 1,
+    "followCasts": 2,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.5058956916099773,
+    "avgMatch": 0.7200240185545924,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 496.4333333332105
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 67514,
+    "casts": 73,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 1,
+    "crashes": 21,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.4375,
+    "avgMatch": 0.8363739190240541,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 478.91666666655976
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 130866,
+    "casts": 61,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 7,
+    "crashes": 13,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.2525252525252525,
+    "avgMatch": 0.834541508822695,
+    "bassLanded": 5,
+    "bag": 7.85,
+    "presentSec": 360.633333333334
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 194218,
+    "casts": 16,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.2916666666666667,
+    "avgMatch": 0.7023742564045516,
+    "bassLanded": 3,
+    "bag": 4.73,
+    "presentSec": 41.61666666666559
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 20000,
+    "casts": 44,
+    "bassStrikes": 6,
+    "otherStrikes": 1,
+    "followCasts": 7,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.49947089947089945,
+    "avgMatch": 0.6490748785738192,
+    "bassLanded": 5,
+    "bag": 11.44,
+    "presentSec": 287.71666666673366
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 83352,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 146704,
+    "casts": 50,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 14,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.4013347763347763,
+    "avgMatch": 0.657220619618877,
+    "bassLanded": 3,
+    "bag": 9.35,
+    "presentSec": 399.3999999999654
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 210056,
+    "casts": 10,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.8333333333333334,
+    "avgMatch": 0.6391009463311663,
+    "bassLanded": 3,
+    "bag": 14.2,
+    "presentSec": 68.9833333333307
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 35838,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 99190,
+    "casts": 57,
+    "bassStrikes": 8,
+    "otherStrikes": 2,
+    "followCasts": 12,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.49925595238095233,
+    "avgMatch": 0.8131015125632026,
+    "bassLanded": 7,
+    "bag": 13.54,
+    "presentSec": 316.28333333337434
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 162542,
+    "casts": 31,
+    "bassStrikes": 2,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.6571969696969697,
+    "avgMatch": 0.7907542330344094,
+    "bassLanded": 2,
+    "bag": 7.45,
+    "presentSec": 152.2500000000133
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 225894,
+    "casts": 49,
+    "bassStrikes": 9,
+    "otherStrikes": 0,
+    "followCasts": 11,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.5076659451659451,
+    "avgMatch": 0.8188522532157216,
+    "bassLanded": 8,
+    "bag": 13.76,
+    "presentSec": 249.30000000009053
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 51676,
+    "casts": 15,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.65,
+    "avgMatch": 0.7276760290861123,
+    "bassLanded": 3,
+    "bag": 6.53,
+    "presentSec": 141.66666666667155
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 115028,
+    "casts": 37,
+    "bassStrikes": 4,
+    "otherStrikes": 2,
+    "followCasts": 6,
+    "crashes": 16,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.3810989010989011,
+    "avgMatch": 0.7325672358491487,
+    "bassLanded": 3,
+    "bag": 3.75,
+    "presentSec": 557.5166666664883
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 178380,
+    "casts": 27,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 1,
+    "crashes": 17,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.47916666666666663,
+    "avgMatch": 0.7234678394639701,
+    "bassLanded": 1,
+    "bag": 2.6,
+    "presentSec": 360.4333333333342
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 241732,
+    "casts": 34,
+    "bassStrikes": 8,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.595,
+    "avgMatch": 0.7206626611766098,
+    "bassLanded": 7,
+    "bag": 17.29,
+    "presentSec": 380.816666666649
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 75433,
+    "casts": 39,
+    "bassStrikes": 5,
+    "otherStrikes": 0,
+    "followCasts": 5,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.6415284715284715,
+    "avgMatch": 0.7241216703705672,
+    "bassLanded": 5,
+    "bag": 8.9,
+    "presentSec": 546.0333333331654
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 138785,
+    "casts": 37,
+    "bassStrikes": 8,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 12,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4208754208754209,
+    "avgMatch": 0.710610419762398,
+    "bassLanded": 7,
+    "bag": 14.95,
+    "presentSec": 454.5333333332486
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "ned",
+   "m": {
+    "seed": 202137,
+    "casts": 37,
+    "bassStrikes": 9,
+    "otherStrikes": 0,
+    "followCasts": 9,
+    "crashes": 10,
+    "snags": 3,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.45588538445681304,
+    "avgMatch": 0.6804464728232767,
+    "bassLanded": 8,
+    "bag": 13.14,
+    "presentSec": 336.8500000000223
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 27919,
+    "casts": 10,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.5227272727272727,
+    "avgMatch": 0.9062178141796189,
+    "bassLanded": 4,
+    "bag": 10.77,
+    "presentSec": 651.1666666664031
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 91271,
+    "casts": 7,
+    "bassStrikes": 1,
+    "otherStrikes": 2,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.45454545454545453,
+    "avgMatch": 0.9152091207377159,
+    "bassLanded": 1,
+    "bag": 1.65,
+    "presentSec": 802.5666666662654
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 154623,
+    "casts": 7,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.6153846153846154,
+    "avgMatch": 0.9148573366592803,
+    "bassLanded": 2,
+    "bag": 2.01,
+    "presentSec": 761.6999999996359
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "dropShot",
+   "m": {
+    "seed": 217975,
+    "casts": 16,
+    "bassStrikes": 8,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 5,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 3,
+    "spookedAtArrival": 0.5888888888888889,
+    "avgMatch": 0.9014894070375007,
+    "bassLanded": 8,
+    "bag": 13.49,
+    "presentSec": 547.533333333164
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 43757,
+    "casts": 33,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 8,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.3833333333333333,
+    "avgMatch": 0.7534045089130503,
+    "bassLanded": 4,
+    "bag": 11.79,
+    "presentSec": 544.4833333331668
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 3,
+    "otherStrikes": 1,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.7604471598472138,
+    "bassLanded": 3,
+    "bag": 5.3,
+    "presentSec": 117.99999999999459
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "tube",
+   "m": {
+    "seed": 233813,
+    "casts": 34,
+    "bassStrikes": 7,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 5,
+    "spookedAtArrival": 0.46439393939393936,
+    "avgMatch": 0.7536718255140267,
+    "bassLanded": 6,
+    "bag": 14.42,
+    "presentSec": 507.8166666665335
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 59595,
+    "casts": 49,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 4,
+    "crashes": 9,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.6043390433096315,
+    "avgMatch": 0.7190756522052526,
+    "bassLanded": 3,
+    "bag": 7.13,
+    "presentSec": 462.53333333324133
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 122947,
+    "casts": 14,
+    "bassStrikes": 2,
+    "otherStrikes": 2,
+    "followCasts": 4,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.5625,
+    "avgMatch": 0.7105571550437147,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 130.2499999999958
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 186299,
+    "casts": 58,
+    "bassStrikes": 10,
+    "otherStrikes": 0,
+    "followCasts": 11,
+    "crashes": 19,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.5392006802721089,
+    "avgMatch": 0.7115135107952023,
+    "bassLanded": 9,
+    "bag": 13.39,
+    "presentSec": 372.84999999998956
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "jerkbait",
+   "m": {
+    "seed": 249651,
+    "casts": 61,
+    "bassStrikes": 3,
+    "otherStrikes": 2,
+    "followCasts": 6,
+    "crashes": 23,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.5285714285714286,
+    "avgMatch": 0.7159137196815426,
+    "bassLanded": 2,
+    "bag": 2.45,
+    "presentSec": 450.08333333325265
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 75433,
+    "casts": 69,
+    "bassStrikes": 2,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 13,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 10,
+    "spookedAtArrival": 0.43992718882424764,
+    "avgMatch": 0.8423407421712397,
+    "bassLanded": 2,
+    "bag": 2.44,
+    "presentSec": 419.0333333332809
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 138785,
+    "casts": 54,
+    "bassStrikes": 10,
+    "otherStrikes": 1,
+    "followCasts": 13,
+    "crashes": 24,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.5672540726817042,
+    "avgMatch": 0.8151522009789067,
+    "bassLanded": 9,
+    "bag": 18.35,
+    "presentSec": 268.9000000000841
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "squarebill",
+   "m": {
+    "seed": 202137,
+    "casts": 54,
+    "bassStrikes": 11,
+    "otherStrikes": 1,
+    "followCasts": 13,
+    "crashes": 13,
+    "snags": 4,
+    "stumps": 0,
+    "arrivals": 8,
+    "spookedAtArrival": 0.4083017676767677,
+    "avgMatch": 0.837695440037018,
+    "bassLanded": 10,
+    "bag": 16.8,
+    "presentSec": 231.050000000076
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 27919,
+    "casts": 55,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 10,
+    "snags": 4,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.3795299938157081,
+    "avgMatch": 0.659409945361612,
+    "bassLanded": 3,
+    "bag": 5.29,
+    "presentSec": 453.0499999999166
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 91271,
+    "casts": 47,
+    "bassStrikes": 4,
+    "otherStrikes": 0,
+    "followCasts": 7,
+    "crashes": 10,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4461279461279461,
+    "avgMatch": 0.659382066235699,
+    "bassLanded": 4,
+    "bag": 8.84,
+    "presentSec": 439.3833333332624
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 154623,
+    "casts": 50,
+    "bassStrikes": 0,
+    "otherStrikes": 1,
+    "followCasts": 2,
+    "crashes": 6,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 7,
+    "spookedAtArrival": 0.5685243328100471,
+    "avgMatch": 0.6608891575414685,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 478.7999999998932
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "walker",
+   "m": {
+    "seed": 217975,
+    "casts": 57,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 12,
+    "snags": 9,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.5510742344075678,
+    "avgMatch": 0.6512800391344479,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 426.81666666660715
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 43757,
+    "casts": 73,
+    "bassStrikes": 1,
+    "otherStrikes": 0,
+    "followCasts": 2,
+    "crashes": 29,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 11,
+    "spookedAtArrival": 0.42149765439239123,
+    "avgMatch": 0.815563633356416,
+    "bassLanded": 1,
+    "bag": 2.3,
+    "presentSec": 398.43333333329963
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 107109,
+    "casts": 0,
+    "bassStrikes": 0,
+    "otherStrikes": 0,
+    "followCasts": 0,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 0,
+    "spookedAtArrival": 0,
+    "avgMatch": 0,
+    "bassLanded": 0,
+    "bag": 0,
+    "presentSec": 0
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 170461,
+    "casts": 6,
+    "bassStrikes": 3,
+    "otherStrikes": 0,
+    "followCasts": 3,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 1,
+    "spookedAtArrival": 0.7,
+    "avgMatch": 0.8841008775176795,
+    "bassLanded": 3,
+    "bag": 8.11,
+    "presentSec": 40.58333333333231
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "chatterbait",
+   "m": {
+    "seed": 233813,
+    "casts": 64,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 9,
+    "crashes": 15,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 9,
+    "spookedAtArrival": 0.4645576645576645,
+    "avgMatch": 0.8286764891773246,
+    "bassLanded": 5,
+    "bag": 13.27,
+    "presentSec": 354.30000000000643
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 59595,
+    "casts": 28,
+    "bassStrikes": 4,
+    "otherStrikes": 1,
+    "followCasts": 5,
+    "crashes": 3,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 4,
+    "spookedAtArrival": 0.5472992081447964,
+    "avgMatch": 0.7306743314763965,
+    "bassLanded": 4,
+    "bag": 11.5,
+    "presentSec": 548.2666666664967
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 122947,
+    "casts": 17,
+    "bassStrikes": 5,
+    "otherStrikes": 1,
+    "followCasts": 6,
+    "crashes": 0,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 2,
+    "spookedAtArrival": 0.55,
+    "avgMatch": 0.7398710131288817,
+    "bassLanded": 5,
+    "bag": 13.47,
+    "presentSec": 307.6000000000489
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 186299,
+    "casts": 39,
+    "bassStrikes": 9,
+    "otherStrikes": 1,
+    "followCasts": 10,
+    "crashes": 18,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.47032203907203907,
+    "avgMatch": 0.7210112270458395,
+    "bassLanded": 9,
+    "bag": 14.83,
+    "presentSec": 331.06666666669423
+   }
+  },
+  {
+   "profile": "average",
+   "rig": "footballJig",
+   "m": {
+    "seed": 249651,
+    "casts": 44,
+    "bassStrikes": 5,
+    "otherStrikes": 2,
+    "followCasts": 9,
+    "crashes": 23,
+    "snags": 0,
+    "stumps": 0,
+    "arrivals": 6,
+    "spookedAtArrival": 0.4446428571428571,
+    "avgMatch": 0.722261044560178,
+    "bassLanded": 4,
+    "bag": 9.21,
+    "presentSec": 473.4666666665647
+   }
+  }
+ ]
+}

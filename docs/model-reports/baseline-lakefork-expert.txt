@@ -1,0 +1,12 @@
+lakefork (SemiPro) · 20 paired days · 8 rigs · 289s
+
+expert
+rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag
+footballJig     4.20  [2.65, 5.85]        0.2     21      21%  0.69       2%       0.0    9.8
+tube            3.50  [2.25, 4.90]        0.1     20      18%  0.69       1%       0.0    8.9
+ned             3.20  [2.10, 4.35]        0.3     22      15%  0.66       2%       0.0    8.4
+chatterbait     2.35  [1.20, 3.65]        0.1     28      14%  0.79       2%       0.0    6.1
+squarebill      1.90  [1.00, 3.00]        0.1     28      12%  0.80       3%       0.0    5.2
+dropShot        1.60  [0.95, 2.35]        0.3      6      26%  0.83       2%       0.0    4.5
+jerkbait        1.20  [0.65, 1.70]        0.1     26       9%  0.61       4%       0.0    4.1
+walker          1.00  [0.45, 1.65]        0.0     25       6%  0.68       1%       0.0    3.2
