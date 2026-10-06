@@ -1,0 +1,15 @@
+lakefork: 30 paired days, expert, 8 lures
+
+PASS  WHERE  advisor route 5.93 vs itinerary 3.90 bass/day, diff CI [1.00, 3.20]; every lure: +0.4 to +2.7
+PASS  WHAT   top pick 5.93 vs median lure 4.65 bass/day, diff CI [0.70, 1.95]; picks: chatterbait 5, squarebill 20, ned 2, footballJig 3
+PASS  RANK   per-day Spearman 0.56 [0.45, 0.67]; pooled over days 0.90
+        lure          advisor/day  harness/day
+        chatterbait         13.4          6.6
+        footballJig         11.3          5.5
+        squarebill          14.1          5.5
+        tube                10.8          5.4
+        ned                 10.1          4.4
+        walker               6.4          3.5
+        dropShot             2.4          3.0
+        jerkbait             5.1          1.6
+PASS  CALIB  Spearman over 480 lure-days 0.87; harness/predicted 0.63 (1.0 = calibrated)

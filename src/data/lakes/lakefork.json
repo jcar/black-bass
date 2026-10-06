@@ -822,7 +822,7 @@
     "maxIn": 26
    }
   },
-  "count": 6500,
+  "count": 8500,
   "condition": 1.08
  },
  "climate": {
@@ -857,10 +857,10 @@
  },
  "field": {
   "medianBagLb": {
-   "Amateur": 13,
-   "SemiPro": 16,
-   "Pro": 19,
-   "Elite": 24
+   "Amateur": 10.5,
+   "SemiPro": 12.5,
+   "Pro": 15,
+   "Elite": 19
   },
   "sigma": 0.3
  },
