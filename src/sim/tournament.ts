@@ -146,10 +146,13 @@ function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: nu
   const boat = s.boat;
   const mag = Math.min(1, Math.hypot(input.stick.x, input.stick.y));
   let targetSpeed = 0;
+  /** Which way the stick wants to turn (+1 starboard): the side the boat glances off a bank. */
+  let side = 1;
   if (mag > 0.15) {
     const desired = Math.atan2(-input.stick.y, input.stick.x);
     let d = desired - boat.heading;
     d = Math.atan2(Math.sin(d), Math.cos(d));
+    side = d < 0 ? -1 : 1;
     const turn = B.turnRate * (boat.speed > 30 ? 0.6 : 1) * dt;
     boat.heading += Math.sign(d) * Math.min(Math.abs(d), turn);
     targetSpeed =
@@ -162,12 +165,38 @@ function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: nu
   boat.speed += Math.sign(targetSpeed - boat.speed) * Math.min(Math.abs(targetSpeed - boat.speed), (targetSpeed > boat.speed ? B.accel : B.decel) * dt);
   boat.motor = boat.speed > B.trollingMaxSpeed + 0.5 ? 'outboard' : 'trolling';
 
-  const nx = boat.pos.x + Math.cos(boat.heading) * boat.speed * dt;
-  const ny = boat.pos.y + Math.sin(boat.heading) * boat.speed * dt;
-  const lookX = nx + Math.cos(boat.heading) * 6;
-  const lookY = ny + Math.sin(boat.heading) * 6;
-  if (isWater(ctx.grid, nx, ny) && isWater(ctx.grid, lookX, lookY)) boat.pos = { x: nx, y: ny };
-  else boat.speed = 0;
+  /** Where a move of `step` m along `a` ends, if that water and the 6 m ahead of it are clear. */
+  const clear = (a: number, step: number) => {
+    const x = boat.pos.x + Math.cos(a) * step;
+    const y = boat.pos.y + Math.sin(a) * step;
+    return isWater(ctx.grid, x, y) && isWater(ctx.grid, x + Math.cos(a) * B.bankLookM, y + Math.sin(a) * B.bankLookM) ? { x, y } : null;
+  };
+  const ahead = clear(boat.heading, boat.speed * dt);
+  if (ahead) {
+    boat.pos = ahead;
+    boat.onBank = false;
+  } else if (!boat.onBank && boat.speed >= B.bankBumpSpeed) {
+    // Ran into the bank: a hit stops you dead and reports one bump (sound, shake, callout).
+    const a = boat.heading;
+    emit(s, 'bank', 'Ran into the bank', { x: boat.pos.x + Math.cos(a) * B.bankLookM, y: boat.pos.y + Math.sin(a) * B.bankLookM });
+    boat.speed = 0;
+    boat.onBank = true;
+  } else {
+    // Against the bank: scrape along it at trolling speed, glancing off toward the way the stick turns,
+    // so an oblique bank or a point never wedges the boat. Steering away (heading still turns) backs off.
+    boat.onBank = true;
+    boat.speed = Math.min(boat.speed, B.trollingMaxSpeed);
+    let moved = false;
+    for (const da of [B.bankGlance, -B.bankGlance, 2 * B.bankGlance, -2 * B.bankGlance, Math.PI / 2, -Math.PI / 2]) {
+      const p = clear(boat.heading + da * side, boat.speed * Math.max(B.bankScrapeMin, Math.cos(da)) * dt);
+      if (p) {
+        boat.pos = p;
+        moved = true;
+        break;
+      }
+    }
+    if (!moved) boat.speed = 0;
+  }
 
   // Stumps just under the surface: running on plane outside the buoyed lanes is a gamble.
   if (boat.speed > B.stumpSpeed && stumpHazardAt(ctx.grid, boat.pos.x, boat.pos.y) && ctx.rng.chance(B.stumpChancePerSec * dt)) {

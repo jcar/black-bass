@@ -4,10 +4,12 @@ import { GameRenderer } from '../render/GameRenderer';
 import { getLakeGrid } from '../sim/lake';
 import { advisorRoute } from '../sim/advisor';
 import { coachStep, debrief, newCoach } from '../sim/coach';
+import { bearingTo, castRangeM, compassPoint, distanceM, markVisited, navCue, nearestInRange, nextStop, relativeBearing, steerPoint, waterPath, type NavStop } from '../sim/nav';
+import type { Vec2 } from '../sim/types';
 import { drainEvents, stepTournament } from '../sim/tournament';
 import type { TournamentEvent, TournamentState } from '../sim/types';
 import { lbOzText } from '../sim/format';
-import { buildHud, useStore, type Notice } from '../state/store';
+import { buildHud, useStore, type NavHud, type Notice } from '../state/store';
 import { inputHub } from './input';
 
 const STEP = 1 / 60;
@@ -17,6 +19,13 @@ const AUTOSAVE_INTERVAL = 20;
 
 /** Seconds the "That's time" banner holds before the broadcast wipes to the weigh-in. */
 const TIME_HOLD = 2.4;
+/** Real seconds between "you hit the bank" notices (the bump sound and shake play every time). */
+const BANK_NOTICE_GAP = 15;
+/** Real seconds in which further bank contacts are the same bump. */
+const BANK_DEBOUNCE = 0.8;
+/** Re-plan the water route to the destination after the boat moves this far (m) or this long (s). */
+const REPATH_M = 15;
+const REPATH_SEC = 1.5;
 
 /**
  * Sim event -> how the player hears about it. Most events already have a home on screen (the
@@ -63,6 +72,7 @@ const CALLOUT: Partial<Record<TournamentEvent['type'], { text: string; color: nu
   edge: { text: 'EDGE', color: 0x5cf27a },
   crash: { text: 'CRASH', color: 0xff5d4d },
   shore: { text: 'SNAGGED', color: 0xff5d4d },
+  bank: { text: 'BANK!', color: 0xff9a4d },
 };
 
 /**
@@ -88,6 +98,15 @@ export class GameRunner {
   private coachDay = -1;
   private realT = 0;
   private proKey = '';
+  /** Today's PRO route for the rig in hand, the charted waypoints, and the stops fished so far. */
+  private route: NavStop[] = [];
+  private waypoints: NavStop[] = [];
+  private visited = new Set<string>();
+  private castsSeen = 0;
+  private bankNoticeAt = -Infinity;
+  private bankAt = -Infinity;
+  /** Water route to the destination (re-planned as the boat moves). */
+  private path: { key: string; from: Vec2; at: number; pts: Vec2[] } | null = null;
 
   async start(host: HTMLElement) {
     await this.renderer.init(host);
@@ -112,7 +131,7 @@ export class GameRunner {
     const grid = getLakeGrid(LAKES[t.lakeId]);
     this.renderer.debug = store.save.settings.debugMeter;
 
-    const blocked = store.paused || store.screen !== 'game' || t.phase === 'WeighIn' || t.phase === 'Landed';
+    const blocked = store.paused || store.mapOpen || store.screen !== 'game' || t.phase === 'WeighIn' || t.phase === 'Landed';
     if (!blocked) {
       this.acc += dt;
       let n = 0;
@@ -131,13 +150,23 @@ export class GameRunner {
     if (t.day !== this.coachDay) {
       this.coach = newCoach();
       this.coachDay = t.day;
+      // A resumed day keeps the stops already fished.
+      this.visited = new Set(t.navVisited?.day === t.day ? t.navVisited.ids : []);
+      this.castsSeen = t.stats.casts;
+      this.path = null;
+      this.waypoints = LAKES[t.lakeId].waypoints.filter((w) => w.visible).map((w) => ({ id: w.id, name: w.name, x: w.x, y: w.y }));
+      if (store.navTarget) store.setNavTarget(null);
+      this.proKey = '';
     }
     // Mark the advisor's stops for the rig in hand (recomputed when the day or rod changes).
     const proKey = store.save.settings.coach ? `${t.day}:${t.activeRod}:${t.deck[t.activeRod]?.lureId}` : 'off';
     if (proKey !== this.proKey) {
       this.proKey = proKey;
-      this.renderer.setProStops(proKey === 'off' ? [] : advisorRoute(LAKES[t.lakeId], t.conditions, t.deck[t.activeRod]).map((s) => s.spot));
+      this.route = proKey === 'off' ? [] : advisorRoute(LAKES[t.lakeId], t.conditions, t.deck[t.activeRod]).map((s, i) => ({ id: s.spot.id, name: s.spot.name, x: s.spot.x, y: s.spot.y, pro: i + 1 }));
+      this.renderer.setProStops(this.route);
+      store.setNavRoute({ route: this.route, visited: [...this.visited] });
     }
+    this.trackVisits(t);
     const tip = coachStep(this.coach, t, events, this.realT, blocked ? 0 : dt, store.save.settings.coach);
     if (tip) store.notify({ kind: 'coach', title: tip.title, sub: tip.text, tone: 'info' });
     if (t.fight) dragTick(t.fight.tension, inputHub.reel, this.renderer.view.time);
@@ -146,7 +175,8 @@ export class GameRunner {
     this.hudT -= dt;
     if (this.hudT <= 0) {
       this.hudT = HUD_INTERVAL;
-      store.setHud(buildHud(t, this.nearWaypoint(t)));
+      const nav = this.navHud(t);
+      store.setHud(buildHud(t, this.nearWaypoint(t), nav.hud, nav.inRange));
     }
     this.saveT += dt;
     if (this.saveT > AUTOSAVE_INTERVAL) {
@@ -169,6 +199,11 @@ export class GameRunner {
     const store = useStore.getState();
     const events = drainEvents(t);
     for (const e of events) {
+      // A hit on plane can be followed by a second as the boat creeps the last metres in: one bump.
+      if (e.type === 'bank') {
+        if (this.realT - this.bankAt < BANK_DEBOUNCE) continue;
+        this.bankAt = this.realT;
+      }
       playEvent(e.type);
       const n = noticeFor(e);
       if (n) store.notify(n);
@@ -176,8 +211,69 @@ export class GameRunner {
       const c = CALLOUT[e.type];
       if (c && e.at) this.renderer.callout(c.text, c.color, e.at);
       if (e.type === 'landed' || e.type === 'cullNeeded') store.persist();
+      if (e.type === 'bank') {
+        this.renderer.shake();
+        if (this.realT - this.bankNoticeAt > BANK_NOTICE_GAP) {
+          this.bankNoticeAt = this.realT;
+          store.notify({ kind: 'bug', title: 'On the bank: steer away from shore to back off', tone: 'bad' });
+        }
+      }
     }
     return events;
+  }
+
+  private castRange(t: TournamentState) {
+    const rig = t.deck[t.activeRod];
+    return rig ? castRangeM(rig, t.conditions) : 25;
+  }
+
+  /** A stop counts as fished once you make a cast within casting range of it. */
+  private trackVisits(t: TournamentState) {
+    if (t.stats.casts === this.castsSeen) return;
+    this.castsSeen = t.stats.casts;
+    const store = useStore.getState();
+    const fresh = markVisited(this.visited, [...this.route, ...this.waypoints, ...(store.navTarget ? [store.navTarget] : [])], t.boat.pos, this.castRange(t));
+    if (!fresh.length) return;
+    t.navVisited = { day: t.day, ids: [...this.visited] };
+    if (store.navTarget && this.visited.has(store.navTarget.id)) store.setNavTarget(null);
+    store.setNavRoute({ route: this.route, visited: [...this.visited] });
+  }
+
+  /** The destination chip: where you're headed, how far, which way, and what to do about it. */
+  private navHud(t: TournamentState): { hud: NavHud | null; inRange: boolean } {
+    const target = useStore.getState().navTarget;
+    const dest = target ?? nextStop(this.route, this.visited);
+    const range = this.castRange(t);
+    const boat = t.boat;
+    const grid = getLakeGrid(LAKES[t.lakeId]);
+    const key = dest ? `${t.lakeId}:${dest.id}` : '';
+    const p = this.path;
+    if (dest && (!p || p.key !== key || distanceM(p.from, boat.pos) > REPATH_M || this.realT - p.at > REPATH_SEC)) {
+      this.path = { key, from: { ...boat.pos }, at: this.realT, pts: waterPath(grid, boat.pos, dest) };
+      useStore.getState().setNavPath(this.path.pts);
+    }
+    const path = dest && this.path ? this.path.pts : [];
+    this.renderer.setDestination(dest, range, this.visited, path);
+    const inRange = !!nearestInRange(dest ? [dest, ...this.route, ...this.waypoints] : [...this.route, ...this.waypoints], boat.pos, range);
+    if (!dest) return { hud: null, inRange };
+    const d = distanceM(boat.pos, dest);
+    // The arrow follows the water: round an island or a point rather than straight through it.
+    const steer = path.length ? steerPoint(grid, boat.pos, path) : dest;
+    return {
+      hud: {
+        name: dest.name,
+        pro: dest.pro ?? null,
+        distM: Math.round(d),
+        rel: relativeBearing(boat.heading, boat.pos, steer),
+        routed: steer !== path[path.length - 1] && steer !== dest,
+        steerCompass: compassPoint(bearingTo(boat.pos, steer)),
+        compass: compassPoint(bearingTo(boat.pos, dest)),
+        cue: navCue(d, boat.motor, range),
+        outboard: boat.motor === 'outboard',
+        manual: !!target,
+      },
+      inRange,
+    };
   }
 
   private nearWaypoint(t: TournamentState) {

@@ -8,6 +8,9 @@ import { HUD_FONT, sonarInsetRect, type Insets, type Scene, type View } from './
 import { WaterScene } from './scenes/WaterScene';
 
 type SceneKey = 'map' | 'cast' | 'water';
+const SHAKE_SEC = 0.35;
+const SHAKE_PX = 7;
+
 const SCENE_FOR: Record<GamePhase, SceneKey> = {
   Navigate: 'map',
   Cast: 'cast',
@@ -42,11 +45,24 @@ export class GameRenderer {
   private sonarBottom = -1;
   private lastT: TournamentState | null = null;
   debug = false;
-  private proStops: Vec2[] = [];
+  private proStops: (Vec2 & { id?: string })[] = [];
+  private miniKey = '';
+  private shakeT = 0;
+  private reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   /** The advisor's stops to mark on the map (empty hides them). */
-  setProStops(stops: Vec2[]) {
+  setProStops(stops: (Vec2 & { id?: string })[]) {
     this.proStops = stops;
     (this.scenes?.map as MapScene | undefined)?.setProStops(stops);
+  }
+
+  /** Where the destination chip points (rings on the chart, highlight on the minimap). */
+  setDestination(dest: (Vec2 & { id?: string }) | null, rangeM: number, visited: ReadonlySet<string> = new Set(), path: readonly Vec2[] = []) {
+    (this.scenes?.map as MapScene | undefined)?.setDestination(dest, rangeM, visited, path);
+  }
+
+  /** A short jolt of the world layer (hitting the bank). The HUD stays put. */
+  shake() {
+    if (!this.reducedMotion) this.shakeT = SHAKE_SEC;
   }
 
   async init(host: HTMLElement) {
@@ -94,6 +110,17 @@ export class GameRenderer {
     const strip = document.querySelector('.hud-left');
     if (!strip || !this.host) return;
     this.hudTop = strip.getBoundingClientRect().bottom - this.host.getBoundingClientRect().top;
+    // The DOM hit area over the minimap (tap to open the full map) and the destination chip beside it.
+    const mini = this.active === 'map' ? (this.scenes.map as MapScene).miniRect : null;
+    const miniKey = mini ? `${Math.round(mini.x)},${Math.round(mini.y)},${Math.round(mini.w)},${Math.round(mini.h)}` : '';
+    if (mini && miniKey !== this.miniKey) {
+      this.miniKey = miniKey;
+      const st = this.host.parentElement?.style;
+      st?.setProperty('--mini-x', `${Math.round(mini.x)}px`);
+      st?.setProperty('--mini-y', `${Math.round(mini.y)}px`);
+      st?.setProperty('--mini-w', `${Math.round(mini.w)}px`);
+      st?.setProperty('--mini-h', `${Math.round(mini.h)}px`);
+    }
     const r = sonarInsetRect(this.view);
     const bottom = Math.round(r.y + r.h + 10);
     if (bottom !== this.sonarBottom) {
@@ -157,6 +184,11 @@ export class GameRenderer {
       this.gradeTimer = 1;
     }
     this.drawWeather(t, dt);
+    if (this.shakeT > 0) {
+      this.shakeT = Math.max(0, this.shakeT - dt);
+      const a = SHAKE_PX * (this.shakeT / SHAKE_SEC);
+      this.layer.position.set((Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a);
+    } else if (this.layer.x || this.layer.y) this.layer.position.set(0, 0);
     this.lastT = t;
     this.updateCallouts(dt);
   }

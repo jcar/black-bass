@@ -7,6 +7,7 @@ import { Button, Icon } from '../kit';
 import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import { SettingsSheet } from '../Settings';
 import { Hud } from './Hud';
+import { LakeMap } from './LakeMap';
 import { LandedModal } from './LandedModal';
 import { Banner, NoticeLive } from './Notices';
 import { TouchControls } from './TouchControls';
@@ -63,6 +64,7 @@ export function GameScreen() {
   const host = useRef<HTMLDivElement>(null);
   const hud = useStore((s) => s.hud);
   const paused = useStore((s) => s.paused);
+  const mapOpen = useStore((s) => s.mapOpen);
   const settings = useStore((s) => s.save.settings);
   const lureId = useStore((s) => s.tournament?.deck[s.hud?.activeRod ?? 0]?.lureId ?? 'ned');
 
@@ -70,15 +72,22 @@ export function GameScreen() {
     const runner = new GameRunner();
     if (host.current) void runner.start(host.current);
     setSoundEnabled(useStore.getState().save.settings.sound);
-    return () => runner.stop();
+    useStore.getState().setMapOpen(false);
+    return () => {
+      runner.stop();
+      useStore.getState().setMapOpen(false);
+    };
   }, []);
 
   useEffect(() => {
     // Escape pauses. An open sheet takes Escape first (kit Sheet, capture phase) and the event never
     // gets here, so one press never both closes the pause menu and reopens it.
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.repeat || e.defaultPrevented) return;
+      if (e.repeat || e.defaultPrevented) return;
       const st = useStore.getState();
+      // M opens the lake map while driving (M is move/burn in only once you're fishing) and closes it.
+      if (e.key.toLowerCase() === 'm' && !st.paused && (st.mapOpen || st.hud?.phase === 'Navigate')) st.setMapOpen(!st.mapOpen);
+      if (e.key !== 'Escape') return;
       if (!st.paused) st.setPaused(true);
     };
     window.addEventListener('keydown', onKey);
@@ -90,10 +99,11 @@ export function GameScreen() {
       <div className="canvas-host" ref={host} />
       {hud && (
         <>
-          {hud.phase !== 'Landed' && !paused && (
+          {hud.phase !== 'Landed' && !paused && !mapOpen && (
             <TouchControls
               phase={hud.phase}
               canFish={hud.canFish}
+              inRange={hud.inRange}
               castFlying={hud.castFlying}
               castCharging={hud.castCharging}
               tension={Math.round(hud.tension * 50) / 50}
@@ -107,6 +117,7 @@ export function GameScreen() {
       )}
       <Banner />
       <NoticeLive />
+      <LakeMap />
       <PauseMenu open={paused} />
     </div>
   );

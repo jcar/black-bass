@@ -189,6 +189,7 @@ export interface TournamentEvent {
     | 'timeWarning'
     | 'dayOver'
     | 'stump'
+    | 'bank'
     | 'rivalCatch'
     | 'leaderChange'
     | 'playerPlace'
@@ -213,6 +214,8 @@ export interface BoatState {
   heading: number;
   speed: number; // m/s (world)
   motor: 'outboard' | 'trolling';
+  /** Touching the bank (set by stepNavigate): a bump is reported once per contact, not every step. */
+  onBank?: boolean;
 }
 
 export interface TournamentState {
@@ -252,6 +255,11 @@ export interface TournamentState {
   popCursor: number;
   /** Optional so tournaments saved before the feed existed still load. */
   broadcast?: BroadcastState;
+  /**
+   * Navigation bookkeeping kept with the save so a resumed day remembers which stops you've fished
+   * (written by the game runner; the sim never reads it).
+   */
+  navVisited?: { day: number; ids: string[] };
 }
 
 /** One frame of player input, produced by touch controls or keyboard. */

@@ -4,8 +4,9 @@ import { PURSE, TIER_FORMAT } from '../../data/lakes';
 import { TUNING } from '../../data/tuning';
 import { inputHub } from '../../game/input';
 import { LIVEWELL_LIMIT } from '../../sim/livewell';
+import { OFF_PLANE_M } from '../../sim/nav';
 import type { RodSetup } from '../../sim/types';
-import type { Hud as HudData } from '../../state/store';
+import type { Hud as HudData, NavHud } from '../../state/store';
 import { useStore } from '../../state/store';
 import { lbOz, LureIcon } from '../components';
 import { Icon, spring } from '../kit';
@@ -55,9 +56,46 @@ const RodBar = memo(function RodBar({ labels, active, pick, deck }: { labels: st
   );
 });
 
+/**
+ * Where you're headed, beside the minimap: the stop, how far, which way relative to the bow (arrow up =
+ * dead ahead), and the approach cue (come off plane at the advisor's distance, then fish it in range).
+ */
+const NavChip = memo(function NavChip({ nav, onOpen }: { nav: NavHud; onOpen: () => void }) {
+  const status =
+    nav.cue === 'inRange'
+      ? 'In range'
+      : nav.cue === 'idleIn'
+        ? 'Idle in now'
+        : nav.routed && nav.steerCompass !== nav.compass
+          ? `Go round, head ${nav.steerCompass}`
+          : nav.outboard
+            ? `Off plane at ${OFF_PLANE_M} m`
+            : null;
+  return (
+    <button className={`nav-chip hud-box ${nav.cue ?? ''}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
+      <span className="nav-arrow" style={{ transform: `rotate(${nav.rel}rad)` }} aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2l8 18-8-4.5L4 20z" />
+        </svg>
+      </span>
+      <span className="nav-text">
+        <span className="nav-name">
+          {nav.pro ? <b className="nav-pro">PRO {nav.pro}</b> : <Icon name="pin" size={13} />} {nav.name}
+        </span>
+        <span className="nav-dist">
+          {nav.distM} m {nav.compass}
+          {status && <em className="nav-status"> · {status}</em>}
+        </span>
+      </span>
+    </button>
+  );
+});
+
 export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const coachOn = useStore((s) => s.save.settings.coach);
   const setPaused = useStore((s) => s.setPaused);
+  const setMapOpen = useStore((s) => s.setMapOpen);
+  const openMap = () => setMapOpen(true);
   const deck = useStore((s) => s.tournament?.deck);
   const tier = useStore((s) => s.tournament?.tier);
   const cutDay = useStore((s) => (s.tournament && s.tournament.cutAfterDay === s.tournament.day ? TIER_FORMAT[s.tournament.tier].cutTo : null));
@@ -132,10 +170,18 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
           <NoticeStrip hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />
         </div>
         <div style={{ flex: 1 }} />
+        {(hud.phase === 'Navigate' || hud.phase === 'Cast') && (
+          <button className="icon-btn" aria-label="Lake map" title="Lake map (M while driving)" onClick={openMap}>
+            <Icon name="map" />
+          </button>
+        )}
         <button className="icon-btn" aria-label="Pause" onClick={() => setPaused(true)}>
           <Icon name="pause" />
         </button>
       </div>
+
+      {hud.phase === 'Navigate' && <button className="minimap-hit" aria-label="Open the lake map" onClick={openMap} />}
+      {hud.nav && <NavChip nav={hud.nav} onOpen={openMap} />}
 
       {/* Outside the zoomed top bar: it's placed under the sonar inset by the renderer (--sonar-bottom). */}
       <CoachCard hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />

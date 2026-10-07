@@ -19,10 +19,18 @@ npm run build        # typecheck + production build + zero-runtime-API guard
 On iOS: open the LAN URL in Safari, accept the certificate, then **Share → Add to Home Screen** for
 full-screen landscape play that works offline.
 
-Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), F = fish
-here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
-T = twitch/hop/shake, B = thumb brake, V = bow on a jump, M = move/burn in, P = pop hook, Esc = pause
+Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), M = lake
+map while driving (1-9 picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
+T = twitch/hop/shake, B = thumb brake, V = bow on a jump, M = move/burn in once fishing, P = pop hook, Esc = pause
 (or close the open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
+
+Getting around: the chip beside the minimap points at the next PRO stop you haven't fished (name, metres,
+an arrow relative to the bow; a stop counts once you cast within casting range of it). Around it the chart
+draws the advisor's come-off-plane ring (dashed amber) and your rig's casting range (green); the chip warns
+"Idle in now" if you're still on the outboard inside the ring and says "In range" (FISH glows) once you can
+reach it. Tap the minimap, the map button or the chip (or press M) for the full lake map: tap a stop to
+make it the destination. The clock stops while the map is open, as it does in the pause menu. Hitting the
+bank bumps (sound, shake, callout); the boat scrapes along it, and steering away always backs it off.
 
 ## Deploying
 

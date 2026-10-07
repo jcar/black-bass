@@ -289,6 +289,24 @@ function bindEscape() {
   );
 }
 
+/** Join the sheet stack while `open`: Escape closes the topmost panel only (sheets, the lake map). */
+export function useEscapeClose(open: boolean, onClose: () => void) {
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
+  useEffect(() => {
+    if (!open) return;
+    bindEscape();
+    const entry = { close: () => close.current() };
+    openSheets.push(entry);
+    return () => {
+      const i = openSheets.indexOf(entry);
+      if (i >= 0) openSheets.splice(i, 1);
+    };
+  }, [open]);
+}
+
 export function Sheet({
   open,
   onClose,
@@ -307,20 +325,7 @@ export function Sheet({
   useEffect(() => {
     if (open) playUi('open');
   }, [open]);
-  const close = useRef(onClose);
-  useEffect(() => {
-    close.current = onClose;
-  });
-  useEffect(() => {
-    if (!open) return;
-    bindEscape();
-    const entry = { close: () => close.current() };
-    openSheets.push(entry);
-    return () => {
-      const i = openSheets.indexOf(entry);
-      if (i >= 0) openSheets.splice(i, 1);
-    };
-  }, [open]);
+  useEscapeClose(open, onClose);
   return (
     <AnimatePresence>
       {open && (

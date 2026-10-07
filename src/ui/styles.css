@@ -1656,6 +1656,380 @@ p {
   }
 }
 
+/* ---------- Navigation: minimap hit area, destination chip, lake map ---------- */
+/* Over the Pixi minimap (the renderer publishes its rect as --mini-*): tap to open the lake map. */
+.minimap-hit {
+  position: absolute;
+  left: var(--mini-x, -200px);
+  top: var(--mini-y, 0);
+  width: var(--mini-w, 0);
+  height: var(--mini-h, 0);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.minimap-hit:focus-visible {
+  outline: 2px solid var(--accent);
+}
+/* Beside the minimap, left of it, top-aligned. */
+.nav-chip {
+  position: absolute;
+  top: var(--mini-y, calc(64px + var(--safe-t)));
+  right: calc(100% - var(--mini-x, 100%) + 8px);
+  max-width: min(300px, 34vw);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.nav-arrow {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  transition: transform 0.1s linear;
+}
+.nav-arrow svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--accent);
+  stroke: #07141a;
+  stroke-width: 1.2;
+}
+.nav-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+.nav-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-pro {
+  color: #5ee08a;
+}
+.nav-dist {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.nav-status {
+  font-style: normal;
+  color: var(--muted);
+}
+.nav-chip.inRange {
+  border-color: var(--good);
+}
+.nav-chip.inRange .nav-status {
+  color: var(--good);
+}
+.nav-chip.idleIn {
+  border-color: var(--bad);
+  animation: chip-warn 0.5s ease-in-out infinite alternate;
+}
+.nav-chip.idleIn .nav-status {
+  color: #ff8a7d;
+}
+@keyframes chip-warn {
+  to {
+    background: rgba(120, 24, 16, 0.9);
+  }
+}
+/* FISH in casting range of a stop: glow and pulse (free fishing anywhere still works). */
+.tbtn.cue {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 4px rgba(92, 242, 122, 0.85),
+    0 0 26px 6px rgba(92, 242, 122, 0.55);
+  animation: fish-cue 0.7s ease-in-out infinite alternate;
+}
+@keyframes fish-cue {
+  to {
+    transform: scale(1.07);
+    box-shadow:
+      0 0 0 6px rgba(92, 242, 122, 0.95),
+      0 0 34px 10px rgba(92, 242, 122, 0.7);
+  }
+}
+
+.lakemap {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  gap: 14px;
+  padding: calc(10px + var(--safe-t)) calc(12px + var(--safe-r)) calc(10px + var(--safe-b)) calc(12px + var(--safe-l));
+  background: rgba(4, 14, 20, 0.94);
+}
+.lakemap-box {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.lakemap-chart {
+  position: relative;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--line-strong);
+  touch-action: none;
+  cursor: pointer;
+}
+.lakemap-chart canvas,
+.lakemap-chart > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+}
+.lakemap-chart > svg {
+  overflow: visible;
+  pointer-events: none;
+}
+.lm-stumps {
+  fill: rgba(150, 96, 40, 0.32);
+  stroke: #c98b4a;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.lm-route {
+  fill: none;
+  stroke: rgba(94, 224, 138, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+.lm-course {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 4;
+}
+.lm-offplane {
+  fill: none;
+  stroke: #ffb84d;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.lm-pin,
+.lm-launch,
+.lm-boat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.lm-pin.wp {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2.5px solid #ffd34d;
+  background: radial-gradient(#ffd34d 30%, transparent 34%);
+}
+.lm-pin.pro {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #5ee08a;
+  color: #07141a;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 0 0 1.5px #07141a;
+}
+.lm-pin.pro.done {
+  opacity: 0.5;
+}
+.lm-pin.dest {
+  box-shadow:
+    0 0 0 2px #07141a,
+    0 0 0 4.5px #fff;
+}
+.lm-label {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #ffe9a8;
+  text-shadow:
+    0 0 3px #07141a,
+    0 0 3px #07141a,
+    0 0 2px #07141a;
+}
+.lm-label.r {
+  left: calc(50% + 11px);
+}
+.lm-label.l {
+  right: calc(50% + 11px);
+}
+.lm-launch {
+  width: 11px;
+  height: 11px;
+  background: #2a6fdb;
+  border: 2.5px solid #fff;
+}
+.lm-boat {
+  width: 24px;
+  height: 24px;
+}
+.lm-boat svg {
+  width: 100%;
+  height: 100%;
+  fill: #ff4433;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.lm-scale {
+  position: absolute;
+  left: 4px;
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(4, 14, 20, 0.75);
+  pointer-events: none;
+}
+.lm-scale .bar {
+  height: 6px;
+  border: 2px solid #fff;
+  border-top: 0;
+}
+.lakemap-side {
+  width: min(320px, 44vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.lm-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.lm-hint {
+  color: var(--muted);
+}
+.lm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.lm-row.dest {
+  border-color: #fff;
+  background: var(--panel-2);
+}
+.lm-row.done {
+  opacity: 0.6;
+}
+.lm-num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #5ee08a;
+  color: #07141a;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+.lm-num.wp {
+  width: 14px;
+  height: 14px;
+  margin: 0 4px;
+  background: transparent;
+  border: 2.5px solid #ffd34d;
+}
+.lm-num.auto {
+  background: var(--accent);
+}
+.lm-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lm-dist {
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.lm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.lm-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  vertical-align: -2px;
+  margin-right: 3px;
+}
+.lg-boat {
+  background: #ff4433;
+  clip-path: polygon(100% 50%, 0 0, 30% 50%, 0 100%);
+}
+.lg-launch {
+  background: #2a6fdb;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.lg-ring {
+  border-radius: 50%;
+  border: 2px dashed #ffb84d;
+}
+.lg-lane {
+  height: 0 !important;
+  border-top: 3px dashed #f3f3f3;
+  vertical-align: 3px !important;
+}
+.lg-stumps {
+  border-radius: 50%;
+  background: rgba(150, 96, 40, 0.6);
+  border: 1.5px dashed #c98b4a;
+}
+
 /* ---------- Touch controls ---------- */
 .touch {
   position: absolute;
@@ -1835,7 +2209,9 @@ label.tbtn.disabled {
   .scene-art.drift,
   .hotspot.goal .ring::after,
   .bow-prompt,
-  .tension-ring.danger {
+  .tension-ring.danger,
+  .tbtn.cue,
+  .nav-chip.idleIn {
     animation: none;
   }
 }

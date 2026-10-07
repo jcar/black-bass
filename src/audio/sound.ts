@@ -104,6 +104,11 @@ const SYNTH: Partial<Record<TournamentEvent['type'], () => void>> = {
   },
   dayOver: () => tone(392, 0.6, 0.12, 'triangle', 523),
   shore: () => noiseBurst(0.25, 300, 1, 0.4),
+  // Hull on the bank: a low thump plus a gravelly scrape.
+  bank: () => {
+    tone(85, 0.3, 0.35, 'sine', 45);
+    noiseBurst(0.3, 220, 0.9, 0.55, 120);
+  },
   popped: () => noiseBurst(0.3, 800, 1, 0.4, 1600),
 };
 

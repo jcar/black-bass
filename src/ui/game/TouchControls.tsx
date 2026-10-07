@@ -56,7 +56,24 @@ function HoldButton({ label, size, onChange, children }: { label: string; size: 
   );
 }
 
-function TapButton({ label, size, onTap, disabled, accent, haptic }: { label: string; size: 'xl' | 'lg' | 'md'; onTap: () => void; disabled?: boolean; accent?: boolean; haptic?: boolean }) {
+function TapButton({
+  label,
+  size,
+  onTap,
+  disabled,
+  accent,
+  haptic,
+  cue,
+}: {
+  label: string;
+  size: 'xl' | 'lg' | 'md';
+  onTap: () => void;
+  disabled?: boolean;
+  accent?: boolean;
+  haptic?: boolean;
+  /** Glow and pulse: this is the moment to press it (FISH in casting range of a stop). */
+  cue?: boolean;
+}) {
   // On iPhone the haptic comes from the user's own tap toggling a switch inside a label; the action
   // itself still fires on pointerdown so there's no tap delay.
   if (haptic && IOS)
@@ -64,7 +81,7 @@ function TapButton({ label, size, onTap, disabled, accent, haptic }: { label: st
       <label
         role="button"
         aria-disabled={disabled}
-        className={`tbtn ${size} ${accent ? 'accent' : ''} ${disabled ? 'disabled' : ''}`}
+        className={`tbtn ${size} ${accent ? 'accent' : ''} ${disabled ? 'disabled' : ''} ${cue ? 'cue' : ''}`}
         onPointerDown={() => {
           unlockAudio();
           if (!disabled) onTap();
@@ -76,7 +93,7 @@ function TapButton({ label, size, onTap, disabled, accent, haptic }: { label: st
     );
   return (
     <button
-      className={`tbtn ${size} ${accent ? 'accent' : ''}`}
+      className={`tbtn ${size} ${accent ? 'accent' : ''} ${cue ? 'cue' : ''}`}
       disabled={disabled}
       onPointerDown={(e) => {
         e.preventDefault();
@@ -100,6 +117,8 @@ function TapButton({ label, size, onTap, disabled, accent, haptic }: { label: st
 interface ControlsProps {
   phase: GamePhase;
   canFish: boolean;
+  /** In casting range of the destination, a PRO stop or a waypoint: FISH glows (fishing anywhere is still allowed). */
+  inRange: boolean;
   castFlying: boolean;
   castCharging: boolean;
   /** Rounded to 2 decimals by the caller so the memo holds between meaningful changes. */
@@ -110,7 +129,7 @@ interface ControlsProps {
 }
 
 /** Memoised: the HUD snapshot ticks at 10 Hz, but the controls only change with these props. */
-export const TouchControls = memo(function TouchControls({ phase, canFish, castFlying, castCharging, tension, leftHanded, lureId }: ControlsProps) {
+export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId }: ControlsProps) {
   const [stick, setStick] = useState<{ ox: number; oy: number; x: number; y: number } | null>(null);
   const touch = useRef<{ id: number; t0: number; x0: number; y0: number } | null>(null);
 
@@ -154,7 +173,7 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, castF
   const keyboard = typeof window !== 'undefined' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
   const hint = keyboard
     ? phase === 'Navigate'
-      ? 'WASD steer (quiet) · Shift+WASD run · F fish'
+      ? 'WASD steer (quiet) · Shift+WASD run · M map · F fish'
       : phase === 'Cast'
         ? 'A/D aim · C cast, C again to release · B thumb · M move'
         : phase === 'Present'
@@ -185,7 +204,7 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, castF
         {!stick && <div className="stick-hint">{hint}</div>}
       </div>
       <div className="btn-zone">
-        {phase === 'Navigate' && <TapButton label="FISH" size="xl" accent haptic disabled={!canFish} onTap={() => inputHub.tap('fishHere')} />}
+        {phase === 'Navigate' && <TapButton label="FISH" size="xl" accent haptic disabled={!canFish} cue={inRange && canFish} onTap={() => inputHub.tap('fishHere')} />}
         {phase === 'Cast' && (
           <>
             {!castFlying && <TapButton label="MOVE" size="md" onTap={() => inputHub.tap('moveOn')} />}

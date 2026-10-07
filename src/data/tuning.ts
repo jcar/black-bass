@@ -41,6 +41,14 @@ export const TUNING = {
     spookMaxMin: 40,
     /** Must be nearly stopped to start fishing. */
     fishHereMaxSpeed: 6,
+    /** (game) Hitting the bank faster than this (m/s) bumps: sound, shake, callout. */
+    bankBumpSpeed: 1.5,
+    /** The bow's clearance (m): the boat stops this far off the bank. */
+    bankLookM: 6,
+    /** (game) Against the bank the boat glances off this far (rad, then twice it, then square on) toward the turn. */
+    bankGlance: 0.6,
+    /** (game) Slowest scrape along the bank, as a share of speed (a square-on glance). */
+    bankScrapeMin: 0.35,
   },
 
   cast: {

@@ -22,6 +22,7 @@ import { generateConditions, lightLevel } from './conditions';
 import { activityFor } from './fish/activity';
 import { colorFit, depthMatch, detectRange, jerkPauseWindow, lineVisibilityFit, lureConditionFit, lureTempFit } from './fish/attraction';
 import { holdingDepth, speciesWeightsAt } from './fish/population';
+import { OFF_PLANE_M } from './nav';
 import { COVER_CODES, getLakeGrid, HARD_COVER, type LakeGrid } from './lake';
 import { Rng } from './rng';
 import type { Conditions, CoverType, Line, RodSetup, Season, SpeciesId, Vec2 } from './types';
@@ -429,7 +430,7 @@ export function techniqueTip(lureId: string, waterTempF: number): string {
 }
 
 /** How to approach a spot so you don't spook what you came for (stepNavigate). */
-export const APPROACH_TIP = `Come off plane ${Math.round(TUNING.boat.outboardSpookRadius * 3)} m out and idle in on the trolling motor: running the outboard within ${TUNING.boat.outboardSpookRadius} m spooks fish for 15-40 minutes.`;
+export const APPROACH_TIP = `Come off plane ${OFF_PLANE_M} m out and idle in on the trolling motor: running the outboard within ${TUNING.boat.outboardSpookRadius} m spooks fish for 15-40 minutes.`;
 
 // ---------- Reports ----------
 

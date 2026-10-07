@@ -7,8 +7,9 @@ import { TUNING } from '../data/tuning';
 import { dayPlan, proPickNow, windowAt, type WindowPlan } from '../sim/advisor';
 import { formatClock } from '../sim/conditions';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
+import type { NavStop } from '../sim/nav';
 import { createTournament, isTournamentOver, standings, startNextDay, switchRod } from '../sim/tournament';
-import type { CaughtFish, GamePhase, TournamentState } from '../sim/types';
+import type { CaughtFish, GamePhase, TournamentState, Vec2 } from '../sim/types';
 import { applyResult, tierOfLake } from './career';
 import type { TournamentResult } from './save';
 import { loadSave, writeSave, type SaveData } from './save';
@@ -45,6 +46,29 @@ export interface Hud {
   lastLanded: CaughtFish | null;
   /** Advisor's rig for right now: the day plan's, unless the water here clearly suits another (deck index). */
   proPick: number;
+  /** Where you're driving (Navigate only): the next unfished PRO stop, or the one you picked on the map. */
+  nav: NavHud | null;
+  /** Within casting range of the destination, a PRO stop or a charted waypoint: the FISH button lights up. */
+  inRange: boolean;
+}
+
+export interface NavHud {
+  name: string;
+  /** Route number when the destination is a PRO stop. */
+  pro: number | null;
+  distM: number;
+  /** Which way to steer, relative to the boat's heading (rad): 0 dead ahead, positive to starboard. Follows the water route. */
+  rel: number;
+  /** Land is in the way: the arrow points along the water route, not straight at the stop. */
+  routed: boolean;
+  /** Compass point to steer for now (along the route). */
+  steerCompass: string;
+  /** Compass point from the boat ("NE"). */
+  compass: string;
+  cue: 'inRange' | 'idleIn' | null;
+  outboard: boolean;
+  /** Picked on the map, rather than the route's next stop. */
+  manual: boolean;
 }
 
 /**
@@ -73,6 +97,18 @@ interface StoreState {
   hud: Hud | null;
   notices: Notice[];
   paused: boolean;
+  /** The full lake map is open (the clock stops, like the pause menu). */
+  mapOpen: boolean;
+  setMapOpen: (open: boolean) => void;
+  /** A stop picked on the full map; null follows the PRO route. */
+  navTarget: NavStop | null;
+  setNavTarget: (s: NavStop | null) => void;
+  /** Today's PRO route for the rig in hand and the stops already fished (published by the runner on change). */
+  navRoute: { route: NavStop[]; visited: string[] };
+  setNavRoute: (r: { route: NavStop[]; visited: string[] }) => void;
+  /** Water route from the boat to the destination (for the lake map's course line). */
+  navPath: Vec2[];
+  setNavPath: (p: Vec2[]) => void;
   lastResult: { result: TournamentResult; promoted: string | null } | null;
 
   setScreen: (s: Screen) => void;
@@ -129,6 +165,14 @@ export const useStore = create<StoreState>((set, get) => ({
   debrief: [],
   setDebrief: (debrief) => set({ debrief }),
   paused: false,
+  mapOpen: false,
+  setMapOpen: (mapOpen) => set({ mapOpen }),
+  navTarget: null,
+  setNavTarget: (navTarget) => set({ navTarget }),
+  navRoute: { route: [], visited: [] },
+  setNavRoute: (navRoute) => set({ navRoute }),
+  navPath: [],
+  setNavPath: (navPath) => set({ navPath }),
   lastResult: null,
 
   setScreen: (screen) => set({ screen }),
@@ -246,7 +290,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 }));
 
-export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint']): Hud {
+export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint'], nav: NavHud | null = null, inRange = false): Hud {
   const lake = LAKES[t.lakeId];
   const st = standings(t, false);
   const placeIdx = st.findIndex((x) => x.isPlayer);
@@ -281,6 +325,8 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint']):
     pendingCull: t.pendingCull,
     lastLanded: t.lastLanded,
     proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos, planFor(t)) : t.activeRod,
+    nav: t.phase === 'Navigate' ? nav : null,
+    inRange: t.phase === 'Navigate' && inRange,
   };
 }
 

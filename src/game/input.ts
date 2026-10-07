@@ -7,7 +7,7 @@ const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
 
 /** Desktop key map, shown in the HUD and README. */
 export const KEY_HINTS =
-  'WASD/arrows steer (trolling) · Shift+steer run · F fish · C cast · Space reel · T twitch/hop/shake · B thumb · V bow · M move/burn in · P pop · Esc pause';
+  'WASD/arrows steer (trolling) · Shift+steer run · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · B thumb · V bow · M move/burn in (once fishing) · P pop · Esc pause';
 
 /**
  * How to work the lure on the line, by the cadence the attraction model rewards (presentationMatch).

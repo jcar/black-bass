@@ -1,5 +1,6 @@
 import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { LakeGrid } from '../../sim/lake';
+import { OFF_PLANE_M } from '../../sim/nav';
 import type { TournamentState, Vec2 } from '../../sim/types';
 import { BOAT_LENGTH_M, BOAT_SPRITE, texture } from '../../game/assets';
 import { paintLakeCanvas } from '../lakeTexture';
@@ -11,6 +12,21 @@ const SONAR_RANGE = 45;
 const SONAR_HALF = 0.5;
 /** A PRO stop this close (m) to a waypoint is the same place: label them together. */
 const PRO_MERGE_M = 30;
+const PRO_GREEN = 0x5ee08a;
+const OFF_PLANE_AMBER = 0xffb84d;
+
+/** A stop on the map: the runner's NavStop (id lets the scene dim the ones you've fished). */
+type MapStop = Vec2 & { id?: string };
+
+/** A dashed ring (Pixi Graphics has no dash style): `n` dashes, each half the gap-plus-dash arc. */
+function dashedCircle(g: Graphics, x: number, y: number, r: number, n: number) {
+  const step = (Math.PI * 2) / n;
+  for (let i = 0; i < n; i++) {
+    const a = i * step;
+    g.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r).arc(x, y, r, a, a + step * 0.55);
+  }
+  return g;
+}
 
 /** Phase 1: top-down lake chart, bass boat, forward-facing sonar. */
 export class MapScene implements Scene {
@@ -38,12 +54,27 @@ export class MapScene implements Scene {
   /** The advisor's stops for the active rig (coach on): numbered green rings. */
   private proLayer = new Container();
   private proPins: Container[] = [];
-  private proStops: Vec2[] = [];
+  private proStops: MapStop[] = [];
+  /** Route numbers on the minimap (built with the route, placed every frame). */
+  private miniNums: Text[] = [];
+  /** Where the chip is pointing: rings for coming off plane and for casting range. */
+  private dest: MapStop | null = null;
+  private destRange = 25;
+  private visited: ReadonlySet<string> = new Set();
+  /** Water route to the destination: a dotted course on the chart. */
+  private path: readonly Vec2[] = [];
+  private destRings = new Graphics();
+  private destLabel = new Text({ text: `IDLE IN · ${OFF_PLANE_M} m`, style: { fill: 0xffd9a0, fontSize: 13, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
+  /** Off-screen destination: a chevron on the screen edge pointing at it. */
+  private edgePtr = new Graphics();
+  /** Screen rect of the minimap (the DOM hit area over it opens the full map). */
+  miniRect = { x: 0, y: 0, w: 0, h: 0 };
 
   constructor() {
-    this.world.addChild(this.wake, this.markers, this.proLayer, this.sonar, this.boat);
+    this.destLabel.anchor.set(0.5, 1);
+    this.world.addChild(this.wake, this.destRings, this.markers, this.proLayer, this.destLabel, this.sonar, this.boat);
     this.root.addChild(this.world);
-    this.overlay.addChild(this.mini);
+    this.overlay.addChild(this.edgePtr, this.mini);
     this.mini.addChild(this.miniDots);
     this.drawBoat();
   }
@@ -53,15 +84,23 @@ export class MapScene implements Scene {
    * the waypoint's label ("ROCK PILE · PRO 2"); any other stop is labelled below-left of its ring,
    * away from waypoint labels, which sit to the right of theirs.
    */
-  setProStops(stops: Vec2[]) {
+  setProStops(stops: MapStop[]) {
     this.proStops = stops;
+    // Route numbers are just 1..n: keep the ones already built.
+    while (this.miniNums.length > stops.length) this.miniNums.pop()?.destroy();
+    while (this.miniNums.length < stops.length) {
+      const n = new Text({ text: `${this.miniNums.length + 1}`, resolution: 2, style: { fill: 0x07141a, fontSize: 9, fontFamily: HUD_FONT, fontWeight: '700' } });
+      n.anchor.set(0.5);
+      this.mini.addChild(n);
+      this.miniNums.push(n);
+    }
     this.proLayer.removeChildren().forEach((c) => c.destroy());
     const joined = new Map<Text, string[]>();
     for (const w of this.wpLabels) w.label.text = w.name;
     this.proPins = stops.map((s, i) => {
       const pin = new Container();
       pin.position.set(s.x, s.y);
-      const g = new Graphics().circle(0, 0, 11).stroke({ width: 2.5, color: 0x5ee08a });
+      const g = new Graphics().circle(0, 0, 11).stroke({ width: 2.5, color: PRO_GREEN });
       pin.addChild(g);
       const wp = this.wpLabels.find((w) => Math.hypot(w.x - s.x, w.y - s.y) < PRO_MERGE_M);
       if (wp) joined.set(wp.label, [...(joined.get(wp.label) ?? []), `PRO ${i + 1}`]);
@@ -74,6 +113,14 @@ export class MapScene implements Scene {
       return pin;
     });
     for (const w of this.wpLabels) if (joined.has(w.label)) w.label.text = `${w.name} · ${joined.get(w.label)!.join(' · ')}`;
+  }
+
+  /** The destination the chip points at (null hides the rings), its casting range, and the stops already fished. */
+  setDestination(dest: MapStop | null, rangeM: number, visited: ReadonlySet<string>, path: readonly Vec2[] = []) {
+    this.dest = dest;
+    this.path = path;
+    this.destRange = rangeM;
+    this.visited = visited;
   }
 
   toScreen(_t: TournamentState, _view: View, p: Vec2) {
@@ -148,7 +195,11 @@ export class MapScene implements Scene {
     const z = this.zoom * Math.min(view.w, view.h) / 390;
     this.world.scale.set(z);
     for (const p of this.pins) p.scale.set(1 / z);
-    for (const p of this.proPins) p.scale.set(1 / z);
+    this.proPins.forEach((p, i) => {
+      p.scale.set(1 / z);
+      p.alpha = this.isVisited(this.proStops[i]) ? 0.45 : 1;
+    });
+    this.drawDestination(view, z, boat.pos);
     const lead = Math.min(80, boat.speed * 0.9);
     this.world.position.set(
       view.w / 2 - (boat.pos.x + Math.cos(boat.heading) * lead) * z,
@@ -203,7 +254,64 @@ export class MapScene implements Scene {
       }
     }
 
+    this.drawEdgePointer(view);
     this.updateMinimap(t, grid, view);
+  }
+
+  /** When the destination is off screen, a chevron on the edge of the chart points the way to it. */
+  private drawEdgePointer(view: View) {
+    const g = this.edgePtr.clear();
+    const d = this.dest;
+    if (!d) return;
+    const p = this.world.toGlobal({ x: d.x, y: d.y });
+    const top = Math.max(view.hudTop, view.safe.t) + 24;
+    const box = { x0: view.safe.l + 30, x1: view.w - view.safe.r - 30, y0: top, y1: view.h - view.safe.b - 30 };
+    if (p.x > box.x0 && p.x < box.x1 && p.y > box.y0 && p.y < box.y1) return;
+    const cx = view.w / 2;
+    const cy = view.h / 2;
+    const a = Math.atan2(p.y - cy, p.x - cx);
+    // Where the ray from the centre leaves the box.
+    const tx = Math.cos(a) > 0 ? (box.x1 - cx) / Math.cos(a) : Math.cos(a) < 0 ? (box.x0 - cx) / Math.cos(a) : Infinity;
+    const ty = Math.sin(a) > 0 ? (box.y1 - cy) / Math.sin(a) : Math.sin(a) < 0 ? (box.y0 - cy) / Math.sin(a) : Infinity;
+    const r = Math.min(tx, ty);
+    const x = cx + Math.cos(a) * r;
+    const y = cy + Math.sin(a) * r;
+    const pt = (fwd: number, side: number) => [x + Math.cos(a) * fwd - Math.sin(a) * side, y + Math.sin(a) * fwd + Math.cos(a) * side];
+    g.poly([...pt(14, 0), ...pt(-8, -11), ...pt(-3, 0), ...pt(-8, 11)])
+      .fill({ color: 0xffffff, alpha: 0.92 })
+      .stroke({ width: 2, color: 0x07141a });
+  }
+
+  private isVisited(s: MapStop | undefined) {
+    return !!s?.id && this.visited.has(s.id);
+  }
+
+  /**
+   * Around the destination: the advisor's off-plane distance (dashed amber, "IDLE IN") and the rig's
+   * casting range (green). Inside the green ring you can reach the stop: FISH lights up.
+   */
+  private drawDestination(view: View, z: number, boat: Vec2) {
+    const g = this.destRings.clear();
+    const d = this.dest;
+    this.destLabel.visible = !!d;
+    if (!d) return;
+    // Dotted course along the water route (dots a constant ~10 px apart on screen).
+    const gap = 10 / z;
+    let prev = boat;
+    let carry = 0;
+    for (const p of this.path) {
+      const len = Math.hypot(p.x - prev.x, p.y - prev.y);
+      for (let s = gap - carry; s < len; s += gap) g.circle(prev.x + ((p.x - prev.x) * s) / len, prev.y + ((p.y - prev.y) * s) / len, 1.6 / z);
+      carry = len > 0 ? (carry + len) % gap : carry;
+      prev = p;
+    }
+    g.fill({ color: 0xffffff, alpha: 0.7 });
+    dashedCircle(g, d.x, d.y, OFF_PLANE_M, 36).stroke({ width: 2.5 / z, color: OFF_PLANE_AMBER, alpha: 0.85 });
+    g.circle(d.x, d.y, this.destRange).fill({ color: PRO_GREEN, alpha: 0.1 }).stroke({ width: 2 / z, color: PRO_GREEN, alpha: 0.9 });
+    const pulse = 15 + 4 * Math.sin(view.time * 4);
+    g.circle(d.x, d.y, pulse / z).stroke({ width: 3 / z, color: 0xffffff, alpha: 0.85 });
+    this.destLabel.scale.set(1 / z);
+    this.destLabel.position.set(d.x, d.y - OFF_PLANE_M - 3 / z);
   }
 
   private updateMinimap(t: TournamentState, grid: LakeGrid, view: View) {
@@ -214,11 +322,30 @@ export class MapScene implements Scene {
     this.miniLake.scale.set(scale / MAP_PX_PER_M);
     const mw = grid.def.sizeM.w * scale;
     this.mini.position.set(view.w - mw - 14 - view.safe.r, view.safe.t + 64);
+    this.miniRect = { x: this.mini.x - 4, y: this.mini.y - 4, w: mw + 8, h: mh + 8 };
     this.miniLake.alpha = 0.92;
     const g = this.miniDots.clear();
     g.roundRect(-4, -4, mw + 8, mh + 8, 6).stroke({ width: 1, color: 0xffffff, alpha: 0.28 });
     for (const w of grid.def.waypoints) if (w.visible) g.circle(w.x * scale, w.y * scale, 2.2).fill(0xffd34d);
-    for (const p of this.proStops) g.circle(p.x * scale, p.y * scale, 2.6).stroke({ width: 1.5, color: 0x5ee08a });
+    const d = this.dest;
+    if (d) {
+      // A heading line from the boat to where the chip points, and a white ring on the destination.
+      g.moveTo(t.boat.pos.x * scale, t.boat.pos.y * scale);
+      for (const p of this.path) g.lineTo(p.x * scale, p.y * scale);
+      if (!this.path.length) g.lineTo(d.x * scale, d.y * scale);
+      g.stroke({ width: 1, color: 0xffffff, alpha: 0.55 });
+      g.circle(d.x * scale, d.y * scale, 7.5).stroke({ width: 2, color: 0xffffff });
+    }
+    // Numbered PRO stops (route order): filled discs so the number reads at minimap size; fished ones dim.
+    this.proStops.forEach((p, i) => {
+      const done = this.isVisited(p);
+      g.circle(p.x * scale, p.y * scale, 5.5).fill({ color: PRO_GREEN, alpha: done ? 0.4 : 1 });
+      const n = this.miniNums[i];
+      if (n) {
+        n.position.set(p.x * scale, p.y * scale + 0.5);
+        n.alpha = done ? 0.6 : 1;
+      }
+    });
     g.circle(t.boat.pos.x * scale, t.boat.pos.y * scale, 3.5).fill(0xff4433).stroke({ width: 1.5, color: 0xffffff });
   }
 }
