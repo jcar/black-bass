@@ -64,7 +64,7 @@ export interface FishEntity {
   hookShy: number;
   /** Game minute until which the fish is spooked and ignores lures. */
   spookUntil: number;
-  /** 0..10 attraction meter toward the current lure (the HBMAX successor). */
+  /** 0..10 attraction meter toward the current lure (successor to the NES lure-action number). */
   interest: number;
   /** True once removed from the lake (in livewell or kept). */
   caught: boolean;

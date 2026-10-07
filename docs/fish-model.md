@@ -31,7 +31,8 @@ barometer is 1.3x, rising 0.75x; post-front lockjaw hits big fish hardest.
 
 ## 4. The interest meter (`fish/attraction.ts`, `presentation.ts`)
 
-Every fish within 45 m of the lure keeps an interest score 0-10 (the NES "HBMAX" successor).
+Every fish within 45 m of the lure keeps an interest score 0-10, a successor to the NES game's hidden
+lure-action number (the "MIRUN" name-entry cheat displays it; players aim to keep it at or above 6.0).
 
 ```
 fit = activity x match x depthMatch x proximity x cover x vulnerability x (1 - 0.7 hookShy)

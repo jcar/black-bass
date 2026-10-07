@@ -4,7 +4,7 @@ import { PURSE } from '../data/lakes';
 import { LURES } from '../data/lures';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
-import { proPickNow } from '../sim/advisor';
+import { dayPlan, proPickNow, windowAt, type WindowPlan } from '../sim/advisor';
 import { formatClock } from '../sim/conditions';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
 import { createTournament, isTournamentOver, standings, startNextDay, switchRod } from '../sim/tournament';
@@ -43,7 +43,7 @@ export interface Hud {
   nearWaypoint: { name: string; tip: string } | null;
   pendingCull: CaughtFish | null;
   lastLanded: CaughtFish | null;
-  /** Advisor's best rig for right now at the depth under the boat (deck index). */
+  /** Advisor's rig for right now: the day plan's, unless the water here clearly suits another (deck index). */
   proPick: number;
 }
 
@@ -97,10 +97,23 @@ interface StoreState {
   completeTournament: () => void;
   /** Copy the edited rod locker into the tournament (only before launching for the day). */
   rerigBeforeLaunch: () => void;
+  /** Blast off from the briefing: the day starts on the plan's rod for the first window. */
+  launchDay: () => void;
 }
 
 /** Before blast-off each day you can still re-rig: nothing has happened on the water yet. */
 export const canRerig = (t: TournamentState | null) => !!t && t.phase === 'Navigate' && t.clockMin === TUNING.clock.dayStartMin;
+
+/** Today's pro plan for the tournament's deck (memoised: the HUD asks for it 10x a second). */
+let planCache: { key: string; plan: WindowPlan[] } | null = null;
+export function planFor(t: TournamentState): WindowPlan[] {
+  const key = `${t.lakeId}:${t.seed}:${t.day}:${JSON.stringify(t.deck)}`;
+  if (planCache?.key !== key) planCache = { key, plan: dayPlan(LAKES[t.lakeId], t.conditions, t.deck) };
+  return planCache.plan;
+}
+
+/** The plan's rod for the window the clock is in (deck index). */
+const plannedRod = (t: TournamentState) => planFor(t).find((p) => p.window.id === windowAt(t.clockMin).id)?.best ?? 0;
 
 let noticeId = 1;
 const NOTICE_MS: Partial<Record<NoticeKind, number>> = { banner: 2300, bug: 3200, coach: 9000 };
@@ -210,8 +223,17 @@ export const useStore = create<StoreState>((set, get) => ({
     const t = get().tournament;
     if (!canRerig(t)) return;
     t!.deck = structuredClone(get().save.deck);
-    t!.activeRod = 0;
+    t!.activeRod = plannedRod(t!);
     get().persist();
+  },
+  launchDay: () => {
+    const t = get().tournament;
+    // Nothing has happened on the water yet: tie on what the briefing's plan says to throw first.
+    if (t && canRerig(t)) {
+      t.activeRod = plannedRod(t);
+      get().persist();
+    }
+    set({ screen: 'game' });
   },
   completeTournament: () => {
     const t = get().tournament;
@@ -258,7 +280,7 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint']):
     nearWaypoint,
     pendingCull: t.pendingCull,
     lastLanded: t.lastLanded,
-    proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos) : t.activeRod,
+    proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos, planFor(t)) : t.activeRod,
   };
 }
 

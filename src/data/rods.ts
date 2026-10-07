@@ -15,7 +15,7 @@ export const RODS: Record<string, RodDef> = {
   'rod-m': { id: 'rod-m', name: "7'0\" M Casting", power: 'M', lureOz: [0.25, 0.75], reel: 'casting', price: 180 },
   'rod-mh': { id: 'rod-mh', name: "7'3\" MH Casting", power: 'MH', lureOz: [0.375, 1.25], reel: 'casting', price: 220 },
   'rod-h': { id: 'rod-h', name: "7'6\" H Casting", power: 'H', lureOz: [0.5, 2], reel: 'casting', price: 260 },
-  'rod-xh': { id: 'rod-xh', name: "7'11\" XH Flipping", power: 'XH', lureOz: [1, 3], reel: 'casting', price: 320 },
+  'rod-xh': { id: 'rod-xh', name: "7'11\" XH Flipping", power: 'XH', lureOz: [0.375, 1.5], reel: 'casting', price: 320 },
 };
 
 /** Line is cheap: any listed spool can be put on any rod for free. */

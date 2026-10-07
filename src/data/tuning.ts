@@ -81,7 +81,7 @@ export const TUNING = {
   },
 
   attraction: {
-    /** HBMAX-style 0..10 meter; the NES community's "6.0 or higher" target is our strike line. */
+    /** 0..10 meter after the NES lure-action number (shown by the "MIRUN" name cheat): "6.0 or higher" is our strike line. */
     max: 10,
     strikeAt: 6,
     /**
@@ -127,6 +127,23 @@ export const TUNING = {
 
   fight: {
     knotStrength: 0.9,
+    /**
+     * Reel drag, as a fraction of the line's knot-adjusted breaking strength (anglers set it near
+     * 25-35% of line test). Above it the spool slips and the fish takes line instead of the tension
+     * climbing, so light line lands ordinary fish. Thumbing the spool while reeling locks it.
+     */
+    dragSetting: 0.35,
+    /** Share of a surge above the drag that still reaches the line: washers stick on a hard run. (game) */
+    dragOverrun: 0.4,
+    /** HUD line warnings (fraction of breaking strength): warn as soon as you're past the drag. */
+    tensionWarn: 0.5,
+    tensionDanger: 0.75,
+    /** At or below this stamina a fish is beaten ("Beat" in the HUD): no more runs, it skates in. */
+    beatStamina: 0.25,
+    /** A beaten fish: reel gains this much faster, it pulls and swims this much weaker. (game) */
+    beatReelMult: 2.5,
+    beatPullMult: 0.4,
+    beatSwimMult: 0.3,
     /** Standing timber: above this tension a running fish can wrap the line around a trunk. */
     wrapTension: 0.62,
     /** Per-second wrap chance at full tension on 12 lb line; scales down with heavier line. */

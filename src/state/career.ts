@@ -1,4 +1,4 @@
-import { LAKE_LADDER, PURSE } from '../data/lakes';
+import { LAKE_LADDER, PURSE, payoutFor } from '../data/lakes';
 import { COLORS, LURES, lureKey } from '../data/lures';
 import { RODS } from '../data/rods';
 import { playerTotal, standings } from '../sim/tournament';
@@ -34,7 +34,7 @@ export function applyResult(save: SaveData, t: TournamentState): { result: Tourn
   const st = standings(t, true);
   const place = st.findIndex((x) => x.isPlayer) + 1;
   const purse = PURSE[t.tier];
-  const payout = purse.payouts[place - 1] ?? 0;
+  const payout = payoutFor(t.tier, place);
   const points = purse.points[place - 1] ?? 10;
   const totalLb = playerTotal(t);
   const bigFishLb = t.stats.bigFishLb;

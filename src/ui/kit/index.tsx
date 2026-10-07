@@ -267,6 +267,28 @@ export function Rail({ children, className, style }: { children: ReactNode; clas
 }
 
 // ---------- Sheets ----------
+/** Open sheets in the order they opened: Escape closes the top one, and only that one. */
+const openSheets: { close: () => void }[] = [];
+let escapeBound = false;
+function bindEscape() {
+  if (escapeBound) return;
+  escapeBound = true;
+  // Capture phase on window runs before the game's key handlers, and a consumed Escape stops there:
+  // closing a sheet never also pauses, steers or reels.
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key !== 'Escape' || !openSheets.length) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.repeat) return;
+      playUi('back');
+      openSheets[openSheets.length - 1].close();
+    },
+    true,
+  );
+}
+
 export function Sheet({
   open,
   onClose,
@@ -284,6 +306,20 @@ export function Sheet({
 }) {
   useEffect(() => {
     if (open) playUi('open');
+  }, [open]);
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
+  useEffect(() => {
+    if (!open) return;
+    bindEscape();
+    const entry = { close: () => close.current() };
+    openSheets.push(entry);
+    return () => {
+      const i = openSheets.indexOf(entry);
+      if (i >= 0) openSheets.splice(i, 1);
+    };
   }, [open]);
   return (
     <AnimatePresence>

@@ -1,3 +1,4 @@
+import type { LureDef } from '../data/lures';
 import { TUNING } from '../data/tuning';
 import { emptyInput, type GamePhase, type InputFrame } from '../sim/types';
 
@@ -5,7 +6,31 @@ import { emptyInput, type GamePhase, type InputFrame } from '../sim/types';
 const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
 
 /** Desktop key map, shown in the HUD and README. */
-export const KEY_HINTS = 'WASD/arrows steer (trolling) · Shift+steer run · F fish · C cast · Space reel · T twitch · B thumb · V bow · M move/burn in · P pop';
+export const KEY_HINTS =
+  'WASD/arrows steer (trolling) · Shift+steer run · F fish · C cast · Space reel · T twitch/hop/shake · B thumb · V bow · M move/burn in · P pop · Esc pause';
+
+/**
+ * How to work the lure on the line, by the cadence the attraction model rewards (presentationMatch).
+ * Holding REEL steady is right for moving baits and wrong for everything else.
+ */
+export function retrieveHint(lure: Pick<LureDef, 'motion' | 'style'>, keyboard: boolean): string {
+  const k = keyboard;
+  const reel = k ? 'Space' : 'REEL';
+  const burn = k ? ' · M burn in' : '';
+  if (lure.motion === 'swimming') return `Count it down, then hold ${reel} steady${burn}`;
+  switch (lure.style) {
+    case 'steady':
+      return `Hold ${reel} steady, no pumping · ${k ? 'A/D' : 'drag sideways to'} steer${burn}`;
+    case 'bottom':
+      return `Let it sink to the bottom · short ${reel} pulses to drag · ${k ? 'T' : 'tap to'} hop${burn}`;
+    case 'shake':
+      return `Let it sink to the bottom · ${k ? 'T' : 'tap to'} shake it in place, barely moving${burn}`;
+    case 'twitchPause':
+      return `${k ? 'T' : 'Tap to'} twitch 1-3 times, then pause: strikes come on the pause${burn}`;
+    case 'walk':
+      return `${k ? 'T' : 'Tap'} in an even rhythm to walk it${burn}`;
+  }
+}
 
 /**
  * Shared mutable input state written by touch controls and the keyboard, read once per

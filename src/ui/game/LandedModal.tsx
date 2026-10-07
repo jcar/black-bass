@@ -26,13 +26,16 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
   const cull = useStore((s) => s.cull);
   const cont = useStore((s) => s.continueFishing);
   const bigFishPb = useStore((s) => s.save.personalBests.bigFishLb);
+  // The saved best only updates at the weigh-in, so it must also beat today's earlier fish. The
+  // tournament's big fish already includes this one: a PB is this fish being the biggest so far.
+  const tourneyBig = useStore((s) => s.tournament?.stats.bigFishLb ?? 0);
   const lake = useStore((s) => (s.tournament ? LAKES[s.tournament.lakeId] : undefined));
   const all = pending ? [...livewell, pending] : [];
   const smallest = all.reduce((mi, f, i) => (f.weightLb < all[mi].weightLb ? i : mi), 0);
   const [release, setRelease] = useState(smallest);
   const sp = SPECIES[fish.species];
   const keeper = isKeeper(fish, lake);
-  const pb = keeper && fish.weightLb > bigFishPb;
+  const pb = keeper && fish.weightLb > bigFishPb && fish.weightLb >= tourneyBig;
   // Texas Parks & Wildlife's ShareLunker program: 13 lb and up.
   const lunker = keeper && fish.species === 'largemouth' && fish.weightLb >= 13;
 

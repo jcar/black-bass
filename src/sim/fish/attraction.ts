@@ -1,4 +1,5 @@
-// The attraction meter: our modern successor to the NES "HBMAX" bait meter.
+// The attraction meter: our successor to the NES game's hidden lure-action number (the one the
+// "MIRUN" name-entry cheat displays; the target there is 6.0 or higher).
 // Every nearby fish keeps a 0..10 interest score toward the lure. It rises when the lure is
 // worked the way that lure is meant to be worked, at the depth the fish holds, where the fish
 // can perceive it. It decays otherwise. Crossing the strike line triggers a strike.

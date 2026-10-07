@@ -12,12 +12,13 @@ import { Icon, spring } from '../kit';
 import { CoachCard, NoticeStrip } from './Notices';
 import { promotionTarget } from '../../state/career';
 
+const C = TUNING.clock;
+const F = TUNING.fight;
+
 function staminaStage(s: number) {
   // Four stages, like the NES fish icon: normal, thinner, very thin, bones.
-  return s > 0.75 ? 'Fresh' : s > 0.5 ? 'Tiring' : s > 0.25 ? 'Worn out' : 'Beat';
+  return s > 0.75 ? 'Fresh' : s > 0.5 ? 'Tiring' : s > F.beatStamina ? 'Worn out' : 'Beat';
 }
-
-const C = TUNING.clock;
 
 /** Remembers the last place change for a few seconds so the chip can show a trend arrow. */
 function usePlaceTrend(place: number): 'up' | 'down' | null {
@@ -44,7 +45,7 @@ const RodBar = memo(function RodBar({ labels, active, pick, deck }: { labels: st
           {deck?.[i] && <LureIcon lureId={deck[i].lureId} colorId={deck[i].colorId} size={34} />}
           {i + 1} {l}
           {i === pick && (
-            <span className="pro-pick" title="Pro pick for this time of day and depth">
+            <span className="pro-pick" title="Pro plan's rod for now (or one that clearly suits this water better)">
               Pro
             </span>
           )}
@@ -130,25 +131,27 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
           </div>
           <NoticeStrip hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />
         </div>
-        <CoachCard hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />
         <div style={{ flex: 1 }} />
         <button className="icon-btn" aria-label="Pause" onClick={() => setPaused(true)}>
           <Icon name="pause" />
         </button>
       </div>
 
+      {/* Outside the zoomed top bar: it's placed under the sonar inset by the renderer (--sonar-bottom). */}
+      <CoachCard hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />
+
       <AnimatePresence>
         {hud.phase === 'Fight' && (
           <m.div className="fight-panel hud-box" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={spring}>
             <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
               <span className="fight-name">{hud.fishName === 'Unknown fish' ? 'Fish on' : hud.fishName}</span>
-              <span className={`badge ${hud.stamina < 0.25 ? 'good' : ''}`}>{staminaStage(hud.stamina)}</span>
+              <span className={`badge ${hud.stamina <= F.beatStamina ? 'good' : ''}`}>{staminaStage(hud.stamina)}</span>
             </div>
             <div className="meter" aria-label="Fish energy">
               <div style={{ transform: `scaleX(${hud.stamina})`, background: '#63e6ff' }} />
             </div>
-            <div className={`fight-line ${tension > 0.85 ? 'danger' : tension > 0.6 ? 'warn' : ''}`}>
-              Line {Math.round(tension * 100)}%{tension > 0.85 ? ' · ease off' : ''}
+            <div className={`fight-line ${tension > F.tensionDanger ? 'danger' : tension > F.tensionWarn ? 'warn' : ''}`}>
+              Line {Math.round(tension * 100)}%{tension > F.tensionDanger ? ' · ease off' : tension > F.tensionWarn ? ' · on the drag' : ''}
             </div>
           </m.div>
         )}

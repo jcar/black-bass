@@ -20,8 +20,9 @@ On iOS: open the LAN URL in Safari, accept the certificate, then **Share → Add
 full-screen landscape play that works offline.
 
 Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), F = fish
-here, Enter/C = cast, Space = reel (hold it steady for moving baits), T = twitch, B = thumb brake,
-V = bow on a jump, M = move/burn in, P = pop hook. Steering keys never twitch the lure.
+here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
+T = twitch/hop/shake, B = thumb brake, V = bow on a jump, M = move/burn in, P = pop hook, Esc = pause
+(or close the open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
 
 ## Deploying
 

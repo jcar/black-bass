@@ -9,6 +9,8 @@ import { HUD_FONT, type Scene, type View } from './types';
 const MAP_PX_PER_M = 0.5;
 const SONAR_RANGE = 45;
 const SONAR_HALF = 0.5;
+/** A PRO stop this close (m) to a waypoint is the same place: label them together. */
+const PRO_MERGE_M = 30;
 
 /** Phase 1: top-down lake chart, bass boat, forward-facing sonar. */
 export class MapScene implements Scene {
@@ -17,6 +19,8 @@ export class MapScene implements Scene {
   private world = new Container();
   /** Waypoint ring + label groups, kept a constant size on screen whatever the zoom. */
   private pins: Container[] = [];
+  /** Waypoint labels, so a PRO stop on a waypoint can join its label instead of overprinting it. */
+  private wpLabels: { x: number; y: number; name: string; label: Text }[] = [];
   private lake?: Sprite;
   private markers = new Container();
   private regionLabels: Text[] = [];
@@ -44,20 +48,32 @@ export class MapScene implements Scene {
     this.drawBoat();
   }
 
-  /** Show the advisor's route (empty list hides it). */
+  /**
+   * Show the advisor's route (empty list hides it). A stop on a waypoint (within PRO_MERGE_M) joins
+   * the waypoint's label ("ROCK PILE · PRO 2"); any other stop is labelled below-left of its ring,
+   * away from waypoint labels, which sit to the right of theirs.
+   */
   setProStops(stops: Vec2[]) {
     this.proStops = stops;
     this.proLayer.removeChildren().forEach((c) => c.destroy());
+    const joined = new Map<Text, string[]>();
+    for (const w of this.wpLabels) w.label.text = w.name;
     this.proPins = stops.map((s, i) => {
       const pin = new Container();
       pin.position.set(s.x, s.y);
       const g = new Graphics().circle(0, 0, 11).stroke({ width: 2.5, color: 0x5ee08a });
-      const label = new Text({ text: `PRO ${i + 1}`, style: { fill: 0xbaf5cf, fontSize: 14, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
-      label.position.set(-label.width / 2, 12);
-      pin.addChild(g, label);
+      pin.addChild(g);
+      const wp = this.wpLabels.find((w) => Math.hypot(w.x - s.x, w.y - s.y) < PRO_MERGE_M);
+      if (wp) joined.set(wp.label, [...(joined.get(wp.label) ?? []), `PRO ${i + 1}`]);
+      else {
+        const label = new Text({ text: `PRO ${i + 1}`, style: { fill: 0xbaf5cf, fontSize: 14, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
+        label.position.set(-label.width - 6, 8);
+        pin.addChild(label);
+      }
       this.proLayer.addChild(pin);
       return pin;
     });
+    for (const w of this.wpLabels) if (joined.has(w.label)) w.label.text = `${w.name} · ${joined.get(w.label)!.join(' · ')}`;
   }
 
   toScreen(_t: TournamentState, _view: View, p: Vec2) {
@@ -100,6 +116,7 @@ export class MapScene implements Scene {
       this.regionLabels.push(label);
     }
     this.pins = [];
+    this.wpLabels = [];
     for (const w of grid.def.waypoints) {
       if (!w.visible) continue;
       const pin = new Container();
@@ -110,7 +127,10 @@ export class MapScene implements Scene {
       pin.addChild(g, label);
       this.markers.addChild(pin);
       this.pins.push(pin);
+      this.wpLabels.push({ x: w.x, y: w.y, name: w.name.toUpperCase(), label });
     }
+    // The route may have been set before this lake's waypoints existed.
+    this.setProStops(this.proStops);
     const ramp = new Graphics().rect(-6, -6, 12, 12).fill(0xffffff).rect(-3, -3, 6, 6).fill(0x2a6fdb);
     ramp.position.set(grid.def.launch.x, grid.def.launch.y);
     this.markers.addChild(ramp);

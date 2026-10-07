@@ -16,7 +16,10 @@ export interface LureDef {
   weightOz: number;
   /** Max running depth (diving/suspending) in ft. */
   runDepthFt: number;
-  /** Sink rate (sinking lures) in ft/s. 1/16 oz Ned ~0.9, 1/2 oz football jig ~4. */
+  /**
+   * Sink rate (sinking lures) in ft/s. 1/16 oz Ned ~0.9 (the buoyant stick slows it), 1/8 oz Ned ~1.3
+   * (sink speed scales ~ sqrt of weight), 1/2 oz football jig ~4.
+   */
   fallRateFtPerSec: number;
   /** Reel-in speed while REEL is held (m/s). 1 mph ~ 0.45 m/s. */
   retrieveSpeed: number;
@@ -62,7 +65,7 @@ export const LURES: Record<string, LureDef> = {
     style: 'bottom',
     weightOz: 0.125,
     runDepthFt: 0,
-    fallRateFtPerSec: 2.2,
+    fallRateFtPerSec: 1.3,
     retrieveSpeed: 0.28,
     speedBand: [0.05, 0.35],
     vibration: 0.05,

@@ -14,7 +14,7 @@ export function conditionsAdvice(c: Conditions, lake: LakeDef): string[] {
   );
   if (c.waterTempF >= 60 && (c.weather === 'Overcast' || c.weather === 'Rain')) tips.push('Low light all day: topwater can keep producing well past sunrise.');
   else if (c.waterTempF >= 60) tips.push('Throw topwater at first light, then slow down as the sun climbs.');
-  if (timber) tips.push('Standing timber holds the giants. Pitch a jig to the trunks on heavy line: light line gets wrapped.');
+  if (timber) tips.push('Standing timber holds the giants. Work a jig tight to the trunks on heavy line: light line gets wrapped.');
   if (c.weather === 'Windy') tips.push('Wind pushes bait onto windblown banks. Moving baits like squarebills and bladed jigs shine.');
   if (c.weather === 'Bluebird') tips.push('Bluebird skies push bass tight to cover and deeper. Finesse on the bottom midday.');
   if (c.postFront) tips.push('Post-front: the big ones have lockjaw. Slow down and fish tight to cover.');
@@ -25,7 +25,7 @@ export function conditionsAdvice(c: Conditions, lake: LakeDef): string[] {
       tips.push('Prespawn: big females stage on the first drops outside spawning flats. They are heavy.');
       break;
     case 'Spawn':
-      tips.push('Spawn: fish are shallow and protective. Pitch soft plastics to them; reaction strikes happen.');
+      tips.push('Spawn: fish are shallow and protective. Drag a tube or Ned rig past them; reaction strikes happen.');
       break;
     case 'Postspawn':
       tips.push('Postspawn: fish are worn out and scattered. Be patient.');

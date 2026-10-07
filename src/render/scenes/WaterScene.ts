@@ -1,13 +1,14 @@
 import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import { COLORS } from '../../data/lures';
 import { SPECIES } from '../../data/species';
+import { TUNING } from '../../data/tuning';
 import { activeTackle } from '../../sim/context';
 import { depthAt, secchiAt, type LakeGrid } from '../../sim/lake';
 import type { TournamentState, Vec2 } from '../../sim/types';
 import { BOAT_LENGTH_M, BOAT_SPRITE, texture } from '../../game/assets';
 import { paintLocalCanvas } from '../lakeTexture';
 import { hexNum, PAL } from '../palette';
-import { HUD_FONT, type Scene, type View } from './types';
+import { HUD_FONT, sonarInsetRect, type Scene, type View } from './types';
 
 const PATCH_M = 140;
 const PATCH_PX_PER_M = 7;
@@ -168,7 +169,7 @@ export class WaterScene implements Scene {
     if (t.fight) {
       const f = t.fight;
       const tension = Math.min(1, f.tension);
-      const lineColor = tension > 0.85 ? 0xff4d4d : tension > 0.6 ? 0xffd34d : PAL.line;
+      const lineColor = tension > TUNING.fight.tensionDanger ? 0xff4d4d : tension > TUNING.fight.tensionWarn ? 0xffd34d : PAL.line;
       lg.moveTo(tip.x, tip.y).lineTo(f.pos.x, f.pos.y).stroke({ width: 0.07 + tension * 0.08, color: lineColor });
       const len = 0.3 + (SPECIES[f.species].isBass ? 0.6 : 0.8) * Math.cbrt(f.weightLb);
       const ang = f.heading;
@@ -196,10 +197,7 @@ export class WaterScene implements Scene {
   private drawInset(t: TournamentState, grid: LakeGrid, view: View, target: Vec2) {
     const g = this.inset.clear();
     // Broadcast panel under the scorebug strip, inside the notch-safe area, clear of the fight panel.
-    const W = Math.min(210, view.w * 0.25);
-    const H = Math.min(124, view.h * 0.32);
-    const x0 = view.safe.l + 10;
-    const y0 = view.safe.t + 100;
+    const { x: x0, y: y0, w: W, h: H } = sonarInsetRect(view);
     g.roundRect(x0, y0, W, H, 8).fill({ color: 0x081820, alpha: 0.88 }).stroke({ width: 1, color: 0xffffff, alpha: 0.14 });
     this.insetTitle.position.set(x0 + 9, y0 + 5);
     this.lureReadout.position.set(x0 + 52, y0 + 2);

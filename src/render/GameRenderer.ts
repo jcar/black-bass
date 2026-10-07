@@ -4,7 +4,7 @@ import type { LakeGrid } from '../sim/lake';
 import type { GamePhase, TournamentState, Vec2 } from '../sim/types';
 import { CastScene } from './scenes/CastScene';
 import { MapScene } from './scenes/MapScene';
-import { HUD_FONT, type Insets, type Scene, type View } from './scenes/types';
+import { HUD_FONT, sonarInsetRect, type Insets, type Scene, type View } from './scenes/types';
 import { WaterScene } from './scenes/WaterScene';
 
 type SceneKey = 'map' | 'cast' | 'water';
@@ -36,6 +36,10 @@ export class GameRenderer {
   private callouts: { label: Text; at: Vec2; age: number }[] = [];
   private safe: Insets = { l: 0, r: 0, t: 0, b: 0 };
   private safeProbe: HTMLDivElement | null = null;
+  private host: HTMLElement | null = null;
+  private hudTop = 0;
+  private hudTimer = 0;
+  private sonarBottom = -1;
   private lastT: TournamentState | null = null;
   debug = false;
   private proStops: Vec2[] = [];
@@ -55,6 +59,7 @@ export class GameRenderer {
       powerPreference: 'high-performance',
     });
     host.appendChild(this.app.canvas);
+    this.host = host;
     this.app.canvas.style.touchAction = 'none';
     // Overlay text uses the broadcast face; make sure it's decoded before the first Text is built.
     await Promise.race([document.fonts?.load(`700 20px ${HUD_FONT}`), new Promise((r) => setTimeout(r, 800))]).catch(() => {});
@@ -78,7 +83,23 @@ export class GameRenderer {
   }
 
   get view(): View {
-    return { w: this.app.screen.width, h: this.app.screen.height, time: this.time, debug: this.debug, safe: this.safe };
+    return { w: this.app.screen.width, h: this.app.screen.height, time: this.time, debug: this.debug, safe: this.safe, hudTop: this.hudTop };
+  }
+
+  /**
+   * Keep the Pixi panels and the DOM HUD out of each other's way: the sonar inset goes under the
+   * scorebug + notice strip (whatever their size and zoom), and the coach card (DOM) under the inset.
+   */
+  private layoutHud() {
+    const strip = document.querySelector('.hud-left');
+    if (!strip || !this.host) return;
+    this.hudTop = strip.getBoundingClientRect().bottom - this.host.getBoundingClientRect().top;
+    const r = sonarInsetRect(this.view);
+    const bottom = Math.round(r.y + r.h + 10);
+    if (bottom !== this.sonarBottom) {
+      this.sonarBottom = bottom;
+      this.host.parentElement?.style.setProperty('--sonar-bottom', `${bottom}px`);
+    }
   }
 
   /** A short word that pops up where the lure landed ("EDGE", "CRASH") and floats away. */
@@ -112,6 +133,11 @@ export class GameRenderer {
 
   render(t: TournamentState, grid: LakeGrid, dt: number) {
     this.time += dt;
+    this.hudTimer -= dt;
+    if (this.hudTimer <= 0) {
+      this.hudTimer = 0.5;
+      this.layoutHud();
+    }
     const key = SCENE_FOR[t.phase];
     const view = this.view;
     if (key !== this.active || (key === 'water' && t.phase === 'Present' && this.enteredPresent(t))) {

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { LAKES } from '../src/data/lakes';
+import { LAKES, PURSE, payoutFor } from '../src/data/lakes';
 import { LURES } from '../src/data/lures';
 import { weightFromLength } from '../src/data/species';
 import { seasonFor } from '../src/sim/conditions';
 import { breakingStrengthLb, newFightState } from '../src/sim/fight';
 import { makeCtx } from '../src/sim/context';
 import { debrief } from '../src/sim/coach';
-import { advisorRoute, bitesPerDayAt, rankLures, rigIssues, spotEnv, spotsFor, strikeChance, suggestedLine } from '../src/sim/advisor';
+import { advisorRoute, bitesPerDayAt, dayPlan, proPickNow, rankLures, rigIssues, spotEnv, spotsFor, strikeChance, suggestedLine } from '../src/sim/advisor';
+import { applyResult } from '../src/state/career';
 import { migrate, newSave } from '../src/state/save';
 import { jerkPauseWindow, presentationMatch } from '../src/sim/fish/attraction';
 import { tempFactor } from '../src/sim/fish/activity';
@@ -95,6 +96,63 @@ describe('fight', () => {
     expect(types).toContain('snap');
     expect(s.phase).toBe('Cast');
   });
+
+  const hooked = (seed: number, species: 'smallmouth' | 'largemouth', lb: number, line: RodSetup['line'], distM = 20) => {
+    const s = newT(seed);
+    s.deck[0] = { ...s.deck[0], rodId: 'rod-ml', line };
+    s.activeRod = 0;
+    const fish = s.fish.filter((f) => f.species === species).reduce((a, b) => (Math.abs(b.weightLb - lb) < Math.abs(a.weightLb - lb) ? b : a));
+    const b = s.boat;
+    s.phase = 'Fight';
+    s.fight = newFightState(s, makeCtx(s), fish, { x: b.pos.x + Math.cos(b.heading) * distM, y: b.pos.y + Math.sin(b.heading) * distM });
+    return s;
+  };
+
+  it('slips the drag so 8 lb fluoro lands a 1.5 lb smallmouth on a steady reel', () => {
+    let landed = 0;
+    for (let seed = 1; seed <= 8; seed++) {
+      const s = hooked(seed, 'smallmouth', 1.5, { type: 'fluoro', testLb: 8 });
+      const types: string[] = [];
+      let peak = 0;
+      for (let i = 0; i < 60 * 60 && s.phase === 'Fight'; i++) {
+        stepTournament(s, { ...emptyInput(), reel: true }, DT);
+        peak = Math.max(peak, s.fight?.tension ?? 0);
+        types.push(...drainEvents(s).map((e) => e.type));
+      }
+      expect(types).not.toContain('snap');
+      expect(peak).toBeLessThan(1);
+      if (s.phase === 'Landed') landed++;
+    }
+    // The rest threw the hook on an unbowed jump; none broke the line.
+    expect(landed).toBeGreaterThanOrEqual(5);
+  });
+
+  it('lets light line survive the first run of a bigger fish through the drag, but not with the spool thumbed', () => {
+    const run = (thumb: boolean) => {
+      const s = hooked(3, 'largemouth', 5, { type: 'fluoro', testLb: 8 });
+      const types: string[] = [];
+      for (let i = 0; i < 120 && s.phase === 'Fight'; i++) {
+        stepTournament(s, { ...emptyInput(), reel: true, brake: thumb }, DT);
+        types.push(...drainEvents(s).map((e) => e.type));
+      }
+      return types;
+    };
+    expect(run(false)).not.toContain('snap');
+    expect(run(true)).toContain('snap');
+  });
+
+  it('brings a beaten fish to the boat quickly', () => {
+    const s = hooked(4, 'smallmouth', 1.5, { type: 'fluoro', testLb: 10 }, 25);
+    s.fight!.stamina = TUNING.fight.beatStamina;
+    s.fight!.burstT = 0;
+    let t = 0;
+    while (s.phase === 'Fight' && t < 30) {
+      stepTournament(s, { ...emptyInput(), reel: true }, DT);
+      t += DT;
+    }
+    expect(s.phase).toBe('Landed');
+    expect(t).toBeLessThan(10);
+  });
 });
 
 describe('casting', () => {
@@ -181,6 +239,22 @@ describe('weigh-in', () => {
     expect(st).toHaveLength(30);
     expect(st.find((x) => x.isPlayer)?.total).toBe(20);
     expect(s.phase).toBe('WeighIn');
+  });
+
+  it('pays every finish, so a career can always afford the next entry', () => {
+    const s = newT(3);
+    endDay(s); // a zero bag: last place
+    const save = newSave();
+    save.player.cash = 0;
+    const { result } = applyResult(save, s);
+    expect(result.place).toBe(30);
+    expect(result.payout).toBe(PURSE.Amateur.participation);
+    expect(save.player.cash).toBeGreaterThanOrEqual(PURSE.Amateur.entry);
+    expect(PURSE.Amateur.entry).toBe(0);
+    for (const tier of Object.keys(PURSE) as (keyof typeof PURSE)[]) {
+      expect(payoutFor(tier, 1)).toBe(PURSE[tier].payouts[0]);
+      expect(payoutFor(tier, 99)).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -365,6 +439,17 @@ describe('pro advisor', () => {
     for (const [i, a] of route.entries()) {
       expect(isWater(g, a.spot.x, a.spot.y)).toBe(true);
       for (const b of route.slice(i + 1)) expect(Math.hypot(a.spot.x - b.spot.x, a.spot.y - b.spot.y)).toBeGreaterThan(80);
+    }
+  });
+  it('keeps the in-game pick on the day plan unless another rig clearly suits the water here', () => {
+    const t = newT(4);
+    const at = { x: Math.round(spotsFor(lake)[0].x / 20) * 20, y: Math.round(spotsFor(lake)[0].y / 20) * 20 };
+    const local = t.deck.map((d) => bitesPerDayAt(lake, t.conditions, 570, d, at));
+    const top = local.reduce((bi, x, i) => (x > local[bi] ? i : bi), 0);
+    const plan = dayPlan(lake, t.conditions, t.deck);
+    for (let k = 0; k < t.deck.length; k++) {
+      const pinned = plan.map((p) => ({ ...p, best: k }));
+      expect(proPickNow(lake, t.conditions, t.deck, 570, at, pinned)).toBe(local[top] > local[k] * 1.3 ? top : k);
     }
   });
   it('asks for heavy line in standing timber and flags rod/lure mismatches', () => {

@@ -26,6 +26,7 @@ export function EventsScreen() {
   const purse = PURSE[sel.tier];
   const fmt = TIER_FORMAT[sel.tier];
   const short = save.player.cash < purse.entry;
+  const entry = purse.entry ? money(purse.entry) : 'Free';
 
   return (
     <>
@@ -82,7 +83,7 @@ export function EventsScreen() {
         <div className="row" style={{ alignItems: 'flex-end', minHeight: 64 }}>
           <Scorebug
             items={[
-              { label: 'Entry', value: money(purse.entry), icon: 'bag' },
+              { label: 'Entry', value: entry, icon: 'bag' },
               { label: '1st place', value: money(purse.payouts[0]), icon: 'trophy', accent: true },
               { label: 'Field', value: fmt.fieldSize, icon: 'users' },
               { label: 'Format', value: fmt.days === 1 ? '1 day' : `${fmt.days} days${fmt.cutAfterDay ? ' · cut' : ''}` },
@@ -106,9 +107,9 @@ export function EventsScreen() {
             </>
           ) : (
             <div className="col" style={{ alignItems: 'flex-end', gap: 4 }}>
-              {short && <span className="badge bad">Not enough cash for the entry fee</span>}
+              {short && <span className="badge bad">Not enough cash for the entry fee · Co-Angler events are free</span>}
               <Button variant="primary" size="lg" skew haptic disabled={short || !sel.available} onClick={() => start()}>
-                <span>Enter · {money(purse.entry)}</span>
+                <span>Enter · {entry}</span>
                 <Icon name="next" />
               </Button>
             </div>

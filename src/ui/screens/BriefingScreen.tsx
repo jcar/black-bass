@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { LAKES, TIER_FORMAT } from '../../data/lakes';
 import { unlockAudio } from '../../audio/sound';
 import { plateId } from '../../game/assets';
-import { KEY_HINTS } from '../../game/input';
 import { canRerig, useStore } from '../../state/store';
 import { promotionTarget } from '../../state/career';
-import { DayPlan, RigCheck } from '../ProAdvice';
+import { DayPlan } from '../ProAdvice';
+import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import type { Weather } from '../../sim/types';
 import { keeperMinIn } from '../../sim/livewell';
 import { conditionsAdvice } from '../advice';
-import { Button, Icon, LowerThird, Scene, Scorebug, Sheet, Slug, rise, stagger, type IconName } from '../kit';
+import { Button, Icon, LowerThird, Scene, Scorebug, Slug, rise, stagger, type IconName } from '../kit';
 
 const SKY_ICON: Record<Weather, IconName> = { Bluebird: 'sun', Overcast: 'cloud', Windy: 'wind', Rain: 'rain' };
 const SERIES = { Amateur: 'Co-Angler Series', SemiPro: 'Semi-Pro Series', Pro: 'Pro Series', Elite: 'Elite Series' } as const;
@@ -19,6 +19,7 @@ const SERIES = { Amateur: 'Co-Angler Series', SemiPro: 'Semi-Pro Series', Pro: '
 export function BriefingScreen() {
   const t = useStore((s) => s.tournament);
   const setScreen = useStore((s) => s.setScreen);
+  const launchDay = useStore((s) => s.launchDay);
   const [howTo, setHowTo] = useState(false);
   const [plan, setPlan] = useState(false);
   const unlocked = useStore((s) => s.save.unlockedLakes);
@@ -106,7 +107,7 @@ export function BriefingScreen() {
           haptic
           onClick={() => {
             unlockAudio();
-            setScreen('game');
+            launchDay();
           }}
         >
           <span>Blast off</span>
@@ -114,10 +115,10 @@ export function BriefingScreen() {
         </Button>
       </div>
 
-      <Sheet
+      <ProPlanSheet
+        t={t}
         open={plan}
         onClose={() => setPlan(false)}
-        title="Today's pro plan"
         footer={
           canRerig(t) && (
             <Button cue="open" onClick={() => setScreen('deck')}>
@@ -125,30 +126,8 @@ export function BriefingScreen() {
             </Button>
           )
         }
-      >
-        <p className="small muted">
-          Which of your rigs pulls the most bites in each part of the day, from today's water ({Math.round(c.waterTempF)}°F, {c.season.toLowerCase()}), light, wind and where the fish are holding.
-        </p>
-        <DayPlan lakeId={t.lakeId} conditions={c} deck={t.deck} />
-        <RigCheck lakeId={t.lakeId} deck={t.deck} />
-      </Sheet>
-      <Sheet open={howTo} onClose={() => setHowTo(false)} title="How to fish">
-        <div className="col small" style={{ gap: 10, fontSize: 15 }}>
-          <p>
-            <strong>Left thumb</strong> steers the boat, aims the cast and works the rod: tap to twitch, flick down to bow when a fish jumps.
-          </p>
-          <p>
-            <strong>Right thumb</strong> fishes and casts, reels, and thumbs the spool as a brake.
-          </p>
-          <p className="muted">
-            <strong>Keyboard:</strong> {KEY_HINTS}.
-          </p>
-          <p>
-            Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under {minIn}" and other species don't count.
-            {slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") are weighed in the boat by a marshal, released, and still count.` : ''}
-          </p>
-        </div>
-      </Sheet>
+      />
+      <HowToFishSheet lakeId={t.lakeId} open={howTo} onClose={() => setHowTo(false)} />
     </>
   );
 }

@@ -24,10 +24,17 @@ export const TIER_FORMAT: Record<Tier, { days: number; cutAfterDay: number | nul
   Elite: { days: 3, cutAfterDay: 2, fieldSize: 60, cutTo: 30 },
 };
 
-/** Payout by finishing place (index 0 = 1st) and rank points. */
-export const PURSE: Record<Tier, { entry: number; payouts: number[]; points: number[] }> = {
-  Amateur: { entry: 100, payouts: [2000, 1200, 800, 500, 400, 300, 250, 200, 150, 150], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
-  SemiPro: { entry: 300, payouts: [6000, 3500, 2500, 1500, 1200, 1000, 800, 700, 600, 500], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
-  Pro: { entry: 1000, payouts: [20000, 12000, 8000, 6000, 5000, 4000, 3500, 3000, 2500, 2000], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
-  Elite: { entry: 2500, payouts: [100000, 30000, 20000, 15000, 12000, 11000, 10500, 10000, 10000, 10000], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
+/**
+ * Payout by finishing place (index 0 = 1st) and rank points. Every finish outside the paid places
+ * still earns a participation check, and Co-Angler entries are free, so a run of bad events can
+ * never lock a career out of the water: the worst case is grinding the free series back up.
+ */
+export const PURSE: Record<Tier, { entry: number; participation: number; payouts: number[]; points: number[] }> = {
+  Amateur: { entry: 0, participation: 50, payouts: [2000, 1200, 800, 500, 400, 300, 250, 200, 150, 150], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
+  SemiPro: { entry: 300, participation: 100, payouts: [6000, 3500, 2500, 1500, 1200, 1000, 800, 700, 600, 500], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
+  Pro: { entry: 1000, participation: 300, payouts: [20000, 12000, 8000, 6000, 5000, 4000, 3500, 3000, 2500, 2000], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
+  Elite: { entry: 2500, participation: 750, payouts: [100000, 30000, 20000, 15000, 12000, 11000, 10500, 10000, 10000, 10000], points: [100, 80, 70, 60, 55, 50, 45, 40, 35, 30] },
 };
+
+/** What a finish pays: the purse for the paid places, the participation check for everyone else. */
+export const payoutFor = (tier: Tier, place: number) => PURSE[tier].payouts[place - 1] ?? PURSE[tier].participation;

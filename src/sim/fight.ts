@@ -78,9 +78,11 @@ export function stepFight(s: TournamentState, ctx: SimCtx, input: InputFrame, dt
   const right = { x: -u.y, y: u.x };
 
   // --- Fish behaviour: bursts (runs) between cruising, bigger and fresher fish run harder ---
+  // A beaten fish has nothing left: no new runs, a weak pull, and it comes to the boat quickly.
+  const beat = fight.stamina <= F.beatStamina;
   fight.nextBurstIn -= dt;
   if (fight.burstT > 0) fight.burstT -= dt;
-  else if (fight.nextBurstIn <= 0) {
+  else if (fight.nextBurstIn <= 0 && !beat) {
     fight.burstT = rng.range(0.7, 1.8) * (0.5 + fight.stamina);
     const awayAng = Math.atan2(u.y, u.x);
     fight.heading = awayAng + rng.normal(0, 1.0);
@@ -104,20 +106,32 @@ export function stepFight(s: TournamentState, ctx: SimCtx, input: InputFrame, dt
     fight.heading += Math.sign(dAng) * Math.min(Math.abs(dAng), F.turnRate * Math.abs(input.stick.x) * dt);
   }
 
-  const speed = (bursting ? F.burstSpeed * (0.4 + 0.6 * fight.stamina) * (1 + w / 12) : F.cruiseSpeed * (0.5 + 0.5 * fight.stamina)) * sp.power;
+  const speed = (bursting ? F.burstSpeed * (0.4 + 0.6 * fight.stamina) * (1 + w / 12) : F.cruiseSpeed * (0.5 + 0.5 * fight.stamina)) * sp.power * (beat ? F.beatSwimMult : 1);
   fight.speed = speed;
   let v = { x: Math.cos(fight.heading) * speed, y: Math.sin(fight.heading) * speed };
   const radialOut = v.x * u.x + v.y * u.y;
   const pullDir = 0.4 + (0.6 * Math.max(0, radialOut)) / Math.max(0.1, speed);
-  const pullLb = w * sp.power * (bursting ? F.burstPullMult : F.sustainedPullMult) * (0.35 + 0.65 * fight.stamina) * pullDir;
+  const pullLb = w * sp.power * (bursting ? F.burstPullMult : F.sustainedPullMult) * (0.35 + 0.65 * fight.stamina) * pullDir * (beat ? F.beatPullMult : 1);
 
   // --- Player: reel winches the fish in, the thumb-brake locks the spool, idle lets it run ---
   const reeling = input.reel;
   const braking = input.brake && !reeling;
   let target: number;
   if (reeling) {
-    v = { x: v.x - u.x * F.reelSpeed, y: v.y - u.y * F.reelSpeed };
-    target = pullLb + F.rodLoadLb[rod.power] + w * F.dragThroughWaterMult;
+    const load = pullLb + F.rodLoadLb[rod.power] + w * F.dragThroughWaterMult;
+    const dragLb = F.dragSetting * breakLb;
+    const reelSpeed = F.reelSpeed * (beat ? F.beatReelMult : 1);
+    if (load <= dragLb || input.brake) {
+      // Under the drag (or the spool thumbed shut): every turn of the handle gains line.
+      v = { x: v.x - u.x * reelSpeed, y: v.y - u.y * reelSpeed };
+      target = load;
+    } else {
+      // The drag slips: the fish takes line instead of the tension climbing. The harder it
+      // out-pulls the drag, the less the handle gains; a hard surge still overruns it a little.
+      const gain = Math.max(0, 1 - (load - dragLb) / dragLb);
+      v = { x: v.x - u.x * reelSpeed * gain, y: v.y - u.y * reelSpeed * gain };
+      target = dragLb + (load - dragLb) * F.dragOverrun;
+    }
   } else if (braking) {
     const out = v.x * u.x + v.y * u.y;
     if (out > 0) v = { x: v.x - u.x * out, y: v.y - u.y * out };

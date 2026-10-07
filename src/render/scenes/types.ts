@@ -17,6 +17,18 @@ export interface View {
   debug: boolean;
   /** Device safe-area insets (notch, home indicator) in CSS px. */
   safe: Insets;
+  /** Bottom of the DOM scorebug + notice strip (CSS px from the top): Pixi panels go below it. */
+  hudTop: number;
+}
+
+/** The side-profile sonar panel, top-left under the scorebug strip and clear of the fight panel. */
+export function sonarInsetRect(view: Pick<View, 'w' | 'h' | 'safe' | 'hudTop'>): { x: number; y: number; w: number; h: number } {
+  return {
+    x: view.safe.l + 10,
+    y: Math.max(view.safe.t + 100, view.hudTop + 6),
+    w: Math.min(210, view.w * 0.25),
+    h: Math.min(124, view.h * 0.32),
+  };
 }
 
 export interface Scene {

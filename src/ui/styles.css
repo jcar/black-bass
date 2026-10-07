@@ -805,7 +805,8 @@ p {
   font-size: 15px;
 }
 .notice-strip {
-  min-height: 30px;
+  /* Fixed height: the sonar inset is laid out under it, so it mustn't grow when a strip shows. */
+  height: 30px;
   margin-top: 4px;
   pointer-events: none;
 }
@@ -1555,10 +1556,12 @@ p {
 .retrieve-meter .meter > div {
   transform-origin: left;
 }
+/* Under the sonar inset (the renderer sets --sonar-bottom from the inset's real position), so it
+   never covers the inset or the ticker above it. */
 .coach-card-wrap {
   position: absolute;
   left: calc(10px + var(--safe-l));
-  top: calc(236px + var(--safe-t));
+  top: var(--sonar-bottom, calc(236px + var(--safe-t)));
   pointer-events: none;
 }
 .coach-card {
@@ -1822,6 +1825,7 @@ label.tbtn.disabled {
   .fight-panel,
   .tip-card,
   .rod-bar,
+  .coach-card,
   .banner {
     zoom: 1.25;
   }

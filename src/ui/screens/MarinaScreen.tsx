@@ -1,4 +1,5 @@
 import { m } from 'motion/react';
+import { PURSE } from '../../data/lakes';
 import { useState } from 'react';
 import { nextCareerGoal, RANK_LABEL } from '../../state/career';
 import { lakeName, useStore, type Screen } from '../../state/store';
@@ -89,7 +90,7 @@ export function MarinaScreen() {
               }
               sub={
                 <>
-                  {last.result.payout > 0 ? `Won ${money(last.result.payout)}` : 'Out of the money'} · +{last.result.points} pts
+                  {last.result.place <= PURSE[last.result.tier].payouts.length ? `Won ${money(last.result.payout)}` : `Out of the money · ${money(last.result.payout)} participation`} · +{last.result.points} pts
                   {last.promoted && <strong style={{ color: 'var(--good)' }}> · {last.promoted} unlocked</strong>}
                 </>
               }

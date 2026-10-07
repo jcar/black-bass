@@ -1,5 +1,7 @@
 import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
-import { inputHub } from '../../game/input';
+import { LURES } from '../../data/lures';
+import { TUNING } from '../../data/tuning';
+import { inputHub, retrieveHint } from '../../game/input';
 import { unlockAudio } from '../../audio/sound';
 import type { GamePhase } from '../../sim/types';
 import { IOS, switchProps, vibrate } from '../kit/haptics';
@@ -14,7 +16,7 @@ function TensionRing({ tension }: { tension: number }) {
   const t = Math.min(1, tension);
   const R = 64;
   const C = 2 * Math.PI * R;
-  const cls = t > 0.85 ? 'danger' : t > 0.6 ? 'warn' : '';
+  const cls = t > TUNING.fight.tensionDanger ? 'danger' : t > TUNING.fight.tensionWarn ? 'warn' : '';
   return (
     <svg className={`tension-ring ${cls}`} viewBox="0 0 140 140" aria-hidden="true">
       <circle cx="70" cy="70" r={R} className="track" />
@@ -103,10 +105,12 @@ interface ControlsProps {
   /** Rounded to 2 decimals by the caller so the memo holds between meaningful changes. */
   tension: number;
   leftHanded: boolean;
+  /** Lure on the active rod: the retrieve hint depends on how it's worked. */
+  lureId: string;
 }
 
 /** Memoised: the HUD snapshot ticks at 10 Hz, but the controls only change with these props. */
-export const TouchControls = memo(function TouchControls({ phase, canFish, castFlying, castCharging, tension, leftHanded }: ControlsProps) {
+export const TouchControls = memo(function TouchControls({ phase, canFish, castFlying, castCharging, tension, leftHanded, lureId }: ControlsProps) {
   const [stick, setStick] = useState<{ ox: number; oy: number; x: number; y: number } | null>(null);
   const touch = useRef<{ id: number; t0: number; x0: number; y0: number } | null>(null);
 
@@ -154,7 +158,7 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, castF
       : phase === 'Cast'
         ? 'A/D aim · C cast, C again to release · B thumb · M move'
         : phase === 'Present'
-          ? 'Space reel (hold steady) · T twitch · A/D steer · M burn in'
+          ? retrieveHint(LURES[lureId], true)
           : phase === 'Fight'
             ? 'Space reel · B thumb · A/D pull opposite · V bow on jumps'
             : ''
@@ -164,7 +168,7 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, castF
       : phase === 'Cast'
         ? 'Drag left/right to aim'
         : phase === 'Present'
-          ? 'Tap to twitch / hop · drag sideways to steer'
+          ? retrieveHint(LURES[lureId], false)
           : phase === 'Fight'
             ? 'Pull opposite the fish · flick ↓ to bow on jumps'
             : '';

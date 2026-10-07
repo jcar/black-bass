@@ -368,7 +368,8 @@ export function suggestedLine(lake: LakeDef, lureId: string): Line {
 /** Lightest owned rod whose lure-weight range fits (cast distance penalty otherwise). */
 export function suggestedRod(lureId: string, ownedRods: string[]): string | null {
   const w = LURES[lureId].weightOz;
-  const fits = ownedRods.filter((r) => w >= RODS[r].lureOz[0] && w <= RODS[r].lureOz[1]);
+  // RODS is listed light to heavy; owned rods are in purchase order.
+  const fits = Object.keys(RODS).filter((r) => ownedRods.includes(r) && w >= RODS[r].lureOz[0] && w <= RODS[r].lureOz[1]);
   return fits[0] ?? null;
 }
 
@@ -575,19 +576,21 @@ export function dayPlan(lake: LakeDef, c: Conditions, deck: RodSetup[]): WindowP
   });
 }
 
-/** In-game pick for right now, for the water around the boat. Returns the deck index. */
-export function proPickNow(lake: LakeDef, c: Conditions, deck: RodSetup[], clockMin: number, at: Vec2): number {
+/** Another rig must out-fish the plan's by this much in the water around the boat to take over. */
+const LOCAL_OVERRIDE = 1.3;
+
+/**
+ * In-game pick for right now (deck index): the day plan's rod for this window, so the badge agrees
+ * with the briefing, unless the water around the boat clearly favours another rig (the plan is judged
+ * at its best stop; the boat may be somewhere else). The margin stops it flipping between close rigs.
+ */
+export function proPickNow(lake: LakeDef, c: Conditions, deck: RodSetup[], clockMin: number, at: Vec2, plan: WindowPlan[]): number {
+  const w = windowAt(clockMin);
+  const planned = (plan.find((p) => p.window.id === w.id) ?? plan[0])?.best ?? 0;
   const env = spotEnv(lake, c.season, { x: Math.round(at.x / 20) * 20, y: Math.round(at.y / 20) * 20 });
-  let best = 0;
-  let bestS = -Infinity;
-  deck.forEach((d, i) => {
-    const s = estimateRig(c, clockMin, d, env).bitesPerDay;
-    if (s > bestS) {
-      bestS = s;
-      best = i;
-    }
-  });
-  return best;
+  const local = deck.map((d) => estimateRig(c, clockMin, d, env).bitesPerDay);
+  const best = local.reduce((bi, sc, i) => (sc > local[bi] ? i : bi), planned);
+  return local[best] > local[planned] * LOCAL_OVERRIDE ? best : planned;
 }
 
 /**

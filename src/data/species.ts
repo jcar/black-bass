@@ -85,7 +85,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { grass: 1.8, reeds: 1.0, none: 0.4 },
     jumpRate: 0.02,
     power: 1.1,
-    lureAffinity: { jerkbait: 1.4, chatterbait: 1.3, spinnerbait: 1.3, squarebill: 1.1 },
+    lureAffinity: { jerkbait: 1.4, chatterbait: 1.3, squarebill: 1.1 },
   },
   pickerel: {
     id: 'pickerel',

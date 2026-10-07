@@ -1,6 +1,6 @@
 import { AnimatePresence, LayoutGroup, m } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
-import { LAKE_LADDER, PURSE, TIER_FORMAT } from '../../data/lakes';
+import { LAKE_LADDER, PURSE, TIER_FORMAT, payoutFor } from '../../data/lakes';
 import { SPECIES } from '../../data/species';
 import { playUi, stopUi } from '../../audio/sound';
 import { assetUrl, portraitId } from '../../game/assets';
@@ -78,7 +78,7 @@ export function WeighInScreen() {
       over,
       cut: playerCut(t),
       bumped: me.total > leader.total,
-      payout: over ? (purse.payouts[place - 1] ?? 0) : 0,
+      payout: over ? payoutFor(t.tier, place) : 0,
       points: over ? (purse.points[place - 1] ?? 10) : 0,
       promotes: over && place <= PROMOTE_TOP && !!next && !save.unlockedLakes.includes(next.id) ? next.name : null,
       missedPromotion:
@@ -278,7 +278,7 @@ export function WeighInScreen() {
                   {phase >= Phase.Payout && (
                     <>
                       <div>
-                        <div className="kicker">Payout</div>
+                        <div className="kicker">{data.place <= data.moneyLine ? 'Payout' : 'Participation'}</div>
                         <div style={{ fontSize: 34, lineHeight: 0.9, color: data.payout ? 'var(--good)' : undefined }}>
                           <CountUp value={data.payout} from={0} format={(n) => money(Math.round(n))} duration={1} />
                         </div>
@@ -325,7 +325,7 @@ export function WeighInScreen() {
           <m.div className="thumb-zone" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
             {data.over ? (
               <Button variant="primary" size="lg" skew haptic onClick={complete}>
-                <span>{data.cut ? 'Missed the cut · Marina' : data.payout ? 'Collect winnings' : 'Back to the marina'}</span>
+                <span>{data.cut ? 'Missed the cut · Marina' : data.place <= data.moneyLine ? 'Collect winnings' : 'Back to the marina'}</span>
                 <Icon name="next" />
               </Button>
             ) : (
