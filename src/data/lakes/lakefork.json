@@ -857,10 +857,10 @@
  },
  "field": {
   "medianBagLb": {
-   "Amateur": 10.5,
-   "SemiPro": 12.5,
-   "Pro": 15,
-   "Elite": 19
+   "Amateur": 12,
+   "SemiPro": 14,
+   "Pro": 17,
+   "Elite": 21
   },
   "sigma": 0.3
  },

@@ -1,15 +1,23 @@
-champlain: 30 paired days, expert, 8 lures
+champlain: 30 paired days, expert, 16 lures
 
-PASS  WHERE  advisor route 13.03 vs itinerary 6.57 bass/day, diff CI [5.17, 7.80]; every lure: +2.7 to +5.7
-PASS  WHAT   top pick 13.03 vs median lure 10.62 bass/day, diff CI [1.48, 3.33]; picks: squarebill 9, jerkbait 5, tube 16
-PASS  RANK   per-day Spearman 0.62 [0.52, 0.71]; pooled over days 0.85
+PASS  WHERE  advisor route 18.10 vs itinerary 8.93 bass/day, diff CI [7.30, 11.03]; every lure: +3.1 to +8.8
+PASS  WHAT   top pick 18.10 vs median lure 13.72 bass/day, diff CI [3.53, 5.22]; picks: deepCrank 22, dropShot 7, jerkbait 1
+PASS  RANK   per-day Spearman 0.68 [0.62, 0.74]; pooled over days 0.90
         lure          advisor/day  harness/day
-        ned                 15.0         12.2
-        tube                16.3         12.2
-        squarebill          15.7         11.6
-        footballJig         15.6         11.2
-        chatterbait         12.4         10.6
-        jerkbait            14.1          9.9
-        dropShot             5.3          7.8
-        walker               9.2          7.4
-PASS  CALIB  Spearman over 480 lure-days 0.82; harness/predicted 0.75 (1.0 = calibrated)
+        deepCrank           17.5         17.9
+        tube                14.9         15.5
+        carolinaRig         16.1         15.4
+        dropShot            15.8         15.0
+        lipless             14.7         14.7
+        texasRig            13.4         14.1
+        spinnerbait         11.8         14.0
+        footballJig         14.2         13.8
+        squarebill          14.3         13.5
+        ned                 13.4         13.4
+        chatterbait         11.3         13.1
+        flipJig             11.7         12.2
+        swimbait            10.2         12.1
+        jerkbait            12.9         11.5
+        walker               8.4          8.9
+        frog                 4.9          6.2
+PASS  CALIB  Spearman over 960 lure-days 0.90; harness/predicted 0.76 (1.0 = calibrated)

@@ -110,7 +110,7 @@
     "weatherOdds": { "Bluebird": 0.35, "Overcast": 0.3, "Windy": 0.2, "Rain": 0.15 }
   },
   "field": {
-    "medianBagLb": { "Amateur": 11.5, "SemiPro": 13.5, "Pro": 15.5, "Elite": 17.5 },
+    "medianBagLb": { "Amateur": 12.5, "SemiPro": 14.5, "Pro": 16.5, "Elite": 19 },
     "sigma": 0.28
   }
 }

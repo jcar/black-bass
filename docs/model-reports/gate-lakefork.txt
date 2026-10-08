@@ -1,15 +1,23 @@
-lakefork: 30 paired days, expert, 8 lures
+lakefork: 30 paired days, expert, 16 lures
 
-PASS  WHERE  advisor route 5.93 vs itinerary 3.90 bass/day, diff CI [1.00, 3.20]; every lure: +0.4 to +2.7
-PASS  WHAT   top pick 5.93 vs median lure 4.65 bass/day, diff CI [0.70, 1.95]; picks: chatterbait 5, squarebill 20, ned 2, footballJig 3
-PASS  RANK   per-day Spearman 0.56 [0.45, 0.67]; pooled over days 0.90
+PASS  WHERE  advisor route 8.27 vs itinerary 4.70 bass/day, diff CI [2.00, 5.20]; every lure: +1.8 to +4.1
+PASS  WHAT   top pick 8.27 vs median lure 6.92 bass/day, diff CI [0.47, 2.32]; picks: chatterbait 4, squarebill 16, carolinaRig 4, ned 2, deepCrank 1, flipJig 3
+PASS  RANK   per-day Spearman 0.52 [0.42, 0.61]; pooled over days 0.84
         lure          advisor/day  harness/day
-        chatterbait         13.4          6.6
-        footballJig         11.3          5.5
-        squarebill          14.1          5.5
-        tube                10.8          5.4
-        ned                 10.1          4.4
-        walker               6.4          3.5
-        dropShot             2.4          3.0
-        jerkbait             5.1          1.6
-PASS  CALIB  Spearman over 480 lure-days 0.87; harness/predicted 0.63 (1.0 = calibrated)
+        chatterbait         12.3          8.6
+        flipJig             11.0          8.5
+        spinnerbait         10.9          8.2
+        deepCrank           11.9          8.1
+        texasRig            11.0          8.0
+        lipless             11.0          7.9
+        carolinaRig         11.9          7.4
+        squarebill          12.9          7.2
+        swimbait             8.0          7.1
+        footballJig         10.4          6.9
+        tube                 9.8          6.7
+        ned                  8.9          6.5
+        dropShot             7.8          5.7
+        frog                 6.3          4.7
+        walker               6.0          4.0
+        jerkbait             4.7          2.9
+PASS  CALIB  Spearman over 960 lure-days 0.89; harness/predicted 0.68 (1.0 = calibrated)
