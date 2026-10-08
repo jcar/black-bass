@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T23:14:21.882Z",
+  "generatedAt": "2026-10-08T12:38:03.689Z",
   "assets": [
     {
       "id": "plate_champlain_bluebird_open",
@@ -470,6 +470,126 @@
       "id": "icon_lure_footballJig_redCraw",
       "kind": "icon",
       "path": "assets/icons/icon_lure_footballJig_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_texasRig_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_texasRig_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_texasRig_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_texasRig_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_texasRig_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_texasRig_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_flipJig_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_flipJig_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_flipJig_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_flipJig_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_flipJig_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_flipJig_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_spinnerbait_white",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_spinnerbait_white.webp"
+    },
+    {
+      "id": "icon_lure_spinnerbait_chartreuse",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_spinnerbait_chartreuse.webp"
+    },
+    {
+      "id": "icon_lure_spinnerbait_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_spinnerbait_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_frog_blackBlue",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_frog_blackBlue.webp"
+    },
+    {
+      "id": "icon_lure_frog_white",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_frog_white.webp"
+    },
+    {
+      "id": "icon_lure_frog_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_frog_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_lipless_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_lipless_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_lipless_chartreuse",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_lipless_chartreuse.webp"
+    },
+    {
+      "id": "icon_lure_lipless_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_lipless_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_deepCrank_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_deepCrank_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_deepCrank_chartreuse",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_deepCrank_chartreuse.webp"
+    },
+    {
+      "id": "icon_lure_deepCrank_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_deepCrank_redCraw.webp"
+    },
+    {
+      "id": "icon_lure_swimbait_ghostMinnow",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_swimbait_ghostMinnow.webp"
+    },
+    {
+      "id": "icon_lure_swimbait_sexyShad",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_swimbait_sexyShad.webp"
+    },
+    {
+      "id": "icon_lure_swimbait_white",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_swimbait_white.webp"
+    },
+    {
+      "id": "icon_lure_carolinaRig_greenPumpkin",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_carolinaRig_greenPumpkin.webp"
+    },
+    {
+      "id": "icon_lure_carolinaRig_smoke",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_carolinaRig_smoke.webp"
+    },
+    {
+      "id": "icon_lure_carolinaRig_redCraw",
+      "kind": "icon",
+      "path": "assets/icons/icon_lure_carolinaRig_redCraw.webp"
     },
     {
       "id": "ui_marina",
