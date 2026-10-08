@@ -69,58 +69,58 @@ describe('Lake Fork regulations (TPWD catch-weigh-immediate-release + tournament
 
   it('weighs a slot fish in the boat and releases it: it counts', () => {
     const s = fork();
-    const { caught, text } = land(s, 19, 3.6);
+    const { caught, text } = land(s, 19, 3.625);
     expect(caught.cwr).toBe(true);
     expect(caught.released).toBeUndefined();
     expect(caught.health).toBeUndefined(); // never in the livewell
     expect(s.livewell).toEqual([caught]);
     expect(s.pendingCull).toBeNull();
-    expect(bagWeight(s.livewell)).toBe(3.6);
-    expect(text).toMatch(/^Slot fish \(16-24"\): 3\.60 lb, weighed by your judge and released\./);
+    expect(bagWeight(s.livewell)).toBe(3.625);
+    expect(text).toMatch(/^Slot fish \(16-24"\): 3-10, weighed by your judge and released\./);
   });
 
   it('keeps the best five on the card by itself: no cull decision', () => {
     const s = fork();
-    for (const [i, w] of [1.8, 2.2, 3.1, 1.5, 2.6].entries()) {
+    for (const [i, w] of [1.75, 2.25, 3.125, 1.5, 2.625].entries()) {
       land(s, 15 + i * 0.25, w, i + 1);
       s.phase = 'Cast';
     }
-    const { text } = land(s, 17, 3.4, 7);
+    const { text } = land(s, 17, 3.375, 7);
     expect(s.pendingCull).toBeNull();
     expect(s.phase).toBe('Landed');
-    expect(text).toMatch(/replaces your 1\.50 on the card/);
-    expect(bagWeight(s.livewell)).toBe(13.1);
+    expect(text).toMatch(/replaces your 1-08 on the card/);
+    expect(bagWeight(s.livewell)).toBe(13.125);
     s.phase = 'Cast';
-    const small = land(s, 14.5, 1.2, 8);
+    const small = land(s, 14.5, 1.25, 8);
     expect(small.text).toMatch(/Your best five are heavier: it doesn't count/);
     expect(small.caught.cwr).toBe(true);
-    expect(bagWeight(s.livewell)).toBe(13.1);
+    expect(bagWeight(s.livewell)).toBe(13.125);
     expect(s.livewell).toHaveLength(5);
   });
 
   it('lets one 24"+ bass a day ride to the stage: the heavier one, never a swap for a dead one', () => {
     const s = fork();
-    const first = land(s, 25, 10.2);
+    const first = land(s, 25, 10.25);
     expect(first.caught.stage).toBe(true);
     expect(first.caught.health).toBeGreaterThan(0);
     expect(first.text).toMatch(/weigh-in stage/);
     s.phase = 'Cast';
-    const second = land(s, 24.5, 9.1);
+    const second = land(s, 24.5, 9.125);
     expect(second.caught.stage).toBeUndefined();
     expect(second.caught.cwr).toBe(true); // weighed and released, and it still counts
-    expect(bagWeight(s.livewell)).toBe(19.3);
+    expect(bagWeight(s.livewell)).toBe(19.375);
     s.phase = 'Cast';
-    land(s, 26, 12.4);
-    expect(s.livewell.filter((f) => f.stage).map((f) => f.weightLb)).toEqual([12.4]);
-    const old = s.livewell.find((f) => f.weightLb === 10.2)!;
+    land(s, 26, 12.375);
+    expect(s.livewell.filter((f) => f.stage).map((f) => f.weightLb)).toEqual([12.375]);
+    const old = s.livewell.find((f) => f.weightLb === 10.25)!;
     expect(old.cwr).toBe(true);
     expect(old.health).toBeUndefined();
-    expect(bagWeight(s.livewell)).toBe(31.7);
+    expect(bagWeight(s.livewell)).toBe(31.75);
     // A dead stage fish stays the stage fish.
     s.livewell.find((f) => f.stage)!.health = 0;
     s.phase = 'Cast';
     land(s, 27, 13.5);
-    expect(s.livewell.filter((f) => f.stage).map((f) => f.weightLb)).toEqual([12.4]);
+    expect(s.livewell.filter((f) => f.stage).map((f) => f.weightLb)).toEqual([12.375]);
     expect(s.lastLanded!.cwr).toBe(true);
   });
 
@@ -181,13 +181,16 @@ describe('check-in', () => {
   });
 
   it('charges 1 lb a minute late (B.A.S.S.), and zeroes the day after 15 minutes', () => {
+    // Read off the clock: 3:00 is on time, 3:01 a minute late.
     expect(lateMinutes(C.dayEndMin)).toBe(0);
-    expect(lateMinutes(C.dayEndMin + 0.5)).toBe(1);
-    expect(lateMinutes(C.dayEndMin + 4.2)).toBe(5);
+    expect(lateMinutes(C.dayEndMin + 0.5)).toBe(0);
+    expect(lateMinutes(C.dayEndMin + 1)).toBe(1);
+    expect(lateMinutes(C.dayEndMin + 4.2)).toBe(4);
     const bag = [kept(4, 1), kept(4, 2), kept(4, 3), kept(4, 4), kept(4, 5)];
-    expect(checkInResult(bag, C.dayEndMin + 3.5)).toMatchObject({ lateMin: 4, latePenaltyLb: 4, netLb: 16, zeroed: false });
+    expect(checkInResult(bag, C.dayEndMin + 3.5)).toMatchObject({ lateMin: 3, latePenaltyLb: 3, netLb: 17, zeroed: false });
     expect(checkInResult(bag, C.dayEndMin + 15)).toMatchObject({ lateMin: 15, netLb: 5, zeroed: false });
-    expect(checkInResult(bag, C.dayEndMin + 15.5)).toMatchObject({ lateMin: 16, netLb: 0, zeroed: true });
+    expect(checkInResult(bag, C.dayEndMin + 15.5)).toMatchObject({ lateMin: 15, netLb: 5, zeroed: false });
+    expect(checkInResult(bag, C.dayEndMin + 16)).toMatchObject({ lateMin: 16, netLb: 0, zeroed: true });
     expect(checkInResult([kept(1.5, 1)], C.dayEndMin + 3)).toMatchObject({ netLb: 0 });
   });
 

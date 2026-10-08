@@ -13,6 +13,7 @@ import { transition } from './machine';
 import { atLaunch, etaHomeMin, headInDue, lateMinutes } from './nav';
 import { stepPresent } from './presentation';
 import { Rng } from './rng';
+import { lbOzText, scaleLb } from './format';
 import type { BroadcastState, Conditions, DayCheckIn, InputFrame, RodSetup, Tier, TournamentState } from './types';
 
 export interface NewTournamentOptions {
@@ -91,7 +92,7 @@ function broadcastFor(s: TournamentState): BroadcastState {
   return s.broadcast;
 }
 
-const lbText = (lb: number) => `${lb.toFixed(2)} lb`;
+const lbText = (lb: number) => lbOzText(lb);
 
 function stepBroadcast(s: TournamentState, bagChanged: boolean): void {
   const b = broadcastFor(s);
@@ -289,7 +290,7 @@ export function stepTournament(s: TournamentState, input: InputFrame, dt: number
 
   // Livewell: fish lose condition with time, faster in warm water. Dead fish can't be culled.
   for (const f of stepLivewell(s, s.clockMin - clock0))
-    emit(s, 'fishDied', `Your ${f.weightLb.toFixed(2)} lb fish died in the livewell: ${TUNING.livewell.deadPenaltyLb * 16} oz penalty, and it can't be culled.`, undefined, { weightLb: f.weightLb });
+    emit(s, 'fishDied', `Your ${lbOzText(f.weightLb)} fish died in the livewell: ${TUNING.livewell.deadPenaltyLb * 16} oz penalty, and it can't be culled.`, undefined, { weightLb: f.weightLb });
 
   if (input.checkIn && canCheckIn(s)) endDay(s);
   else if (s.clockMin >= TUNING.clock.dayEndMin) {
@@ -326,7 +327,7 @@ export function checkInResult(livewell: TournamentState['livewell'], clockMin: n
   const deadFish = livewell.filter(isDead).length;
   const deadPen = deadPenaltyLb(livewell);
   const latePen = lateMin * C.latePenaltyLbPerMin;
-  const netLb = zeroed ? 0 : Math.max(0, Math.round((grossLb - deadPen - latePen) * 100) / 100);
+  const netLb = zeroed ? 0 : Math.max(0, scaleLb(grossLb - deadPen - latePen));
   return { atMin: clockMin, grossLb, lateMin, latePenaltyLb: latePen, deadFish, deadPenaltyLb: deadPen, zeroed, netLb };
 }
 
@@ -351,7 +352,7 @@ export function endDay(s: TournamentState): void {
   transition(s, 'WeighIn');
 }
 
-export const playerTotal = (s: TournamentState) => Math.round(s.dayWeights.reduce((a, b) => a + b, 0) * 100) / 100;
+export const playerTotal = (s: TournamentState) => scaleLb(s.dayWeights.reduce((a, b) => a + b, 0));
 
 export function playerCut(s: TournamentState): boolean {
   if (!s.cutAfterDay || s.day < s.cutAfterDay) return false;
@@ -368,9 +369,9 @@ export function standings(s: TournamentState, final = s.phase === 'WeighIn'): St
   const rows: Standing[] = s.rivals.map((r) => {
     const today = final ? (r.dayWeights[r.dayWeights.length - 1] ?? 0) : r.cut ? 0 : rivalTodayAt(r, s.clockMin);
     const prev = r.dayWeights.slice(0, final ? r.dayWeights.length - 1 : r.dayWeights.length).reduce((a, b) => a + b, 0);
-    return { id: r.id, name: r.name, total: Math.round((prev + today) * 100) / 100, today, isPlayer: false, cut: r.cut };
+    return { id: r.id, name: r.name, total: scaleLb(prev + today), today, isPlayer: false, cut: r.cut };
   });
-  rows.push({ id: -1, name: 'You', total: Math.round((playerPrev + playerToday) * 100) / 100, today: playerToday, isPlayer: true, cut: false });
+  rows.push({ id: -1, name: 'You', total: scaleLb(playerPrev + playerToday), today: playerToday, isPlayer: true, cut: false });
   rows.sort((a, b) => Number(a.cut) - Number(b.cut) || b.total - a.total);
   return rows;
 }

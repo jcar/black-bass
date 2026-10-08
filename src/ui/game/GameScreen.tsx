@@ -1,9 +1,14 @@
 import { AnimatePresence } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { setSoundEnabled } from '../../audio/sound';
+import { inputHub, rodForKey } from '../../game/input';
 import { GameRunner } from '../../game/runner';
+import { formatClock } from '../../sim/conditions';
+import { hoursMinText } from '../../sim/format';
+import { checkInNeedsConfirm } from '../../sim/nav';
 import { adviceFor } from '../../sim/tierAdvice';
 import { useStore } from '../../state/store';
+import { TUNING } from '../../data/tuning';
 import { Button, Icon } from '../kit';
 import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import { SettingsSheet } from '../Settings';
@@ -12,6 +17,9 @@ import { LakeMap } from './LakeMap';
 import { LandedModal } from './LandedModal';
 import { Banner, NoticeLive } from './Notices';
 import { TouchControls } from './TouchControls';
+
+/** Real ms to press K again (or tap CONFIRM) before an early check-in disarms. */
+const CONFIRM_MS = 3000;
 
 function PauseMenu({ open }: { open: boolean }) {
   const setPaused = useStore((s) => s.setPaused);
@@ -90,13 +98,35 @@ export function GameScreen() {
       const st = useStore.getState();
       // M opens the lake map while driving (M is move/burn in only once you're fishing) and closes it.
       if (e.key.toLowerCase() === 'm' && !st.paused && (st.mapOpen || st.hud?.phase === 'Navigate')) st.setMapOpen(!st.mapOpen);
+      // 1-5 pick a rod between casts (the lake map, while open, has its own digits for PRO stops).
+      const rod = !st.paused && !st.mapOpen && st.tournament ? rodForKey(e.key, st.tournament.deck.length) : null;
+      if (rod !== null && (st.hud?.phase === 'Navigate' || (st.hud?.phase === 'Cast' && !st.hud.castCharging && !st.hud.castFlying))) st.selectRod(rod);
       // I re-checks the data for this point (between casts, where the tier allows it).
       if (e.key.toLowerCase() === 'i' && !st.paused && !st.mapOpen && st.hud?.phase === 'Cast' && !st.hud.castCharging && !st.hud.castFlying) st.checkPoint(true);
       if (e.key !== 'Escape') return;
       if (!st.paused) st.setPaused(true);
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // K ends the day: with more than half an hour left it takes a second press within a few seconds.
+    let armedUntil = 0;
+    inputHub.confirmCheckIn = () => {
+      const st = useStore.getState();
+      const t = st.tournament;
+      if (!t || !st.hud?.checkIn.can || !checkInNeedsConfirm(t.clockMin)) return true;
+      const now = performance.now();
+      if (now < armedUntil) {
+        armedUntil = 0;
+        return true;
+      }
+      armedUntil = now + CONFIRM_MS;
+      const left = hoursMinText(TUNING.clock.dayEndMin - t.clockMin);
+      st.notify({ kind: 'banner', title: 'Check in early?', sub: `${left} left · press K again to end the day at ${formatClock(t.clockMin)}`, tone: 'info' });
+      return false;
+    };
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      inputHub.confirmCheckIn = null;
+    };
   }, []);
 
   return (

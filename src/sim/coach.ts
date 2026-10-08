@@ -7,8 +7,11 @@ import { RODS, rodPowerOk } from '../data/rods';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { advisorRoute, APPROACH_TIP, techniqueTip } from './advisor';
+import { getLakeGrid, nearCover } from './lake';
 import { healthOf } from './livewell';
+import { hookWindowSec } from './presentation';
 import { formatClock } from './conditions';
+import { hoursMinText } from './format';
 import type { DayCheckIn, GamePhase, HookMiss, RodSetup, TournamentEvent, TournamentState, Vec2 } from './types';
 
 export interface CoachTip {
@@ -100,8 +103,18 @@ export function missTip(why: HookMiss, topwater: boolean, rig: RodSetup): CoachT
     return topwater
       ? { id: 'miss-early-top', title: 'Too early: wait to feel the weight on topwater', text: "The blow-up isn't the bite. Let the fish turn down with it, feel the weight (the thump), then set: H or HOOK." }
       : { id: 'miss-early', title: 'Too early', text: "You set while the fish was still coming. Wait for the thump (HOOK glows), then set: H or HOOK." };
-  if (why === 'late')
-    return { id: 'miss-late', title: 'Too late', text: 'Bass spit a hard bait in under a second (soft plastics a little later). Set as soon as you feel the thump: H or HOOK.' };
+  if (why === 'late') {
+    const lure = LURES[rig.lureId];
+    const win = hookWindowSec(lure).toFixed(1);
+    const soft = hookWindowSec(lure) > TUNING.hookset.windowSec;
+    return {
+      id: 'miss-late',
+      title: 'Too late',
+      text: soft
+        ? `Bass hold a soft plastic like the ${lure.name} a little longer, but only about ${win} s before they spit it. Set as soon as you feel the thump: H or HOOK.`
+        : `Bass spit a hard bait like the ${lure.name} in under ${win} s. Set as soon as you feel the thump: H or HOOK.`,
+    };
+  }
   return { id: 'miss-nohook', title: "The hook didn't stick", text: noHookReason(rig) };
 }
 
@@ -197,7 +210,8 @@ export function coachStep(c: CoachState, t: TournamentState, events: TournamentE
     if (sinks && !p.onBottom && !p.held && p.t < 6 && speed > 0.15) c.earlyReelSec += dt;
     if (p.t > 1.5 && p.match < 0.45 && (!sinks || p.onBottom)) c.lowMatchSec += dt;
     if (c.earlyReelSec > 1.2) candidates.push({ id: 'bottom', title: 'Let it hit bottom first', text: `The ${lure.name} gets bit on the bottom. Watch the sonar depth and wait for it to touch down before you reel.` });
-    if (c.lowMatchSec > 1.5) candidates.push({ id: `match-${lure.style}`, title: `Work the ${lure.name} right`, text: techniqueTip(lure.id, t.conditions.waterTempF) });
+    if (c.lowMatchSec > 1.5)
+      candidates.push({ id: `match-${lure.style}`, title: `Work the ${lure.name} right`, text: techniqueTip(lure.id, t.conditions.waterTempF, nearCover(getLakeGrid(LAKES[t.lakeId]), p.lurePos.x, p.lurePos.y, 8)) });
   }
 
   // End of a cast (back at the boat, or a fish ended it).
@@ -238,6 +252,11 @@ export function debrief(s: DayStats, waterTempF: number, checkIn?: DayCheckIn): 
   const out: { cost: number; text: string }[] = [];
   if (checkIn?.zeroed) out.push({ cost: 100, text: `Checked in ${checkIn.lateMin} minutes late: over ${TUNING.checkIn.lateMaxMin} and the day counts zero. Head in when the chip says so; it allows for the run back.` });
   else if (checkIn?.lateMin) out.push({ cost: 50 + checkIn.lateMin, text: `${checkIn.lateMin} minutes late to check-in cost ${checkIn.latePenaltyLb} lb. Leave when the "Head in" warning comes: it counts the run back to the launch.` });
+  else if (checkIn && TUNING.clock.dayEndMin - checkIn.atMin > TUNING.checkIn.confirmEarlyMin)
+    out.push({
+      cost: 90,
+      text: `Checked in at ${formatClock(checkIn.atMin)} with ${hoursMinText(TUNING.clock.dayEndMin - checkIn.atMin)} left: the day ended early. Bites come all day; fish on until the "Head in" warning.`,
+    });
   const dead = checkIn?.deadFish ?? s.deadFish ?? 0;
   if (dead > 0) out.push({ cost: 40 + dead, text: `${dead} fish died in the livewell (${Math.round(waterTempF)}°F water): -${Math.round(dead * TUNING.livewell.deadPenaltyLb * 16)} oz. ${HOT_WATER}` });
   if (s.arrivals >= 2 && s.spookedArrivals / s.arrivals >= 0.25)

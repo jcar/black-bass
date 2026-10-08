@@ -8,6 +8,7 @@ import { PROMOTE_TOP } from '../../state/career';
 import type { Standing } from '../../sim/field';
 import { isTournamentOver, playerCut, standings } from '../../sim/tournament';
 import { isDead } from '../../sim/livewell';
+import { scaleLb } from '../../sim/format';
 import type { CaughtFish } from '../../sim/types';
 import { lakeName, useStore } from '../../state/store';
 import { lbOz, money } from '../components';
@@ -55,7 +56,7 @@ export function WeighInScreen() {
     if (!t) return null;
     const final = standings(t, true);
     const me = final.find((r) => r.isPlayer)!;
-    const before = sortRows(final.map((r) => (r.isPlayer ? { ...r, total: Math.round((r.total - r.today) * 100) / 100 } : { ...r })));
+    const before = sortRows(final.map((r) => (r.isPlayer ? { ...r, total: scaleLb(r.total - r.today) } : { ...r })));
     const leader = final.find((r) => !r.isPlayer && !r.cut) ?? final.find((r) => !r.isPlayer)!;
     const bag = [...t.livewell].sort((a, b) => a.weightLb - b.weightLb);
     const place = final.indexOf(me) + 1;
@@ -144,6 +145,7 @@ export function WeighInScreen() {
   };
 
   const reordered = phase >= Phase.Board;
+  const multiDay = t.totalDays > 1;
   const rows = reordered ? data.final : data.before;
   const top = rows.slice(0, SHOWN);
   const myRow = rows.find((r) => r.isPlayer)!;
@@ -166,7 +168,8 @@ export function WeighInScreen() {
     >
       <span className="lb-place">{place}</span>
       <span className="lb-name">{r.isPlayer ? 'You' : r.name}</span>
-      <span className="lb-today">{r.isPlayer && !reordered ? (phase >= Phase.Weigh ? 'on the scale' : '') : `+${lbOz(r.today)}`}</span>
+      {/* Today's weight beside the total only means something once there's more than one day. */}
+      <span className="lb-today">{r.isPlayer && !reordered ? (phase >= Phase.Weigh ? 'on the scale' : '') : multiDay ? `+${lbOz(r.today)}` : ''}</span>
       <span className="lb-w">{lbOz(r.total)}</span>
     </m.div>
   );

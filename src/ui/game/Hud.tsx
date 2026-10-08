@@ -62,28 +62,35 @@ const RodBar = memo(function RodBar({ labels, active, pick, deck }: { labels: st
  * Where you're headed, beside the minimap: the stop, how far, which way relative to the bow (arrow up =
  * dead ahead), and the approach cue (come off plane at the advisor's distance, then fish it in range).
  */
-const NavChip = memo(function NavChip({ nav, onOpen, etaMin, canCheckIn }: { nav: NavHud; onOpen: () => void; etaMin: number; canCheckIn: boolean }) {
+const NavChip = memo(function NavChip({ nav, onOpen, etaMin, canCheckIn, late, lateMin }: { nav: NavHud; onOpen: () => void; etaMin: number; canCheckIn: boolean; late: boolean; lateMin: number }) {
   const status = nav.home
     ? canCheckIn
       ? 'Check in now'
       : nav.distM <= TUNING.checkIn.radiusM
         ? 'At the launch'
-        : `Head in · ${Math.max(1, Math.ceil(etaMin))} min run`
+        : late
+          ? lateMin > 0
+            ? `Late · ${lateMin} min · run in`
+            : 'Check-in time · run in'
+          : `Head in · ${Math.max(1, Math.ceil(etaMin))} min run`
     : nav.cue === 'inRange'
       ? 'In range'
-      : nav.cue === 'lane'
-        ? 'Stay in the lane'
-        : nav.cue === 'idleIn'
-          ? 'Idle in now'
-          : nav.cue === 'stumpsAhead'
-            ? 'Off plane: stumps ahead'
-            : nav.routed && nav.steerCompass !== nav.compass
-          ? `Go round, head ${nav.steerCompass}`
-          : nav.outboard
-            ? `Off plane at ${OFF_PLANE_M} m`
-            : null;
+      : nav.cue === 'idleIn'
+        ? 'Idle in now'
+        : nav.cue === 'idleInStumps'
+          ? 'Off plane now · stumps'
+          : nav.cue === 'lane'
+            ? 'Stay in the lane'
+            : nav.cue === 'stumpsAhead'
+              ? 'Off plane: stumps ahead'
+              : nav.routed && nav.steerCompass !== nav.compass
+                ? `Go round, head ${nav.steerCompass}`
+                : nav.outboard
+                  ? `Off plane at ${OFF_PLANE_M} m`
+                  : null;
+  const warn = nav.cue === 'lane' || nav.cue === 'stumpsAhead' || nav.cue === 'idleInStumps';
   return (
-    <button className={`nav-chip hud-box ${nav.home ? (canCheckIn ? 'inRange' : 'idleIn') : nav.cue === 'lane' || nav.cue === 'stumpsAhead' ? 'idleIn' : (nav.cue ?? '')}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
+    <button className={`nav-chip hud-box ${nav.home ? (canCheckIn ? 'inRange' : 'idleIn') : warn ? 'idleIn' : (nav.cue ?? '')}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
       <span className="nav-arrow" style={{ transform: `rotate(${nav.rel}rad)` }} aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <path d="M12 2l8 18-8-4.5L4 20z" />
@@ -184,11 +191,13 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const clockLabel =
     ci.lateMin > 0
       ? `Late ${ci.lateMin} min · -${ci.lateMin * TUNING.checkIn.latePenaltyLbPerMin} lb`
-      : ci.headIn
-        ? ci.atLaunch
-          ? 'At the launch · check in'
-          : `Head in · ${Math.max(1, Math.ceil(ci.etaMin))} min run`
-        : `Day ${hud.day}/${hud.totalDays} · ${hud.motor === 'outboard' ? 'Outboard' : 'Trolling'}`;
+      : ci.late && !ci.atLaunch
+        ? 'Check-in time · run in'
+        : ci.headIn
+          ? ci.atLaunch
+            ? 'At the launch · check in'
+            : `Head in · ${Math.max(1, Math.ceil(ci.etaMin))} min run`
+          : `Day ${hud.day}/${hud.totalDays} · ${hud.motor === 'outboard' ? 'Outboard' : 'Trolling'}`;
   const money = tier ? PURSE[tier].payouts.length : 10;
   const line = cutDay ?? (hud.fieldSize > money ? money : null);
   const inside = line !== null && hud.place <= line;
@@ -273,7 +282,7 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
       </div>
 
       {hud.phase === 'Navigate' && <button className="minimap-hit" aria-label="Open the lake map" onClick={openMap} />}
-      {hud.nav && <NavChip nav={hud.nav} onOpen={openMap} etaMin={ci.etaMin} canCheckIn={ci.can} />}
+      {hud.nav && <NavChip nav={hud.nav} onOpen={openMap} etaMin={ci.etaMin} canCheckIn={ci.can} late={ci.late} lateMin={ci.lateMin} />}
 
       {/* Outside the zoomed top bar: it's placed under the sonar inset by the renderer (--sonar-bottom). */}
       <CoachCard hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />

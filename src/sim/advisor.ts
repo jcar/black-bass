@@ -19,6 +19,7 @@ import { POWER_RANK, RODS, rodCasts, rodPowerOk } from '../data/rods';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { generateConditions, lightLevel } from './conditions';
+import { plural } from './format';
 import { activityFor } from './fish/activity';
 import { colorFit, depthMatch, detectRange, jerkPauseWindow, lineVisibilityFit, lureConditionFit, lureTempFit } from './fish/attraction';
 import { holdingDepth, speciesWeightsAt } from './fish/population';
@@ -502,12 +503,23 @@ export function rigIssues(lake: LakeDef, rig: RodSetup): RigIssue[] {
 }
 
 /** How to work the lure so the attraction model rewards it (presentationMatch). */
-export function techniqueTip(lureId: string, waterTempF: number): string {
+/** Cover a weedless bait gets pitched into, as the tip names it. */
+const PITCH_INTO: Partial<Record<CoverType, string>> = { dock: 'the docks', timber: 'the wood', standing: 'the standing timber', grass: 'the grass', reeds: 'the reeds' };
+
+/**
+ * How to work a lure. `cover` (the water you're fishing, when known) keeps the advice to what's there:
+ * a Texas rig is pitched into docks and wood, but dragged and hopped over an offshore rock reef.
+ */
+export function techniqueTip(lureId: string, waterTempF: number, cover?: CoverType): string {
   const lure = LURES[lureId];
   switch (lure.id) {
     case 'texasRig':
-    case 'flipJig':
-      return `Pitch it right into the docks, wood or grass (weedless: no crash, it lands beside the fish). Let it hit bottom, hop it once or twice, and set on the thump.`;
+    case 'flipJig': {
+      const into = cover && PITCH_INTO[cover];
+      if (into) return `Pitch it right into ${into} (weedless: no crash, it lands beside the fish). Let it hit bottom, hop it once or twice, and set on the thump.`;
+      if (cover === 'rock') return `Let it hit bottom on the rock, then crawl it and hop it over the boulders with short pulls. Set on the thump.`;
+      return `Get it to the bottom where the fish are (weedless, so it can go right into cover without a crash), hop it once or twice, and set on the thump.`;
+    }
     case 'frog':
       return `Walk it over grass, pads and wood with an even rhythm, pausing in the holes. On a blow-up wait to feel the weight, then set (H / HOOK).`;
     case 'lipless':
@@ -719,8 +731,8 @@ export function dayOutlook(lake: LakeDef, c: Conditions, deck: RodSetup[], spots
   const scout = scoutLake(lake, 8).picks[0].score * PLAY_CALIBRATION;
   const tough = bites < scout * 0.6;
   const text = tough
-    ? `Tough day: about ${Math.round(bites)} bites for a pro on the best water (a normal day here is ~${Math.round(scout)}). Slow down and fish ${spots ? 'the spots below' : 'your water'} thoroughly.`
-    : `A pro fishing ${spots ? 'the spots below' : 'the right water'} should get around ${Math.round(bites)} bites today.`;
+    ? `Tough day: about ${plural(Math.round(bites), 'bite')} for a pro on the best water (a normal day here is ~${Math.round(scout)}). Slow down and fish ${spots ? 'the spots below' : 'your water'} thoroughly.`
+    : `A pro fishing ${spots ? 'the spots below' : 'the right water'} should get around ${plural(Math.round(bites), 'bite')} today.`;
   return { bites, tough, text };
 }
 

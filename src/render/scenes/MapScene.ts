@@ -13,6 +13,9 @@ const SONAR_RANGE = 45;
 const SONAR_HALF = 0.5;
 /** Every return on the sonar is drawn in the one colour. */
 const SONAR_MARK = 0xffe066;
+/** The destination chip sits left of the minimap, about this wide (CSS px); ring labels keep clear of both. */
+const CHIP_W_PX = 300;
+const LABEL_CLEAR_PX = 8;
 /** A PRO stop this close (m) to a waypoint is the same place: label them together. */
 const PRO_MERGE_M = 30;
 const PRO_GREEN = 0x5ee08a;
@@ -219,12 +222,12 @@ export class MapScene implements Scene {
       p.scale.set(1 / z);
       p.alpha = this.isVisited(this.proStops[i]) ? 0.45 : 1;
     });
-    this.drawDestination(view, z, boat.pos);
     const lead = Math.min(80, boat.speed * 0.9);
     this.world.position.set(
       view.w / 2 - (boat.pos.x + Math.cos(boat.heading) * lead) * z,
       view.h / 2 - (boat.pos.y + Math.sin(boat.heading) * lead) * z,
     );
+    this.drawDestination(view, z, boat.pos);
 
     // Region names only read well when zoomed out at speed.
     const labelAlpha = Math.max(0, Math.min(0.4, (1.0 - this.zoom) * 0.8));
@@ -356,7 +359,21 @@ export class MapScene implements Scene {
     const pulse = 15 + 4 * Math.sin(view.time * 4);
     g.circle(d.x, d.y, pulse / z).stroke({ width: 3 / z, color: 0xffffff, alpha: 0.85 });
     this.destLabel.scale.set(1 / z);
-    this.destLabel.position.set(d.x, d.y - OFF_PLANE_M - 3 / z);
+    // Over the ring's top, unless that's under the HUD (scorebug, minimap, destination chip): then under it.
+    const lw = this.destLabel.width * z;
+    const lh = this.destLabel.height * z;
+    const sx = this.world.position.x + d.x * z;
+    const topY = this.world.position.y + (d.y - OFF_PLANE_M) * z - 3;
+    const m = this.miniRect;
+    const underHud = (y0: number, y1: number) =>
+      y0 < view.hudTop + 4 || (m.w > 0 && y1 > m.y && y0 < m.y + m.h + LABEL_CLEAR_PX && sx + lw / 2 > m.x - CHIP_W_PX && sx - lw / 2 < m.x + m.w);
+    if (underHud(topY - lh, topY)) {
+      this.destLabel.anchor.set(0.5, 0);
+      this.destLabel.position.set(d.x, d.y + OFF_PLANE_M + 3 / z);
+    } else {
+      this.destLabel.anchor.set(0.5, 1);
+      this.destLabel.position.set(d.x, d.y - OFF_PLANE_M - 3 / z);
+    }
   }
 
   private updateMinimap(t: TournamentState, grid: LakeGrid, view: View) {

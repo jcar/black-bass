@@ -8,12 +8,20 @@ import type { TournamentEvent } from '../sim/types';
 
 let ctx: AudioContext | null = null;
 let enabled = true;
+/**
+ * Browsers only let audio start after a user gesture, and every AudioContext made (or resumed) before
+ * one logs a warning. Nothing audio is created until the first tap, click or key: the music and the
+ * UI cue preloads wait for it.
+ */
+let gestured = false;
+let wantPreload = false;
 let music: Howl | null = null;
 const sfxFiles = new Map<string, Howl>();
 
 export function setSoundEnabled(on: boolean) {
   const was = enabled;
   enabled = on;
+  if (!gestured) return; // applied on the first gesture
   Howler.mute(!on);
   // Music is skipped entirely while muted, so start the current track when sound comes back.
   if (on && !was && !music && musicName) {
@@ -23,20 +31,31 @@ export function setSoundEnabled(on: boolean) {
   }
 }
 
-/** iOS only allows audio after a user gesture: call this from the first tap. */
+/** Audio may only start after a user gesture: the first tap, click or key calls this (so can any tap handler). */
 export function unlockAudio() {
+  // A touch's pointerdown isn't a gesture yet (its touchend is): wait for one, or Chrome warns.
+  if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
   if (!ctx) {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (AC) ctx = new AC();
   }
-  void ctx?.resume();
+  if (ctx && ctx.state !== 'running') void ctx.resume();
+  if (gestured) return;
+  gestured = true;
+  // Howler makes its own context on first use: now, inside the gesture.
+  Howler.mute(!enabled);
+  if (wantPreload) preloadUi();
+  const name = musicName;
+  musicName = '';
+  if (name) playMusic(name);
 }
 
 // iOS suspends ("interrupts") the context when the app is backgrounded; resume on return and on
 // the next touch, not just the first one.
 if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && void ctx?.resume());
-  document.addEventListener('pointerdown', () => ctx && ctx.state !== 'running' && void ctx.resume(), { passive: true });
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && gestured && ctx?.state !== 'running' && void ctx?.resume());
+  for (const type of ['pointerdown', 'pointerup', 'keydown', 'touchend', 'click'] as const)
+    document.addEventListener(type, () => (!gestured || (ctx && ctx.state !== 'running')) && unlockAudio(), { passive: true, capture: true });
 }
 
 function noiseBurst(dur: number, freq: number, q: number, gain: number, sweepTo?: number) {
@@ -123,7 +142,7 @@ const SYNTH: Partial<Record<TournamentEvent['type'], () => void>> = {
 };
 
 export function playEvent(type: TournamentEvent['type']) {
-  if (!enabled) return;
+  if (!enabled || !gestured) return;
   const file = assetUrl(`sfx_${type}`);
   if (file) {
     let h = sfxFiles.get(type);
@@ -199,7 +218,7 @@ function uiHowl(cue: UiCue): Howl | null {
 
 /** Menu/UI feedback. Stings briefly duck the music so they read like a broadcast cue. */
 export function playUi(cue: UiCue) {
-  if (!enabled) return;
+  if (!enabled || !gestured) return;
   if (STINGS.has(cue)) duckMusic(cue === 'build' ? 2600 : 2200);
   const h = uiHowl(cue);
   if (h) {
@@ -212,6 +231,10 @@ export function playUi(cue: UiCue) {
 
 /** Preload UI cues so the first tap isn't silent while the file decodes. */
 export function preloadUi() {
+  if (!gestured) {
+    wantPreload = true;
+    return;
+  }
   (Object.keys(UI_SYNTH) as UiCue[]).forEach(uiHowl);
 }
 
@@ -239,7 +262,7 @@ export function playMusic(name: string) {
     setTimeout(() => old.unload(), 700);
     music = null;
   }
-  if (!url || !enabled) return;
+  if (!url || !enabled || !gestured) return;
   music = new Howl({ src: [url], loop: true, volume: 0, html5: false });
   music.play();
   music.fade(0, MUSIC_VOL, 1200);

@@ -6,6 +6,7 @@ import { activeTackle, emit } from './context';
 import { coverAt, depthAt, getLakeGrid, nearCover } from './lake';
 import { transition } from './machine';
 import type { Rng } from './rng';
+import { lbOzText, scaleLb } from './format';
 import type { CaughtFish, FishEntity, TournamentState } from './types';
 
 export const LIVEWELL_LIMIT = 5;
@@ -47,7 +48,8 @@ export function catchVerdict(c: Pick<CaughtFish, 'species' | 'lengthIn'>, lake?:
   return 'keeper';
 }
 
-export const bagWeight = (fish: CaughtFish[]) => Math.round(fish.reduce((a, f) => a + f.weightLb, 0) * 100) / 100;
+/** A bag on the scales: the sum of each fish's scale weight (nearest ounce), so the fish shown add up to it. */
+export const bagWeight = (fish: Pick<CaughtFish, 'weightLb'>[]) => fish.reduce((a, f) => a + scaleLb(f.weightLb), 0);
 
 // ---------- Livewell survival ----------
 
@@ -111,7 +113,8 @@ export function landFish(s: TournamentState, f: FishEntity, rng?: Rng): void {
   const caught: CaughtFish = {
     fishId: f.id,
     species: f.species,
-    weightLb: f.weightLb,
+    // Weighed once, to the ounce: every card, bag and record reads this number.
+    weightLb: scaleLb(f.weightLb),
     lengthIn: f.lengthIn,
     caughtAtMin: s.clockMin,
     lureId: setup.lureId,
@@ -161,14 +164,14 @@ export function landFish(s: TournamentState, f: FishEntity, rng?: Rng): void {
       const lim = lake.regs!.bigFish!;
       if (!isDead(kept) && caught.weightLb > kept.weightLb) {
         s.livewell[bi] = caught;
-        emit(s, 'landed', `Only ${lim.perDay} bass ${lim.minIn}" or longer a day: kept this ${caught.weightLb.toFixed(2)} lb fish and released your ${kept.weightLb.toFixed(2)}.`);
+        emit(s, 'landed', `Only ${lim.perDay} bass ${lim.minIn}" or longer a day: kept this ${lbOzText(caught.weightLb)} fish and released your ${lbOzText(kept.weightLb)}.`);
       } else {
         caught.released = 'bigFish';
         emit(s, 'landed', `Only ${lim.perDay} bass ${lim.minIn}" or longer a day: you already have one${isDead(kept) ? ' (dead, so it stays)' : ''}. Released.`);
       }
     } else if (s.livewell.length < LIVEWELL_LIMIT) {
       s.livewell.push(caught);
-      emit(s, 'landed', `${caught.weightLb.toFixed(2)} lb ${SPECIES[f.species].name} into the livewell.`);
+      emit(s, 'landed', `${lbOzText(caught.weightLb)} ${SPECIES[f.species].name} into the livewell.`);
     } else {
       s.pendingCull = caught;
       emit(s, 'cullNeeded', 'Livewell full: cull a fish.');
@@ -183,7 +186,7 @@ export function landFish(s: TournamentState, f: FishEntity, rng?: Rng): void {
  * livewell for the weigh-in stage; only that fish can die there.
  */
 function landCwir(s: TournamentState, caught: CaughtFish, lake: LakeDef, fightSec: number, rng?: Rng): void {
-  const w = `${caught.weightLb.toFixed(2)} lb`;
+  const w = `${lbOzText(caught.weightLb)}`;
   const slot = lake.regs?.slot;
   const what = inSlot(caught, lake) && slot ? `Slot fish (${slot.minIn}-${slot.maxIn}"): ${w}` : `${w} ${SPECIES[caught.species].name}`;
   caught.cwr = true;
@@ -194,7 +197,7 @@ function landCwir(s: TournamentState, caught: CaughtFish, lake: LakeDef, fightSe
     if (i >= 0 && s.livewell[i].weightLb < caught.weightLb) [culled] = s.livewell.splice(i, 1, caught);
     else culled = caught;
   }
-  let note = culled === caught ? ' Your best five are heavier: it doesn\'t count.' : culled ? ` It replaces your ${culled.weightLb.toFixed(2)} on the card.` : '';
+  let note = culled === caught ? ' Your best five are heavier: it doesn\'t count.' : culled ? ` It replaces your ${lbOzText(culled.weightLb)} on the card.` : '';
   // The stage fish: the first 24"+ of the day, or a heavier one (the old one goes back; a dead one stays).
   const big = lake.regs?.bigFish;
   const stage = s.livewell.find((f) => f.stage);
@@ -210,7 +213,7 @@ function landCwir(s: TournamentState, caught: CaughtFish, lake: LakeDef, fightSe
     caught.stage = true;
     caught.hardy = Math.round(hardy * 1000) / 1000;
     caught.health = landingHealth(caught.weightLb, fightSec, hardy, s.conditions.waterTempF);
-    note += ` Your one ${big.minIn}"+ fish goes in the livewell for the weigh-in stage${stage ? ` (your ${stage.weightLb.toFixed(2)} goes back)` : ''}.`;
+    note += ` Your one ${big.minIn}"+ fish goes in the livewell for the weigh-in stage${stage ? ` (your ${lbOzText(stage.weightLb)} goes back)` : ''}.`;
   }
   emit(s, 'landed', `${what}, weighed by your judge${caught.stage ? '' : ' and released'}.${note}`);
 }

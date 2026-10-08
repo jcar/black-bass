@@ -186,7 +186,7 @@ describe('lane routing on Lake Fork', () => {
         const stumps = stumpsOnRoute(g, t.boat.pos, path, t.boat.heading);
         const cue = navCue(distanceM(t.boat.pos, w), t.boat.motor, 20, stumps);
         // A player who heeds "Stay in the lane" / "Off plane: stumps ahead" idles through, then runs again.
-        const mag = cue === 'lane' || cue === 'stumpsAhead' || (!running && stumps) ? 0.36 : 1;
+        const mag = cue === 'lane' || cue === 'stumpsAhead' || cue === 'idleInStumps' || (!running && stumps) ? 0.36 : 1;
         t.clockMin = 420;
         t.phase = 'Navigate';
         stepTournament(t, { ...emptyInput(), stick: { x: Math.cos(a) * mag, y: -Math.sin(a) * mag } }, 1 / 60);

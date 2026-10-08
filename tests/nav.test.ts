@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { LAKES } from '../src/data/lakes';
 import { TUNING } from '../src/data/tuning';
-import { APPROACH_TIP } from '../src/sim/advisor';
+import { RODS } from '../src/data/rods';
+import { rodForKey } from '../src/game/input';
+import { APPROACH_TIP, techniqueTip } from '../src/sim/advisor';
+import { debrief, missTip } from '../src/sim/coach';
+import { hoursMinText, lbOzText, plural, scaleLb } from '../src/sim/format';
+import { bagWeight } from '../src/sim/livewell';
 import { getLakeGrid, isWater } from '../src/sim/lake';
-import { bearingTo, castRangeM, compassPoint, distanceM, lineClear, markVisited, navCue, nearestInRange, nextStop, OFF_PLANE_M, relativeBearing, scaleBarM, steerPoint, waterPath, wrapAngle, type NavStop } from '../src/sim/nav';
+import { bearingTo, castRangeM, checkInNeedsConfirm, compassPoint, distanceM, idleInDistM, lateMinutes, lineClear, markVisited, navCue, nearestInRange, nextStop, OFF_PLANE_M, relativeBearing, scaleBarM, steerPoint, waterPath, wrapAngle, type NavStop } from '../src/sim/nav';
 import { createTournament, drainEvents, stepTournament } from '../src/sim/tournament';
-import { emptyInput, type TournamentState } from '../src/sim/types';
+import { emptyInput, type RodSetup, type TournamentState } from '../src/sim/types';
 import { botDeck } from '../tools/simulate';
 
 const DT = 1 / 60;
@@ -201,5 +206,87 @@ describe('water routing', () => {
       stepTournament(t, { ...emptyInput(), stick: { x: Math.cos(a) * mag, y: -Math.sin(a) * mag } }, DT);
     }
     expect(distanceM(t.boat.pos, rocks)).toBeLessThanOrEqual(20);
+  });
+});
+
+describe('playtest fixes: chip cues, check-in, rods, scale weights', () => {
+  it('"Idle in now" wins over the lane warnings inside the off-plane ring (Lake Fork stops sit in stumps)', () => {
+    expect(navCue(OFF_PLANE_M - 1, 'outboard', 25, 'in')).toBe('idleInStumps');
+    expect(navCue(OFF_PLANE_M - 1, 'outboard', 25, 'ahead')).toBe('idleInStumps');
+    expect(navCue(OFF_PLANE_M - 1, 'outboard', 25, null)).toBe('idleIn');
+    // Outside the ring (and the coast-down) the lane warnings still apply.
+    expect(navCue(OFF_PLANE_M + 200, 'outboard', 25, 'in', 75)).toBe('lane');
+    expect(navCue(OFF_PLANE_M + 200, 'outboard', 25, 'ahead', 75)).toBe('stumpsAhead');
+    expect(navCue(OFF_PLANE_M - 1, 'trolling', 25, 'in')).toBeNull();
+  });
+
+  it('calls "Idle in now" a stopping distance early at speed', () => {
+    const v = TUNING.boat.outboardMaxSpeed;
+    const stopM = (v * v) / (2 * TUNING.boat.decel);
+    expect(idleInDistM(0)).toBe(OFF_PLANE_M);
+    expect(idleInDistM(v)).toBeCloseTo(OFF_PLANE_M + stopM);
+    expect(navCue(OFF_PLANE_M + stopM - 1, 'outboard', 25, null, v)).toBe('idleIn');
+    expect(navCue(OFF_PLANE_M + stopM - 1, 'outboard', 25, null, 0)).toBeNull();
+    expect(navCue(OFF_PLANE_M + stopM + 1, 'outboard', 25, null, v)).toBeNull();
+  });
+
+  it('asks before an early check-in, not in the last half hour', () => {
+    const end = TUNING.clock.dayEndMin;
+    expect(checkInNeedsConfirm(7 * 60 + 8)).toBe(true);
+    expect(checkInNeedsConfirm(end - TUNING.checkIn.confirmEarlyMin - 1)).toBe(true);
+    expect(checkInNeedsConfirm(end - TUNING.checkIn.confirmEarlyMin)).toBe(false);
+    expect(checkInNeedsConfirm(end - 5)).toBe(false);
+  });
+
+  it('counts minutes late off the clock: 0 at 3:00, 1 from 3:01', () => {
+    const end = TUNING.clock.dayEndMin;
+    expect(lateMinutes(end - 1)).toBe(0);
+    expect(lateMinutes(end)).toBe(0);
+    expect(lateMinutes(end + 0.99)).toBe(0);
+    expect(lateMinutes(end + 1)).toBe(1);
+    expect(lateMinutes(end + 2.5)).toBe(2);
+  });
+
+  it('maps digit keys to rods on the bar, up to the deck size', () => {
+    expect(rodForKey('1', 5)).toBe(0);
+    expect(rodForKey('5', 5)).toBe(4);
+    expect(rodForKey('4', 3)).toBeNull();
+    expect(rodForKey('0', 5)).toBeNull();
+    expect(rodForKey('k', 5)).toBeNull();
+  });
+
+  it('weighs each fish to the ounce, so the fish shown add up to the bag', () => {
+    const fish = [3.39, 3.24, 2.76, 2.62, 2.38].map((w) => ({ weightLb: w }));
+    const bag = bagWeight(fish);
+    const shown = fish.map((f) => lbOzText(f.weightLb));
+    expect(shown).toEqual(['3-06', '3-04', '2-12', '2-10', '2-06']);
+    // 3-06 + 3-04 + 2-12 + 2-10 + 2-06 = 14-06
+    expect(lbOzText(bag)).toBe('14-06');
+    expect(bag).toBe(fish.reduce((a, f) => a + scaleLb(f.weightLb), 0));
+    expect(scaleLb(3.39)).toBe(3.375);
+  });
+
+  it('words tips for the day and the lure in hand', () => {
+    expect(hoursMinText(472)).toBe('7 h 52 m');
+    expect(hoursMinText(25)).toBe('25 m');
+    expect(plural(1, 'bite')).toBe('1 bite');
+    expect(plural(3, 'bite')).toBe('3 bites');
+    expect(techniqueTip('texasRig', 70, 'rock')).not.toMatch(/docks/);
+    expect(techniqueTip('texasRig', 70)).not.toMatch(/docks/);
+    expect(techniqueTip('texasRig', 70, 'dock')).toMatch(/into the docks/);
+    const rig = { rodId: Object.keys(RODS)[0], lureId: 'texasRig', colorId: 'greenPumpkin', line: { type: 'fluoro', testLb: 12 } } as RodSetup;
+    expect(missTip('late', false, rig).text).toMatch(/soft plastic like the Texas rig/i);
+    expect(missTip('late', false, { ...rig, lureId: 'squarebill' }).text).toMatch(/hard bait/);
+    const early = debrief({ casts: 0, arrivals: 0, spookedArrivals: 0, crashes: 0, fishlessCasts: 0, followNoStrike: 0, strikes: 0, match: {} }, 70, {
+      atMin: 7 * 60 + 8,
+      grossLb: 0,
+      lateMin: 0,
+      latePenaltyLb: 0,
+      deadFish: 0,
+      deadPenaltyLb: 0,
+      zeroed: false,
+      netLb: 0,
+    });
+    expect(early[0]).toMatch(/^Checked in at 7:08 AM with 7 h 52 m left/);
   });
 });

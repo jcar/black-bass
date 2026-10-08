@@ -2,10 +2,10 @@ import { AnimatePresence, m } from 'motion/react';
 import { useRef, useState } from 'react';
 import { COLORS, LURES, lureKey } from '../../data/lures';
 import { RODS } from '../../data/rods';
-import { assetUrl, lureIconId, rodIconId } from '../../game/assets';
+import { assetUrl, rodIconId } from '../../game/assets';
 import { buyLure, buyRod } from '../../state/career';
 import { useStore } from '../../state/store';
-import { LureIcon, money } from '../components';
+import { LureIcon, lureImageUrl, money } from '../components';
 import { Button, CountUp, Icon, IconButton, Rail, Scene, Segmented, Slug, spring } from '../kit';
 
 type Tab = 'lures' | 'rods';
@@ -52,7 +52,7 @@ export function ShopScreen() {
   const lureOwned = save.ownedLures.includes(lureKey(lureId, colorId));
   const rod = RODS[rodId];
   const rodOwned = save.ownedRods.includes(rodId);
-  const heroSrc = tab === 'lures' ? assetUrl(lureIconId(lureId, colorId)) : assetUrl(rodIconId(rodId));
+  const heroSrc = tab === 'lures' ? lureImageUrl(lureId, colorId) : assetUrl(rodIconId(rodId));
 
   const buy = () => {
     mutateSave((s) => void (tab === 'lures' ? buyLure(s, lureId, colorId) : buyRod(s, rodId)));

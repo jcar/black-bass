@@ -5,12 +5,16 @@ import { LAKES } from '../data/lakes';
 import { COLORS, LURES, lureKey } from '../data/lures';
 import { lineLabel, RODS } from '../data/rods';
 import { APPROACH_TIP, dayOutlook, dayPlan, rigIssues, rodNeed, scoutLake, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
+import { getLakeGrid, nearCover } from '../sim/lake';
 import { adviceFor } from '../sim/tierAdvice';
 import type { Conditions, RodSetup, Tier } from '../sim/types';
 import { tierOfLake } from '../state/career';
 import { useStore } from '../state/store';
 import { LureIcon, money } from './components';
 import { Button, Icon, Sheet } from './kit';
+
+/** The cover a technique tip talks about: what's within a short cast of the stop. */
+const COVER_NEAR_M = 25;
 
 const WINDOW_LABEL = Object.fromEntries(WINDOWS.map((w) => [w.id, w.label])) as Record<WindowId, string>;
 
@@ -167,7 +171,7 @@ export function DayPlan({ lakeId, conditions, deck, tier, compact }: { lakeId: s
                   <strong>Where:</strong> {p.spot.spot.name} ({p.spot.why})
                 </span>
               )}
-              <span className="small muted">{techniqueTip(d.lureId, conditions.waterTempF)}</span>
+              <span className="small muted">{techniqueTip(d.lureId, conditions.waterTempF, spots ? nearCover(getLakeGrid(LAKES[lakeId]), p.spot.spot.x, p.spot.spot.y, COVER_NEAR_M) : undefined)}</span>
             </div>
           </div>
         );

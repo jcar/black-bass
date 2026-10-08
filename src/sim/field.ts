@@ -5,6 +5,7 @@ import { activityFor } from './fish/activity';
 import { sampleLength } from './fish/population';
 import { inSlot, isBigFish, isCwir, keeperMinIn } from './livewell';
 import type { Rng } from './rng';
+import { scaleLb } from './format';
 import type { Conditions, Rival, SpeciesId, Tier } from './types';
 
 // Clearly fictional names for the simulated field.
@@ -94,7 +95,7 @@ export function rollRivalDay(r: Rival, lake: LakeDef, tier: Tier, c: Conditions,
       ? weightFromLength(f.species, slot.minIn, lake.species.condition)
       : weightFromLength(f.species, lake.species.sizes[f.species]?.maxIn ?? 22, lake.species.condition * 1.05);
   for (const f of kept)
-    r.catches.push({ atMin: rng.range(T.dayStartMin + 10, T.dayEndMin - 15), weightLb: Math.max(0.9, Math.round(Math.min(cap(f), f.w * k) * 100) / 100), species: f.species });
+    r.catches.push({ atMin: rng.range(T.dayStartMin + 10, T.dayEndMin - 15), weightLb: scaleLb(Math.max(0.9, Math.min(cap(f), f.w * k))), species: f.species });
   r.catches.sort((a, b) => a.atMin - b.atMin);
 }
 
@@ -108,14 +109,14 @@ export function notableWeight(rivals: Rival[]): number {
 export function rivalBagAt(r: Rival, clockMin: number): number {
   const got = r.catches.filter((c) => c.atMin <= clockMin).map((c) => c.weightLb);
   got.sort((a, b) => b - a);
-  return Math.round(got.slice(0, 5).reduce((a, b) => a + b, 0) * 100) / 100;
+  return got.slice(0, 5).reduce((a, b) => a + scaleLb(b), 0);
 }
 
 /** A rival's weight on the scales today: the best five, less the late penalty (zero if over 15 minutes late). */
 export function rivalDayWeight(r: Rival): number {
   const late = r.lateMin ?? 0;
   if (late > TUNING.checkIn.lateMaxMin) return 0;
-  return Math.max(0, Math.round((rivalBagAt(r, TUNING.clock.dayEndMin) - late * TUNING.checkIn.latePenaltyLbPerMin) * 100) / 100);
+  return Math.max(0, scaleLb(rivalBagAt(r, TUNING.clock.dayEndMin) - late * TUNING.checkIn.latePenaltyLbPerMin));
 }
 
 /** A rival's bag on the live leaderboard: what's in the boat, then what's on the scales after check-in time. */

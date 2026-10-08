@@ -70,23 +70,35 @@ export function nearestInRange(stops: readonly NavStop[], boat: Vec2, rangeM: nu
 }
 
 /**
- * What the destination chip should warn about: in casting range of it, or still on the outboard
- * inside the off-plane ring (spooking what you came for).
+ * What the destination chip should warn about: in casting range of it, still on the outboard inside
+ * the off-plane ring (spooking what you came for; `idleInStumps` when that ring sits in an off-lane
+ * stump field, as Lake Fork's stops do), on the outboard in an off-lane stump field ("Stay in the
+ * lane"), or about to leave the lane for stumps on the route ahead (come off plane first).
  */
-export type NavCue = 'inRange' | 'idleIn' | 'lane' | 'stumpsAhead' | null;
+export type NavCue = 'inRange' | 'idleIn' | 'idleInStumps' | 'lane' | 'stumpsAhead' | null;
 
 /**
- * What the destination chip should warn about: in casting range of it, on the outboard in an off-lane
- * stump field ("Stay in the lane"), still on the outboard inside the off-plane ring (spooking what you
- * came for), or about to leave the lane for stumps on the route ahead (come off plane first).
+ * How far out (m) to call "Idle in now" at `speed` (m/s): the off-plane ring plus the distance the
+ * boat coasts to a stop (speed^2 / 2 decel). The outboard covers the ring in well under a second, so
+ * the cue has to come before it.
  */
-export function navCue(distM: number, motor: 'outboard' | 'trolling', castRangeM: number, stumps: 'in' | 'ahead' | null = null): NavCue {
+export const idleInDistM = (speed: number) => OFF_PLANE_M + (speed * speed) / (2 * TUNING.boat.decel);
+
+/**
+ * The idle-in cue wins over the lane warnings: the stop is what you're spooking, and the stumps only
+ * add to the reason to come off plane.
+ */
+export function navCue(distM: number, motor: 'outboard' | 'trolling', castRangeM: number, stumps: 'in' | 'ahead' | null = null, speed = 0): NavCue {
   if (distM <= castRangeM) return 'inRange';
-  if (motor === 'outboard' && stumps === 'in') return 'lane';
-  if (motor === 'outboard' && distM <= OFF_PLANE_M) return 'idleIn';
-  if (motor === 'outboard' && stumps === 'ahead') return 'stumpsAhead';
+  if (motor !== 'outboard') return null;
+  if (distM <= idleInDistM(speed)) return stumps ? 'idleInStumps' : 'idleIn';
+  if (stumps === 'in') return 'lane';
+  if (stumps === 'ahead') return 'stumpsAhead';
   return null;
 }
+
+/** Check-in at `clockMin` ends the day early enough to ask first (a stray K or tap at the ramp). */
+export const checkInNeedsConfirm = (clockMin: number) => TUNING.clock.dayEndMin - clockMin > TUNING.checkIn.confirmEarlyMin;
 
 /** A round scale-bar length (m) that draws about `targetPx` long at `pxPerM`. */
 export function scaleBarM(pxPerM: number, targetPx = 90): number {
@@ -405,7 +417,8 @@ export const headInDue = (clockMin: number, etaMin: number, marginMin: number = 
 /** The latest clock (game minutes) to leave for the launch from here with `marginMin` to spare. */
 export const leaveByMin = (etaMin: number, marginMin: number = TUNING.checkIn.headInMarginMin) => TUNING.clock.dayEndMin - etaMin - marginMin;
 
-/** Whole minutes late to check in at `clockMin` (any part of a minute counts). */
-/** A few game seconds of slack, so the sim step that crosses check-in time at the ramp is on time. */
-const LATE_TOLERANCE_MIN = 0.05;
-export const lateMinutes = (clockMin: number) => Math.max(0, Math.ceil(clockMin - TUNING.clock.dayEndMin - LATE_TOLERANCE_MIN));
+/**
+ * Whole minutes late to check in at `clockMin`, read off the clock: 3:00 is on time, 3:01 is a minute
+ * late (the same minute the HUD clock shows).
+ */
+export const lateMinutes = (clockMin: number) => Math.max(0, Math.floor(clockMin - TUNING.clock.dayEndMin));

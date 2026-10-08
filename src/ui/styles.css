@@ -49,6 +49,8 @@ body,
   height: 100%;
   width: 100%;
   overflow: hidden;
+  /* clip, not just hidden: nothing (a wipe, a focused control) can scroll the game up under the top bar. */
+  overflow: clip;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -1579,16 +1581,16 @@ p {
 }
 
 /* Retrieve quality while working a lure (the cadence match the fish judge), and the Angler's Eye
-   lure-action number under it. Top centre, small. */
+   lure-action number under it. Top right, where the fight panel goes: the camera keeps the lure (and
+   the followers around it) on the centre line, so nothing over the middle of the water. */
 .present-meters {
   position: absolute;
-  left: 50%;
-  top: calc(86px + var(--safe-t));
-  transform: translateX(-50%);
+  right: calc(10px + var(--safe-r));
+  top: calc(58px + var(--safe-t));
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-end;
+  gap: 4px;
   pointer-events: none;
 }
 .retrieve-meter {

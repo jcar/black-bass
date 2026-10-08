@@ -7,7 +7,17 @@ const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
 
 /** Desktop key map, shown in the HUD and README. */
 export const KEY_HINTS =
-  '←/→ (A/D) turn the boat · ↑ (W) go on the trolling motor, Shift+↑ runs the outboard · ↓ (S) brake (Settings: point-to-go steering) · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · K check in (at the launch) · Esc pause';
+  '←/→ (A/D) turn the boat · ↑ (W) go on the trolling motor, Shift+↑ runs the outboard · ↓ (S) brake (Settings: point-to-go steering) · 1-5 pick a rod (between casts) · M lake map (while driving; 1-9 there pick a PRO stop) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · K check in (at the launch; twice early in the day) · Esc pause';
+
+/**
+ * The rod a digit key picks (0-based), or null: 1 is the first rod on the bar, up to the deck size.
+ * The lake map has its own digits (PRO stops) while it's open.
+ */
+export function rodForKey(key: string, deckSize: number): number | null {
+  if (!/^[1-9]$/.test(key)) return null;
+  const i = Number(key) - 1;
+  return i < deckSize ? i : null;
+}
 
 /**
  * How to work the lure on the line, by the cadence the attraction model rewards (presentationMatch).
@@ -47,6 +57,11 @@ class InputHub {
   reel = false;
   brake = false;
   private keysDown = new Set<string>();
+  /**
+   * Asked before K checks in: false holds the press (the game asks for a second one when there's
+   * plenty of day left). Unset (the harness), K checks in straight away.
+   */
+  confirmCheckIn: (() => boolean) | null = null;
   private pending = { castTap: 0, popTap: 0, bowFlick: 0, twitch: 0, fishHere: 0, moveOn: 0, hookSet: 0, checkIn: 0 };
 
   tap(kind: keyof InputHub['pending']) {
@@ -130,7 +145,7 @@ class InputHub {
           break;
         // Check in at the launch: ends the day (only works there, once check-in opens).
         case 'k':
-          this.tap('checkIn');
+          if (!this.confirmCheckIn || this.confirmCheckIn()) this.tap('checkIn');
           break;
       }
       this.updateKeyStick();

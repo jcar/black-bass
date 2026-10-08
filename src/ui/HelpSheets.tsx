@@ -7,6 +7,7 @@ import { formatClock } from '../sim/conditions';
 import { TUNING } from '../data/tuning';
 import type { TournamentState } from '../sim/types';
 import { adviceFor } from '../sim/tierAdvice';
+import { MAX_DECK } from '../state/career';
 import { useStore } from '../state/store';
 import { DayPlan, RigCheck, ScoutingReport } from './ProAdvice';
 import { Sheet } from './kit';
@@ -88,7 +89,11 @@ export function HowToFishSheet({ lakeId, open, onClose }: { lakeId: string; open
           the scales.{cwir ? ' Under catch-weigh-release only your stage fish is in the livewell; the rest are already swimming.' : ''}
         </p>
         <p>
-          <strong>Check in</strong> at the launch by {formatClock(TUNING.clock.dayEndMin)}: CHECK IN (K) there ends your day early. Late costs{' '}
+          <strong>Switch rods</strong> between casts: tap one on the rod bar, or press its number (1-{MAX_DECK}) on a keyboard.
+        </p>
+        <p>
+          <strong>Check in</strong> at the launch by {formatClock(TUNING.clock.dayEndMin)}: CHECK IN (K) there ends your day early (it asks you to
+          confirm: CONFIRM, or K again, with more than {TUNING.checkIn.confirmEarlyMin} minutes left). Late costs{' '}
           {TUNING.checkIn.latePenaltyLbPerMin} lb a minute, and more than {TUNING.checkIn.lateMaxMin} minutes late the day counts zero. "Head in" warns
           you in time for the run back, and the chip points home.
         </p>

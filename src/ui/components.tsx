@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { assetUrl, lureIconId, portraitId } from '../game/assets';
-import { COLORS, LURES } from '../data/lures';
+import { COLORS } from '../data/lures';
+import { lureArtUrl } from './lureArt';
 import type { SpeciesId } from '../sim/types';
 
 export { lbOzText as lbOz } from '../sim/format';
@@ -38,26 +39,11 @@ export function FishArt({ species, weightLb }: { species: SpeciesId; weightLb: n
   );
 }
 
+/** A lure in a colour: the generated icon, or the procedural silhouette (lureArt.ts) until there is one. */
 export function LureIcon({ lureId, colorId, size = 28 }: { lureId: string; colorId: string; size?: number }) {
-  const url = assetUrl(lureIconId(lureId, colorId));
-  if (url) return <img src={url} width={size} height={size} alt="" style={{ borderRadius: 6 }} />;
-  const lure = LURES[lureId];
-  return (
-    <span
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 8,
-        display: 'inline-grid',
-        placeItems: 'center',
-        background: COLORS[colorId]?.hex ?? '#888',
-        color: '#111',
-        fontSize: size * 0.32,
-        fontWeight: 900,
-        border: '1.5px solid rgba(255,255,255,0.6)',
-      }}
-    >
-      {lure?.short.slice(0, 2)}
-    </span>
-  );
+  const url = lureImageUrl(lureId, colorId);
+  return <img src={url} width={size} height={size} alt="" style={{ borderRadius: 6 }} />;
 }
+
+/** The picture for a lure in a colour: generated art when the pipeline has made it, else procedural. */
+export const lureImageUrl = (lureId: string, colorId: string) => assetUrl(lureIconId(lureId, colorId)) ?? lureArtUrl(lureId, COLORS[colorId]?.hex ?? '#888888');

@@ -40,16 +40,19 @@ function RotatePrompt() {
   );
 }
 
+/** The broadcast wipe: mounted for its sweep only, so it never sits off-screen widening the page. */
 function Wipe({ n }: { n: number }) {
+  const [done, setDone] = useState(0);
   return (
     <AnimatePresence>
-      {n > 0 && (
+      {n > done && (
         <m.div
           key={n}
           className="wipe"
           initial={{ x: '-100%' }}
           animate={{ x: '100%' }}
           transition={{ duration: 0.95, ease: [0.65, 0, 0.35, 1] }}
+          onAnimationComplete={() => setDone(n)}
         >
           <div className="w-accent" />
           <div className="w-band" />

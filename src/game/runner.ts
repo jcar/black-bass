@@ -324,7 +324,7 @@ export class GameRunner {
         routed: steer !== path[path.length - 1] && steer !== dest,
         steerCompass: compassPoint(bearingTo(boat.pos, steer)),
         compass: compassPoint(bearingTo(boat.pos, dest)),
-        cue: navCue(d, boat.motor, range, stumps),
+        cue: navCue(d, boat.motor, range, stumps, boat.speed),
         outboard: boat.motor === 'outboard',
         manual: !!target,
         home: dest.id === 'launch',

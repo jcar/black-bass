@@ -46,6 +46,35 @@ interface FishVis {
   seen: number;
 }
 
+/** Point in a polygon given as flat [x0, y0, x1, y1, ...] (even-odd rule). */
+function insidePoly(x: number, y: number, pts: number[]): boolean {
+  let inside = false;
+  for (let i = 0, j = pts.length - 2; i < pts.length; j = i, i += 2) {
+    const xi = pts[i];
+    const yi = pts[i + 1];
+    const xj = pts[j];
+    const yj = pts[j + 1];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** Where the line from the rod tip to the mouth first meets the fish's body (the mouth if it never does). */
+function lineEnd(tip: Vec2, mouth: Vec2, body: number[], len: number): Vec2 {
+  const dx = mouth.x - tip.x;
+  const dy = mouth.y - tip.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 1e-6) return mouth;
+  // Only the last stretch (a body length and a bit) can cross the fish.
+  const from = Math.max(0, d - len * 1.2);
+  const N = 32;
+  for (let i = 0; i < N; i++) {
+    const s = (from + ((d - from) * i) / N) / d;
+    if (insidePoly(tip.x + dx * s, tip.y + dy * s, body)) return { x: tip.x + dx * s, y: tip.y + dy * s };
+  }
+  return mouth;
+}
+
 /** An unbothered fish's heading: its own slow wander, not the lure. */
 const idleHeading = (id: number, now: number) => id * 2.399 + Math.sin(now * 0.15 + id) * 0.6;
 
@@ -168,7 +197,7 @@ export class WaterScene implements Scene {
     // bigger floor than idle ones so the ones that matter stand out from the crowd.
     const pxK = Math.max(0.75, Math.min(1.3, view.h / 720));
     const minLen = (px: number) => (px * pxK) / this.zoom;
-    const MIN_PX = [12, 20, 26, 30, 32];
+    const MIN_PX = [12, 20, 30, 36, 38];
     for (const f of t.fish) {
       if (f.caught) continue;
       if (t.fight && t.fight.fishId === f.id) continue;
@@ -234,7 +263,7 @@ export class WaterScene implements Scene {
         tailHz = 1.2;
       } else if (band === 2) {
         heading = toLure;
-        alpha = 0.66 * depthK;
+        alpha = Math.max(0.55, 0.72 * depthK);
         tailHz = 2.4;
         size = 1.05;
       } else {
@@ -296,7 +325,9 @@ export class WaterScene implements Scene {
       g.poly(pts).fill({ color: 0x0b1a22, alpha: v.alpha });
       if (band >= 2 && v.leaving <= 0) {
         // Followers get a light edge so they read on any water; hot fish a bright one.
-        g.poly(pts).stroke({ width: (hot ? 2 : 1.3) / this.zoom, color: hot ? 0xffffff : 0x9fd8ea, alpha: (hot ? 0.9 : 0.55) * v.alpha });
+        // A dark rim under the light edge keeps it readable on pale rock and stump textures too.
+        g.poly(pts).stroke({ width: (hot ? 4.2 : 3.2) / this.zoom, color: 0x04121a, alpha: 0.45 * v.alpha });
+        g.poly(pts).stroke({ width: (hot ? 2.4 : 1.7) / this.zoom, color: hot ? 0xffffff : 0xb4e6f4, alpha: (hot ? 0.95 : 0.75) * v.alpha });
       }
       if (hot) {
         // Fin flare: pectoral fins spread out (the tell before a strike).
@@ -364,7 +395,6 @@ export class WaterScene implements Scene {
       const f = t.fight;
       const tension = Math.min(1, f.tension);
       const lineColor = tension > TUNING.fight.tensionDanger ? 0xff4d4d : tension > TUNING.fight.tensionWarn ? 0xffd34d : PAL.line;
-      lg.moveTo(tip.x, tip.y).lineTo(f.pos.x, f.pos.y).stroke({ width: 0.07 + tension * 0.08, color: lineColor });
       const len = 0.3 + (SPECIES[f.species].isBass ? 0.6 : 0.8) * Math.cbrt(f.weightLb);
       const ang = f.heading;
       const c2 = Math.cos(ang);
@@ -375,6 +405,10 @@ export class WaterScene implements Scene {
         [len * 0.55, 0], [len * 0.2, len * 0.18], [-len * 0.3, len * 0.12], [-len * 0.55, len * 0.24],
         [-len * 0.5, 0], [-len * 0.55, -len * 0.24], [-len * 0.3, -len * 0.12], [len * 0.2, -len * 0.18],
       ].flatMap(([px, py]) => [f.pos.x + (px - len * MOUTH) * c2 - py * s2, f.pos.y + (px - len * MOUTH) * s2 + py * c2]);
+      // The line runs under the fish to the mouth: when it runs straight away the body hangs over the
+      // line, so the line stops where it meets the body rather than showing through it.
+      const end = lineEnd(tip, f.pos, pts, len);
+      lg.moveTo(tip.x, tip.y).lineTo(end.x, end.y).stroke({ width: 0.07 + tension * 0.08, color: lineColor });
       g.poly(pts).fill({ color: air ? 0x6b7f3a : 0x0b1a22, alpha: air ? 1 : 0.55 });
       if (air || f.burstT > 0) this.rings.push({ x: f.pos.x - len * MOUTH * c2, y: f.pos.y - len * MOUTH * s2, age: air ? 0 : 0.5, big: air });
     }

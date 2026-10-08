@@ -20,10 +20,10 @@ On iOS: open the LAN URL in Safari, accept the certificate, then **Share → Add
 full-screen landscape play that works offline.
 
 Desktop keyboard: drive like Rock n' Roll Racing: ←/→ (A/D) turn the boat, ↑ (W) goes on the quiet trolling motor
-(hold Shift to run the outboard), ↓ (S) brakes; Settings switches to point-to-go steering. M = lake
-map while driving (1-9 picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
+(hold Shift to run the outboard), ↓ (S) brakes; Settings switches to point-to-go steering. 1-5 = pick a rod
+between casts, M = lake map while driving (1-9 there picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
 T = twitch/hop/shake, H = set the hook, B = thumb brake (also stops a drop shot on the fall), V = bow on a jump,
-M = move/burn in once fishing, I = data for this point (between casts), P = pop hook, K = check in (at the launch),
+M = move/burn in once fishing, I = data for this point (between casts), P = pop hook, K = check in (at the launch; with more than 30 minutes left, press it twice),
 Esc = pause (or close the open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
 
 Setting the hook: a strike is a fish charging the lure; once it has the bait (a thump and a buzz, "HOOK HIM!", and
@@ -39,7 +39,8 @@ trigger for a lipless crank.
 Getting around: the chip beside the minimap points at the next PRO stop you haven't fished (name, metres,
 an arrow relative to the bow; a stop counts once you cast within casting range of it). Around it the chart
 draws the advisor's come-off-plane ring (dashed amber) and your rig's casting range (green); the chip warns
-"Idle in now" if you're still on the outboard inside the ring and says "In range" (FISH glows) once you can
+"Idle in now" if you're still on the outboard inside the ring, or close enough that the boat would coast
+into it ("Off plane now · stumps" when the stop sits in a stump field), and says "In range" (FISH glows) once you can
 reach it. Tap the minimap, the map button or the chip (or press M) for the full lake map: tap a stop to
 make it the destination. The clock stops while the map is open, as it does in the pause menu. Hitting the
 bank bumps (sound, shake, callout); the boat scrapes along it, and steering away always backs it off. On the
@@ -58,8 +59,9 @@ the clock, sky and water temperature. It comes from the advisor's model (expecte
 active they are now, against the lake's own range), never from the live fish.
 
 Tournament rules (B.A.S.S. and Texas Parks & Wildlife; see `docs/fish-model.md` section 8): check in at the
-launch by 3:00 PM. CHECK IN (K) there ends your day early; late costs 1 lb a minute and more than 15 minutes
-late zeroes the day. "Head in" warns you in time for the run back (the chip then points home with the run
+launch by 3:00 PM. CHECK IN (K) there ends your day early (it asks to confirm with more than 30 minutes left); late
+costs 1 lb a minute by the clock (3:01 is a minute late) and more than 15 minutes late zeroes the day. Each
+fish is weighed once, to the ounce, and a bag is the sum of those weights. "Head in" warns you in time for the run back (the chip then points home with the run
 time). Fish in the livewell go lively, sluggish, dead, faster in warm water, after long fights and for big
 fish; a dead fish can't be culled and costs 4 oz at the scales. Lake Fork runs TPWD's catch-weigh-immediate-
 release format (since the 2007 Toyota Texas Bass Classic there): a judge in your boat weighs every bass 14"

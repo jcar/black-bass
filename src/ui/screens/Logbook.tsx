@@ -21,7 +21,7 @@ const lureName = (e: Pick<LogEntry, 'lureId' | 'colorId'>) => `${LURES[e.lureId]
 
 function where(e: LogEntry): string {
   const parts: string[] = [];
-  if (e.depthFt !== undefined) parts.push(`${Math.round(e.depthFt)} ft${e.bottomFt !== undefined ? ` over ${Math.round(e.bottomFt)}` : ''}`);
+  if (e.depthFt !== undefined) parts.push(`${Math.round(e.depthFt)} ft${e.bottomFt !== undefined ? ` over ${Math.round(e.bottomFt)} ft` : ''}`);
   if (e.cover) parts.push(COVER[e.cover]);
   return parts.join(', ');
 }

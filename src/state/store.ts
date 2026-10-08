@@ -66,6 +66,8 @@ export interface CheckInHud {
   leaveBy: string;
   /** The "head in" warning has gone off (or it's past check-in time). */
   headIn: boolean;
+  /** Past check-in time (penalties start a minute later, at 3:01). */
+  late: boolean;
   /** Minutes late so far (past check-in time). */
   lateMin: number;
   atLaunch: boolean;
@@ -391,6 +393,7 @@ export function checkInHud(t: TournamentState): CheckInHud {
     etaMin,
     leaveBy: formatClock(Math.max(TUNING.clock.dayStartMin, leaveByMin(etaMin))),
     headIn: t.timeWarned || t.clockMin >= TUNING.clock.dayEndMin,
+    late: t.clockMin >= TUNING.clock.dayEndMin,
     lateMin: lateMinutes(t.clockMin),
     atLaunch: atLaunch(grid, t.boat.pos),
     can: canCheckIn(t),

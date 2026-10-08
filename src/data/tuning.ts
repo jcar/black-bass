@@ -28,6 +28,8 @@ export const TUNING = {
     lateMaxMin: 15,
     /** (game) Check-in opens this long after blast-off, so a stray tap at the ramp can't end the day. */
     openAfterMin: 60,
+    /** (game) Checking in with more than this many game minutes left asks for a confirm (K twice, CHECK IN then CONFIRM). */
+    confirmEarlyMin: 30,
     /** "Head in" warning: when the run back plus this margin (game minutes) reaches check-in time. */
     headInMarginMin: 10,
     /** ETA: a run averages this share of top outboard speed (lanes, turns, idling out of the marina). */
