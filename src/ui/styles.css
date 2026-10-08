@@ -1536,12 +1536,20 @@ p {
   transition: transform 0.1s linear;
 }
 
-/* Retrieve quality while working a lure (the cadence match the fish judge). Top centre, small. */
-.retrieve-meter {
+/* Retrieve quality while working a lure (the cadence match the fish judge), and the Angler's Eye
+   lure-action number under it. Top centre, small. */
+.present-meters {
   position: absolute;
   left: 50%;
   top: calc(86px + var(--safe-t));
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.retrieve-meter {
   width: min(220px, 30vw);
   display: flex;
   align-items: center;
@@ -1555,6 +1563,140 @@ p {
 }
 .retrieve-meter .meter > div {
   transform-origin: left;
+}
+/* Angler's Eye: 0-10 with the follow (3) and strike (6) lines marked. */
+.eye-meter {
+  width: min(240px, 34vw);
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 12px;
+  pointer-events: none;
+}
+.eye-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+  min-width: 2.2em;
+  text-align: right;
+  color: var(--muted);
+}
+.eye-meter.follow .eye-num {
+  color: var(--accent);
+}
+.eye-meter.hot .eye-num {
+  color: #ff9a4d;
+}
+.eye-meter.strike .eye-num {
+  color: var(--good);
+}
+.eye-track {
+  position: relative;
+  height: 8px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.eye-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: var(--muted);
+  transform-origin: left center;
+  transition: transform 0.1s linear;
+}
+.eye-meter.follow .eye-fill {
+  background: var(--accent);
+}
+.eye-meter.hot .eye-fill {
+  background: #ff9a4d;
+}
+.eye-meter.strike .eye-fill {
+  background: var(--good);
+}
+.eye-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  opacity: 0.8;
+}
+.eye-mark.strike {
+  background: var(--good);
+}
+.eye-mark b {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+/* Briefing: what this tier's advice shows ("Pros find their own water"). */
+.tier-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(7, 20, 26, 0.72);
+  border-left: 3px solid var(--accent);
+  font-weight: 600;
+}
+
+/* "Data for this point": a lower-third above the rod bar that fades on its own. */
+.point-card-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(66px + var(--safe-b));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.point-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 16px 7px;
+  border-left: 4px solid var(--muted);
+  pointer-events: none;
+  text-align: center;
+  max-width: min(420px, 60vw);
+}
+.point-card.nice {
+  border-left-color: var(--good);
+}
+.point-card.some {
+  border-left-color: var(--accent);
+}
+.point-card.little {
+  border-left-color: var(--bad);
+}
+.point-verdict {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+}
+.point-card.nice .point-verdict {
+  color: var(--good);
+}
+.point-card.little .point-verdict {
+  color: #ff8a7d;
+}
+.point-meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
 }
 /* Under the sonar inset (the renderer sets --sonar-bottom from the inset's real position), so it
    never covers the inset or the ticker above it. */
@@ -2200,6 +2342,8 @@ label.tbtn.disabled {
   .tip-card,
   .rod-bar,
   .coach-card,
+  .present-meters,
+  .point-card-wrap,
   .banner {
     zoom: 1.25;
   }
@@ -2214,4 +2358,66 @@ label.tbtn.disabled {
   .nav-chip.idleIn {
     animation: none;
   }
+}
+
+/* Trophy room logbook: summaries on the left, the catches on the right (both scroll on a phone). */
+.log-side {
+  width: min(330px, 40vw);
+  flex: none;
+}
+.log-record {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+}
+.log-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 13px;
+}
+.log-group-name {
+  min-width: 78px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.log-lure {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.log-lure b {
+  color: var(--accent);
+}
+.log-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 14px;
+}
+.log-row.short {
+  opacity: 0.7;
+}
+.log-w {
+  min-width: 3.4em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent);
+  text-align: right;
+}
+.log-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
 }

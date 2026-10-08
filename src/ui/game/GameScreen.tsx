@@ -2,6 +2,7 @@ import { AnimatePresence } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { setSoundEnabled } from '../../audio/sound';
 import { GameRunner } from '../../game/runner';
+import { adviceFor } from '../../sim/tierAdvice';
 import { useStore } from '../../state/store';
 import { Button, Icon } from '../kit';
 import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
@@ -67,6 +68,8 @@ export function GameScreen() {
   const mapOpen = useStore((s) => s.mapOpen);
   const settings = useStore((s) => s.save.settings);
   const lureId = useStore((s) => s.tournament?.deck[s.hud?.activeRod ?? 0]?.lureId ?? 'ned');
+  const tier = useStore((s) => s.tournament?.tier);
+  const dataMin = tier ? adviceFor(tier).pointDataMin : null;
 
   useEffect(() => {
     const runner = new GameRunner();
@@ -87,6 +90,8 @@ export function GameScreen() {
       const st = useStore.getState();
       // M opens the lake map while driving (M is move/burn in only once you're fishing) and closes it.
       if (e.key.toLowerCase() === 'm' && !st.paused && (st.mapOpen || st.hud?.phase === 'Navigate')) st.setMapOpen(!st.mapOpen);
+      // I re-checks the data for this point (between casts, where the tier allows it).
+      if (e.key.toLowerCase() === 'i' && !st.paused && !st.mapOpen && st.hud?.phase === 'Cast' && !st.hud.castCharging && !st.hud.castFlying) st.checkPoint(true);
       if (e.key !== 'Escape') return;
       if (!st.paused) st.setPaused(true);
     };
@@ -109,6 +114,7 @@ export function GameScreen() {
               tension={Math.round(hud.tension * 50) / 50}
               leftHanded={settings.leftHanded}
               lureId={lureId}
+              dataMin={dataMin}
             />
           )}
           <Hud hud={hud} debug={settings.debugMeter} />

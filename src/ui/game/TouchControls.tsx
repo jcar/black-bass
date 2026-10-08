@@ -4,6 +4,7 @@ import { TUNING } from '../../data/tuning';
 import { inputHub, retrieveHint } from '../../game/input';
 import { unlockAudio } from '../../audio/sound';
 import type { GamePhase } from '../../sim/types';
+import { useStore } from '../../state/store';
 import { IOS, switchProps, vibrate } from '../kit/haptics';
 
 const STICK_R = 60;
@@ -126,10 +127,12 @@ interface ControlsProps {
   leftHanded: boolean;
   /** Lure on the active rod: the retrieve hint depends on how it's worked. */
   lureId: string;
+  /** "Data for this point" at this tier: game minutes it costs (0 = free), null = not available. */
+  dataMin: number | null;
 }
 
 /** Memoised: the HUD snapshot ticks at 10 Hz, but the controls only change with these props. */
-export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId }: ControlsProps) {
+export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId, dataMin }: ControlsProps) {
   const [stick, setStick] = useState<{ ox: number; oy: number; x: number; y: number } | null>(null);
   const touch = useRef<{ id: number; t0: number; x0: number; y0: number } | null>(null);
 
@@ -207,7 +210,12 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
         {phase === 'Navigate' && <TapButton label="FISH" size="xl" accent haptic disabled={!canFish} cue={inRange && canFish} onTap={() => inputHub.tap('fishHere')} />}
         {phase === 'Cast' && (
           <>
-            {!castFlying && <TapButton label="MOVE" size="md" onTap={() => inputHub.tap('moveOn')} />}
+            {!castFlying && (
+              <div className="btn-row">
+                {dataMin !== null && !castCharging && <TapButton label={dataMin ? `DATA ${dataMin}m` : 'DATA'} size="md" onTap={() => useStore.getState().checkPoint(true)} />}
+                <TapButton label="MOVE" size="md" onTap={() => inputHub.tap('moveOn')} />
+              </div>
+            )}
             <div className="btn-row">
               {castFlying ? (
                 <HoldButton label="THUMB" size="xl" onChange={(v) => (inputHub.brake = v)} />

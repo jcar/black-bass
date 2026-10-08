@@ -29,6 +29,7 @@ export function newFightState(s: TournamentState, ctx: SimCtx, f: FishEntity, at
     revealed: false,
     t: 0,
     rodSide: 0,
+    hook: { x: at.x, y: at.y, depthFt: f.depthFt },
   };
 }
 

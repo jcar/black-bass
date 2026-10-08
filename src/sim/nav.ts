@@ -73,9 +73,18 @@ export function nearestInRange(stops: readonly NavStop[], boat: Vec2, rangeM: nu
  * What the destination chip should warn about: in casting range of it, or still on the outboard
  * inside the off-plane ring (spooking what you came for).
  */
-export function navCue(distM: number, motor: 'outboard' | 'trolling', castRangeM: number): 'inRange' | 'idleIn' | null {
+export type NavCue = 'inRange' | 'idleIn' | 'lane' | 'stumpsAhead' | null;
+
+/**
+ * What the destination chip should warn about: in casting range of it, on the outboard in an off-lane
+ * stump field ("Stay in the lane"), still on the outboard inside the off-plane ring (spooking what you
+ * came for), or about to leave the lane for stumps on the route ahead (come off plane first).
+ */
+export function navCue(distM: number, motor: 'outboard' | 'trolling', castRangeM: number, stumps: 'in' | 'ahead' | null = null): NavCue {
   if (distM <= castRangeM) return 'inRange';
+  if (motor === 'outboard' && stumps === 'in') return 'lane';
   if (motor === 'outboard' && distM <= OFF_PLANE_M) return 'idleIn';
+  if (motor === 'outboard' && stumps === 'ahead') return 'stumpsAhead';
   return null;
 }
 
@@ -95,11 +104,20 @@ export function scaleBarM(pxPerM: number, targetPx = 90): number {
 const SHORE_COST = 3;
 /** Stump fields off the boat lanes cost extra, so routes run the lanes (running them on plane is a gamble). */
 const STUMP_COST = 4;
+/**
+ * Running on the outboard, an off-lane stump cell costs this much: the route stays in the buoyed lanes
+ * and leaves them only where the stop itself sits in the stumps (the last stretch is idled).
+ */
+const STUMP_RUN_COST = 40;
 /** Stumps this close (m) to either end of a straight run don't count against it (you idle in and out). */
 const STUMP_ENDS_M = 40;
 
-/** Water route from `from` to `to`: cell centres after the start, ending exactly at `to`. [to] if none. */
-export function waterPath(g: LakeGrid, from: Vec2, to: Vec2): Vec2[] {
+/**
+ * Water route from `from` to `to`: cell centres after the start, ending exactly at `to`. [to] if none.
+ * `running` (on the outboard) keeps the route inside the boat lanes through stump fields.
+ */
+export function waterPath(g: LakeGrid, from: Vec2, to: Vec2, running = false): Vec2[] {
+  const stumpCost = running ? STUMP_RUN_COST : STUMP_COST;
   const cell = (p: Vec2) => {
     const c = Math.min(g.cols - 1, Math.max(0, Math.floor(p.x / g.cellM)));
     const r = Math.min(g.rows - 1, Math.max(0, Math.floor(p.y / g.cellM)));
@@ -172,7 +190,7 @@ export function waterPath(g: LakeGrid, from: Vec2, to: Vec2): Vec2[] {
         // No cutting a corner between two land cells.
         if (dr && dc && (!g.water[r * g.cols + cc] || !g.water[rr * g.cols + c])) continue;
         const near = j !== goal && g.shoreDistM[j] <= g.cellM ? SHORE_COST : 1;
-        const stumps = j !== goal && g.stump[j] && !g.lane[j] ? STUMP_COST : 1;
+        const stumps = j !== goal && g.stump[j] && !g.lane[j] ? stumpCost : 1;
         const step = (dr && dc ? Math.SQRT2 : 1) * g.cellM * near * stumps;
         if (cost[i] + step < cost[j]) {
           cost[j] = cost[i] + step;
@@ -191,9 +209,11 @@ export function waterPath(g: LakeGrid, from: Vec2, to: Vec2): Vec2[] {
 
 /**
  * A boat-width-clear straight run over water from a to b (sampled every 5 m, 6 m either side). With
- * `avoidStumps`, a run through an off-lane stump field (away from its ends) doesn't count as clear.
+ * `avoidStumps`, a run through an off-lane stump field (away from its ends) doesn't count as clear;
+ * `strict` (running on plane) counts every off-lane stump sample, ends included: an exemption at the
+ * ends slides along with the boat and drags it across the stumps at speed.
  */
-export function lineClear(g: LakeGrid, a: Vec2, b: Vec2, avoidStumps = false): boolean {
+export function lineClear(g: LakeGrid, a: Vec2, b: Vec2, avoidStumps = false, strict = false): boolean {
   const d = distanceM(a, b);
   if (d < 1e-6) return true;
   const ux = (b.x - a.x) / d;
@@ -202,7 +222,7 @@ export function lineClear(g: LakeGrid, a: Vec2, b: Vec2, avoidStumps = false): b
     const x = a.x + ux * s;
     const y = a.y + uy * s;
     if (!isWater(g, x, y)) return false;
-    if (avoidStumps && s > STUMP_ENDS_M && s < d - STUMP_ENDS_M && stumpHazardAt(g, x, y)) return false;
+    if (avoidStumps && (strict || (s > STUMP_ENDS_M && s < d - STUMP_ENDS_M)) && stumpHazardAt(g, x, y)) return false;
     // Either side too, away from the ends (the boat or the stop may sit close to a bank).
     if (s > 8 && s < d - 8 && (!isWater(g, x - uy * 6, y + ux * 6) || !isWater(g, x + uy * 6, y - ux * 6))) return false;
   }
@@ -211,15 +231,42 @@ export function lineClear(g: LakeGrid, a: Vec2, b: Vec2, avoidStumps = false): b
 
 /**
  * Where to steer now along a water route: the farthest point of `path` you can run to in a straight
- * line. The destination itself when nothing is in the way.
+ * line. The destination itself when nothing is in the way. `running` (outboard) never cuts a corner
+ * through off-lane stumps.
  */
-export function steerPoint(g: LakeGrid, from: Vec2, path: readonly Vec2[]): Vec2 {
+export function steerPoint(g: LakeGrid, from: Vec2, path: readonly Vec2[], running = false): Vec2 {
   const end = path[path.length - 1];
-  if (lineClear(g, from, end, true)) return end;
+  if (lineClear(g, from, end, true, running)) return end;
   let best = path[0];
   for (const p of path) {
-    if (!lineClear(g, from, p, true)) break;
+    if (!lineClear(g, from, p, true, running)) break;
     best = p;
   }
   return best;
+}
+
+/** How far ahead (m) along the route the chip looks for stumps before telling you to come off plane. */
+const STUMP_LOOK_M = 200;
+
+/** How far (m) along the bow the chip looks for stumps: a boat on plane swings wide of the route in a turn. */
+const BOW_LOOK_M = 60;
+
+/** Off-lane stumps under the boat ('in'), off the bow, or on the route within STUMP_LOOK_M ('ahead'). */
+export function stumpsOnRoute(g: LakeGrid, from: Vec2, path: readonly Vec2[], heading?: number): 'in' | 'ahead' | null {
+  if (stumpHazardAt(g, from.x, from.y)) return 'in';
+  if (heading !== undefined)
+    for (let s = 10; s <= BOW_LOOK_M; s += 10) if (stumpHazardAt(g, from.x + Math.cos(heading) * s, from.y + Math.sin(heading) * s)) return 'ahead';
+  let prev = from;
+  let run = 0;
+  for (const p of path) {
+    const d = distanceM(prev, p);
+    for (let s = 5; s <= d; s += 5) {
+      if (run + s > STUMP_LOOK_M) return null;
+      if (stumpHazardAt(g, prev.x + ((p.x - prev.x) * s) / d, prev.y + ((p.y - prev.y) * s) / d)) return 'ahead';
+    }
+    run += d;
+    prev = p;
+    if (run > STUMP_LOOK_M) return null;
+  }
+  return null;
 }

@@ -10,6 +10,7 @@ import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import type { Weather } from '../../sim/types';
 import { keeperMinIn } from '../../sim/livewell';
 import { conditionsAdvice } from '../advice';
+import { adviceFor } from '../../sim/tierAdvice';
 import { Button, Icon, LowerThird, Scene, Scorebug, Slug, rise, stagger, type IconName } from '../kit';
 
 const SKY_ICON: Record<Weather, IconName> = { Bluebird: 'sun', Overcast: 'cloud', Windy: 'wind', Rain: 'rain' };
@@ -32,6 +33,7 @@ export function BriefingScreen() {
   const minIn = keeperMinIn(lake);
   const promo = promotionTarget(t.lakeId, unlocked);
   const slot = lake.regs?.slot;
+  const access = adviceFor(t.tier);
 
   return (
     <>
@@ -43,7 +45,7 @@ export function BriefingScreen() {
           </Slug>
           <div className="spacer" />
           <Button size="md" cue="open" onClick={() => setPlan(true)}>
-            <Icon name="fish" /> Pro plan
+            <Icon name="fish" /> {access.plan === 'scouting' ? 'Scouting' : 'Pro plan'}
           </Button>
           <Button size="md" cue="open" onClick={() => setHowTo(true)}>
             <Icon name="info" /> How to fish
@@ -60,6 +62,9 @@ export function BriefingScreen() {
           <span className="badge">Bass {minIn}" minimum</span>
           {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": catch, weigh &amp; release (counts)</span>}
           {lake.lanes?.length ? <span className="badge">Run the buoyed lanes: stumps everywhere else</span> : null}
+        </m.div>
+        <m.div className="tier-help small" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+          <Icon name="info" size={14} /> {access.label}
         </m.div>
 
         <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
@@ -92,14 +97,16 @@ export function BriefingScreen() {
       </div>
 
       <div className="thumb-zone" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-        <m.div className="row" style={{ gap: 6, alignItems: 'center' }} {...stagger(0.9, 0.05)}>
-          <m.span {...rise} className="kicker" style={{ marginRight: 2, color: 'var(--accent)' }}>
-            Pro plan
-          </m.span>
-          <m.div {...rise}>
-            <DayPlan lakeId={t.lakeId} conditions={c} deck={t.deck} compact />
+        {access.plan !== 'scouting' && (
+          <m.div className="row" style={{ gap: 6, alignItems: 'center' }} {...stagger(0.9, 0.05)}>
+            <m.span {...rise} className="kicker" style={{ marginRight: 2, color: 'var(--accent)' }}>
+              Pro plan
+            </m.span>
+            <m.div {...rise}>
+              <DayPlan lakeId={t.lakeId} conditions={c} deck={t.deck} tier={t.tier} compact />
+            </m.div>
           </m.div>
-        </m.div>
+        )}
         <Button
           variant="primary"
           size="xl"

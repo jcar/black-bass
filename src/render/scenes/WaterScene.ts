@@ -12,6 +12,39 @@ import { HUD_FONT, sonarInsetRect, type Scene, type View } from './types';
 
 const PATCH_M = 140;
 const PATCH_PX_PER_M = 7;
+const A = TUNING.attraction;
+/** Interest bands for the shadows (the follow line, 3, and strike line, 6, come from tuning). */
+const CURIOUS_AT = 2;
+const HOT_AT = 5;
+const DART_AT = 5.6;
+const DART_SEC = 0.18;
+/** Seconds a follower takes to turn away and fade. */
+const LEAVE_SEC = 1.1;
+
+interface FishVis {
+  /** Drawn position (the sim position plus render-only offsets). */
+  x: number;
+  y: number;
+  /** Swim-away offset while turning away (decays back once out of sight). */
+  ox: number;
+  oy: number;
+  heading: number;
+  alpha: number;
+  /** Tail-beat phase. */
+  tail: number;
+  /** 0 idle, 1 curious, 2 following, 3 hot, 4 striking. */
+  band: number;
+  prevI: number;
+  /** Seconds left of turning away. */
+  leaving: number;
+  leaveDir: number;
+  dart: number;
+  darted: boolean;
+  seen: number;
+}
+
+/** An unbothered fish's heading: its own slow wander, not the lure. */
+const idleHeading = (id: number, now: number) => id * 2.399 + Math.sin(now * 0.15 + id) * 0.6;
 
 /** Phases 3 & 4: top-down over the water (boat at the bottom) plus a side-profile depth inset. */
 export class WaterScene implements Scene {
@@ -35,6 +68,10 @@ export class WaterScene implements Scene {
   private zoom = 10;
   private rings: { x: number; y: number; age: number; big: boolean }[] = [];
   private lastLurePos: Vec2 | null = null;
+  private fishVis = new Map<number, FishVis>();
+  private reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** Called when a fish starts following the lure (sound/haptic cue). */
+  onFollow?: () => void;
 
   constructor() {
     this.boatSprite.anchor.set(0.5);
@@ -43,6 +80,11 @@ export class WaterScene implements Scene {
     this.root.addChild(this.world);
     this.overlay.addChild(this.inset, this.insetTitle, this.lureReadout, this.bottomReadout);
     this.bottomReadout.anchor.set(1, 0);
+  }
+
+  dispose() {
+    this.patch?.destroy({ texture: true });
+    this.patch = undefined;
   }
 
   toScreen(_t: TournamentState, _view: View, p: Vec2) {
@@ -90,40 +132,184 @@ export class WaterScene implements Scene {
     const ay = h * 0.9;
     this.world.position.set(ax - (b.x * cos - b.y * sin) * this.zoom, ay - (b.x * sin + b.y * cos) * this.zoom);
 
-    this.drawShadows(t, grid, view, target);
+    this.drawShadows(t, grid, view, target, dt);
     this.drawActors(t, dt);
     this.drawInset(t, grid, view, target);
   }
 
-  private drawShadows(t: TournamentState, grid: LakeGrid, view: View, center: Vec2) {
+  /**
+   * Fish shadows, drawn from each fish's real interest in the lure (the leaky meter in
+   * fish/attraction.ts), so what you see is what the fish think:
+   * - idle (< 2): only fish shallow enough to see, faint, minding their own business;
+   * - curious (2-3): faint, slow, half-looking at the lure;
+   * - following (>= 3, the follow line): clearer, nose on the lure, trailing it at its depth;
+   * - hot (>= 5): closer, faster tail, fins flared and a bright edge: it's close to committing;
+   * - strike imminent (rising through 5.6): a quick dart at the bait.
+   * A follower that drops below the follow line (or is left behind when the retrieve ends) turns
+   * away and fades instead of vanishing. Only fish near the lure are drawn.
+   */
+  private drawShadows(t: TournamentState, grid: LakeGrid, view: View, center: Vec2, dt: number) {
     const g = this.shadows.clear();
     const secchi = secchiAt(grid, center.x, center.y);
     // You can see fish down to roughly the Secchi depth; followers rise and become visible.
     const visibleFt = Math.max(3, secchi * 0.9);
     const radius = (view.h / this.zoom) * 1.2;
     const strikeId = t.present?.strikingFishId ?? null;
+    const lure = t.present?.lurePos ?? null;
+    const now = view.time;
+    const calm = this.reducedMotion;
+    // Drawn sizes have a floor in screen px so a shadow still reads on a phone; interested fish get a
+    // bigger floor than idle ones so the ones that matter stand out from the crowd.
+    const pxK = Math.max(0.75, Math.min(1.3, view.h / 720));
+    const minLen = (px: number) => (px * pxK) / this.zoom;
+    const MIN_PX = [12, 20, 26, 30, 32];
     for (const f of t.fish) {
       if (f.caught) continue;
       if (t.fight && t.fight.fishId === f.id) continue;
       const dd = Math.hypot(f.pos.x - center.x, f.pos.y - center.y);
-      if (dd > radius) continue;
-      const depth = f.id === strikeId ? 0 : f.depthFt;
-      const vis = f.interest >= 2 || f.id === strikeId ? 1 : 1 - depth / visibleFt;
-      if (vis <= 0.05) continue;
-      const len = 0.25 + f.lengthIn * 0.025;
-      const ang = Math.atan2(center.y - f.pos.y, center.x - f.pos.x);
-      const alpha = Math.min(0.6, 0.15 + 0.45 * vis);
-      const cx = f.pos.x;
-      const cy = f.pos.y;
-      const ca = Math.cos(ang);
-      const sa = Math.sin(ang);
-      // Fish silhouette as a polygon (body + tail) oriented toward the lure.
+      let v = this.fishVis.get(f.id);
+      if (dd > radius && !v?.leaving) continue;
+      const I = lure ? f.interest : 0;
+      const striking = f.id === strikeId;
+      const band = striking ? 4 : I >= HOT_AT ? 3 : I >= A.followAt ? 2 : I >= CURIOUS_AT ? 1 : 0;
+      if (!v) {
+        if (band === 0 && 1 - f.depthFt / visibleFt <= 0.05) continue;
+        v = { x: f.pos.x, y: f.pos.y, ox: 0, oy: 0, heading: idleHeading(f.id, now), alpha: 0, tail: f.id, band: 0, prevI: I, leaving: 0, leaveDir: 0, dart: 0, darted: false, seen: now };
+        this.fishVis.set(f.id, v);
+      }
+      v.seen = now;
+      // A follower losing interest (or left behind at the end of the retrieve) turns away.
+      if (v.band >= 2 && band < 2 && !striking) {
+        v.leaving = LEAVE_SEC;
+        const from = lure ?? center;
+        v.leaveDir = Math.atan2(f.pos.y - from.y, f.pos.x - from.x) + (((f.id * 7919) % 100) / 100 - 0.5) * 1.2;
+      }
+      if (band >= 2) v.leaving = 0;
+      if (band >= 2 && v.band < 2 && !striking && lure) this.onFollow?.();
+      // Strike imminent: rising through the dart line, one quick lunge per approach.
+      if (I >= DART_AT && I > v.prevI && !v.darted && !calm) {
+        v.dart = DART_SEC;
+        v.darted = true;
+      }
+      if (I < HOT_AT) v.darted = false;
+      v.prevI = I;
+      v.band = band;
+
+      // Target look for the band.
+      const toLure = lure ? Math.atan2(lure.y - f.pos.y, lure.x - f.pos.x) : v.heading;
+      let heading: number;
+      let alpha: number;
+      let tailHz: number;
+      let size = 1;
+      let px = f.pos.x;
+      let py = f.pos.y;
+      const depth = striking ? 0 : f.depthFt;
+      const depthK = Math.max(0.55, Math.min(1, 1 - depth / (visibleFt * 2.5)));
+      if (v.leaving > 0) {
+        v.leaving = Math.max(0, v.leaving - dt);
+        const k = v.leaving / LEAVE_SEC;
+        heading = v.leaveDir;
+        alpha = 0.5 * k;
+        tailHz = 3.5;
+        if (!calm) {
+          // Swim off along the new heading as it fades.
+          const sp = 1.6 * dt;
+          v.ox += Math.cos(v.heading) * sp;
+          v.oy += Math.sin(v.heading) * sp;
+        }
+      } else if (band === 0) {
+        const vis = 1 - depth / visibleFt;
+        heading = idleHeading(f.id, now);
+        alpha = vis > 0.05 ? Math.min(0.2, 0.06 + 0.16 * vis) : 0;
+        tailHz = 0.8;
+      } else if (band === 1) {
+        heading = toLure + Math.sin(now * 0.55 + f.id) * 0.9;
+        alpha = 0.4 * depthK;
+        tailHz = 1.2;
+      } else if (band === 2) {
+        heading = toLure;
+        alpha = 0.66 * depthK;
+        tailHz = 2.4;
+        size = 1.05;
+      } else {
+        heading = toLure;
+        alpha = striking ? 0.95 : 0.85;
+        tailHz = striking ? 7 : 4.5;
+        size = 1.12;
+        // Hot fish crowd the bait: drawn a little tighter on it than the sim's follow distance.
+        if (lure && !striking) {
+          const d = Math.hypot(lure.x - f.pos.x, lure.y - f.pos.y);
+          const pull = Math.min(0.25, Math.max(0, (d - 0.6) / Math.max(d, 1e-6)) * 0.25);
+          px += (lure.x - f.pos.x) * pull;
+          py += (lure.y - f.pos.y) * pull;
+        }
+      }
+      if (v.leaving <= 0) {
+        // Drift any swim-away offset back while the fish is out of sight.
+        const decay = Math.min(1, dt * 0.4);
+        v.ox -= v.ox * decay;
+        v.oy -= v.oy * decay;
+      }
+      if (v.dart > 0 && lure) {
+        v.dart = Math.max(0, v.dart - dt);
+        const lunge = Math.sin((1 - v.dart / DART_SEC) * Math.PI) * 0.45;
+        px += Math.cos(toLure) * lunge;
+        py += Math.sin(toLure) * lunge;
+      }
+      // Smooth toward the target: slow turns for curious fish, quick for hot ones.
+      const turnRate = v.leaving > 0 ? 6 : band >= 3 ? 10 : band === 2 ? 6 : 1.5;
+      let dh = Math.atan2(Math.sin(heading - v.heading), Math.cos(heading - v.heading));
+      if (calm && v.leaving > 0) dh = heading - v.heading;
+      v.heading += dh * Math.min(1, dt * turnRate);
+      v.alpha += (alpha - v.alpha) * Math.min(1, dt * 8);
+      v.x = px + v.ox;
+      v.y = py + v.oy;
+      v.tail += dt * tailHz * Math.PI * 2;
+      if (v.alpha <= 0.02) continue;
+
+      const len = Math.max(0.25 + f.lengthIn * 0.025, minLen(MIN_PX[v.leaving > 0 ? 2 : band])) * size;
+      const ca = Math.cos(v.heading);
+      const sa = Math.sin(v.heading);
+      const wag = calm ? 0 : Math.sin(v.tail) * (band >= 3 ? 0.2 : 0.12);
+      const cx = v.x;
+      const cy = v.y;
+      const tx = (x: number, y: number) => [cx + x * len * ca - y * len * sa, cy + x * len * sa + y * len * ca];
+      // Body + a tail that beats (faster as interest climbs).
+      const tailY = wag;
       const pts = [
-        [len * 0.55, 0], [len * 0.2, len * 0.16], [-len * 0.3, len * 0.12], [-len * 0.55, len * 0.22],
-        [-len * 0.5, 0], [-len * 0.55, -len * 0.22], [-len * 0.3, -len * 0.12], [len * 0.2, -len * 0.16],
-      ].flatMap(([px, py]) => [cx + px * ca - py * sa, cy + px * sa + py * ca]);
-      g.poly(pts).fill({ color: 0x0b1a22, alpha });
+        tx(0.55, 0), tx(0.2, 0.16), tx(-0.3, 0.12), tx(-0.55, 0.22 + tailY), tx(-0.48, tailY), tx(-0.55, -0.22 + tailY), tx(-0.3, -0.12), tx(0.2, -0.16),
+      ].flat();
+      const hot = band >= 3 && v.leaving <= 0;
+      if (hot) {
+        // Brighten: a soft light glow around a fish that's about to commit.
+        const glow = calm ? 0.22 : 0.2 + 0.08 * Math.sin(now * 9);
+        g.ellipse(cx, cy, len * 0.75, len * 0.75).fill({ color: 0xe8fbff, alpha: glow * v.alpha });
+      }
+      g.poly(pts).fill({ color: 0x0b1a22, alpha: v.alpha });
+      if (band >= 2 && v.leaving <= 0) {
+        // Followers get a light edge so they read on any water; hot fish a bright one.
+        g.poly(pts).stroke({ width: (hot ? 2 : 1.3) / this.zoom, color: hot ? 0xffffff : 0x9fd8ea, alpha: (hot ? 0.9 : 0.55) * v.alpha });
+      }
+      if (hot) {
+        // Fin flare: pectoral fins spread out (the tell before a strike).
+        const flare = calm ? 0.32 : 0.28 + 0.06 * Math.sin(now * 12 + f.id);
+        for (const side of [1, -1]) {
+          g.poly([...tx(0.12, 0.13 * side), ...tx(-0.05, (0.13 + flare) * side), ...tx(-0.02, 0.1 * side)]).fill({ color: 0xffd34d, alpha: 0.7 * v.alpha });
+        }
+      }
     }
+    // Forget fish we haven't drawn for a while.
+    if (this.fishVis.size > 64)
+      for (const [id, v] of this.fishVis) if (now - v.seen > 2 && !v.leaving) this.fishVis.delete(id);
+  }
+
+  /**
+   * Followers on screen, or fish still turning away: when a retrieve ends with any, the renderer holds
+   * this view a moment so you see them turn and go.
+   */
+  hasFollowers(): boolean {
+    for (const v of this.fishVis.values()) if ((v.band >= 2 || v.leaving > 0) && v.alpha > 0.05) return true;
+    return false;
   }
 
   private drawActors(t: TournamentState, dt: number) {

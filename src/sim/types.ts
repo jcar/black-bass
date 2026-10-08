@@ -79,6 +79,13 @@ export interface CaughtFish {
   lureId: string;
   /** Protected-slot fish under catch-weigh-release: weighed by the marshal, counted, released. */
   cwr?: boolean;
+  /** Logbook details (optional: fish caught before the logbook existed lack them). */
+  colorId?: string;
+  line?: Line;
+  /** Where it bit: fish depth, bottom depth and cover at the hook-up. */
+  depthFt?: number;
+  bottomFt?: number;
+  cover?: CoverType;
 }
 
 export interface Rival {
@@ -167,6 +174,8 @@ export interface FightState {
   revealed: boolean;
   t: number;
   rodSide: number; // -1..1 from stick
+  /** Where the fish took the lure (position and depth), for the logbook. */
+  hook?: Vec2 & { depthFt: number };
 }
 
 export interface TournamentEvent {

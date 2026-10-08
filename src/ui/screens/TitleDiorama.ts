@@ -4,6 +4,7 @@
 import { Application, Assets, Container, Sprite, type Texture } from 'pixi.js';
 import { GodrayFilter } from 'pixi-filters/godray';
 import { ReflectionFilter } from 'pixi-filters/reflection';
+import { destroyPixiApp } from '../../render/teardown';
 
 /** Where the water starts in the plate art (fraction of image height). */
 const SHORELINE = 0.42;
@@ -12,6 +13,7 @@ export class TitleDiorama {
   private app = new Application();
   private alive = true;
   private inited = false;
+  private world: Container | null = null;
 
   async start(host: HTMLElement, plateUrl: string | null, still: boolean) {
     await this.app.init({
@@ -29,6 +31,7 @@ export class TitleDiorama {
     if (!this.alive || !tex) return;
 
     const world = new Container();
+    this.world = world;
     const plate = new Sprite(tex);
     plate.anchor.set(0.5);
     world.addChild(plate);
@@ -70,7 +73,11 @@ export class TitleDiorama {
   }
 
   private teardown() {
-    // Keep textures: the plate is shared with the in-game cast view via Pixi's Assets cache.
-    this.app.destroy(true, { children: true, texture: false });
+    if (this.world) {
+      for (const f of this.world.filters ?? []) f.destroy();
+      this.world.filters = null;
+    }
+    // Keeps textures: the plate is shared with the in-game cast view via Pixi's Assets cache.
+    destroyPixiApp(this.app);
   }
 }

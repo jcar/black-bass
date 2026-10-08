@@ -346,6 +346,17 @@ export function switchRod(s: TournamentState, index: number): boolean {
   return true;
 }
 
+/**
+ * Spend game minutes on something off the water clock (checking the data for a point at Pro tier).
+ * Only between casts; the next step handles the 30-minute warning and the end of the day.
+ */
+export function spendMinutes(s: TournamentState, min: number): boolean {
+  if (s.phase !== 'Navigate' && s.phase !== 'Cast') return false;
+  if (s.cast?.flying || s.cast?.powerCharging) return false;
+  s.clockMin += min;
+  return true;
+}
+
 /** Drain events emitted since the last call (audio, toasts, effects). */
 export function drainEvents(s: TournamentState) {
   const ev = s.events;

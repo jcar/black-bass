@@ -86,33 +86,40 @@ export class MapScene implements Scene {
    */
   setProStops(stops: MapStop[]) {
     this.proStops = stops;
-    // Route numbers are just 1..n: keep the ones already built.
-    while (this.miniNums.length > stops.length) this.miniNums.pop()?.destroy();
+    // Route numbers are just 1..n: keep the ones already built (hidden when the route is shorter).
+    this.miniNums.forEach((n, i) => (n.visible = i < stops.length));
     while (this.miniNums.length < stops.length) {
       const n = new Text({ text: `${this.miniNums.length + 1}`, resolution: 2, style: { fill: 0x07141a, fontSize: 9, fontFamily: HUD_FONT, fontWeight: '700' } });
       n.anchor.set(0.5);
       this.mini.addChild(n);
       this.miniNums.push(n);
     }
-    this.proLayer.removeChildren().forEach((c) => c.destroy());
-    const joined = new Map<Text, string[]>();
-    for (const w of this.wpLabels) w.label.text = w.name;
-    this.proPins = stops.map((s, i) => {
+    // Pins are pooled and their labels reused: destroying and rebuilding Text objects that were drawn
+    // last frame left Pixi binding destroyed textures ("BindGroup ... destroyed" warnings).
+    while (this.proPins.length < stops.length) {
+      const i = this.proPins.length;
       const pin = new Container();
+      const label = new Text({ text: `PRO ${i + 1}`, style: { fill: 0xbaf5cf, fontSize: 14, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
+      label.position.set(-label.width - 6, 8);
+      pin.addChild(new Graphics().circle(0, 0, 11).stroke({ width: 2.5, color: PRO_GREEN }), label);
+      this.proLayer.addChild(pin);
+      this.proPins.push(pin);
+    }
+    const joined = new Map<Text, string[]>();
+    this.proPins.forEach((pin, i) => {
+      const s = stops[i];
+      pin.visible = !!s;
+      if (!s) return;
       pin.position.set(s.x, s.y);
-      const g = new Graphics().circle(0, 0, 11).stroke({ width: 2.5, color: PRO_GREEN });
-      pin.addChild(g);
       const wp = this.wpLabels.find((w) => Math.hypot(w.x - s.x, w.y - s.y) < PRO_MERGE_M);
       if (wp) joined.set(wp.label, [...(joined.get(wp.label) ?? []), `PRO ${i + 1}`]);
-      else {
-        const label = new Text({ text: `PRO ${i + 1}`, style: { fill: 0xbaf5cf, fontSize: 14, fontFamily: HUD_FONT, fontWeight: '700', letterSpacing: 1, stroke: { color: 0x07141a, width: 4 } } });
-        label.position.set(-label.width - 6, 8);
-        pin.addChild(label);
-      }
-      this.proLayer.addChild(pin);
-      return pin;
+      pin.children[1].visible = !wp;
     });
-    for (const w of this.wpLabels) if (joined.has(w.label)) w.label.text = `${w.name} · ${joined.get(w.label)!.join(' · ')}`;
+    // Only touch a waypoint label when its text actually changes (each change re-rasterises it).
+    for (const w of this.wpLabels) {
+      const text = joined.has(w.label) ? `${w.name} · ${joined.get(w.label)!.join(' · ')}` : w.name;
+      if (w.label.text !== text) w.label.text = text;
+    }
   }
 
   /** The destination the chip points at (null hides the rings), its casting range, and the stops already fished. */
@@ -121,6 +128,15 @@ export class MapScene implements Scene {
     this.path = path;
     this.destRange = rangeM;
     this.visited = visited;
+  }
+
+  dispose() {
+    // The chart texture is shared by the chart and the minimap sprites.
+    const tex = this.lake?.texture;
+    this.lake?.destroy();
+    this.miniLake?.destroy();
+    tex?.destroy(true);
+    this.lake = this.miniLake = undefined;
   }
 
   toScreen(_t: TournamentState, _view: View, p: Vec2) {
@@ -196,6 +212,7 @@ export class MapScene implements Scene {
     this.world.scale.set(z);
     for (const p of this.pins) p.scale.set(1 / z);
     this.proPins.forEach((p, i) => {
+      if (!p.visible) return;
       p.scale.set(1 / z);
       p.alpha = this.isVisited(this.proStops[i]) ? 0.45 : 1;
     });

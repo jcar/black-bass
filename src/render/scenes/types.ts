@@ -38,6 +38,8 @@ export interface Scene {
   overlay: Container;
   enter(t: TournamentState, grid: LakeGrid, view: View): void;
   update(t: TournamentState, grid: LakeGrid, view: View, dt: number): void;
+  /** Free textures the scene painted itself (the app's teardown keeps shared, cached art). */
+  dispose?(): void;
   /** World position (m) to screen px, for callouts. Null when off-screen/behind the camera. */
   toScreen(t: TournamentState, view: View, p: Vec2): { x: number; y: number } | null;
 }

@@ -601,15 +601,15 @@ export function proPickNow(lake: LakeDef, c: Conditions, deck: RodSetup[], clock
 export const PLAY_CALIBRATION = 0.75;
 
 /** An honest expectation for the day with your best rig on the advisor's route (expert play). */
-export function dayOutlook(lake: LakeDef, c: Conditions, deck: RodSetup[]): { bites: number; tough: boolean; text: string } {
+export function dayOutlook(lake: LakeDef, c: Conditions, deck: RodSetup[], spots = true): { bites: number; tough: boolean; text: string } {
   let best = 0;
   for (const d of deck) best = Math.max(best, rankLures(lake, c, [d])[0].score);
   const bites = best * PLAY_CALIBRATION;
   const scout = scoutLake(lake, 8).picks[0].score * PLAY_CALIBRATION;
   const tough = bites < scout * 0.6;
   const text = tough
-    ? `Tough day: about ${Math.round(bites)} bites for a pro on the best water (a normal day here is ~${Math.round(scout)}). Slow down and fish the spots below thoroughly.`
-    : `A pro fishing the spots below should get around ${Math.round(bites)} bites today.`;
+    ? `Tough day: about ${Math.round(bites)} bites for a pro on the best water (a normal day here is ~${Math.round(scout)}). Slow down and fish ${spots ? 'the spots below' : 'your water'} thoroughly.`
+    : `A pro fishing ${spots ? 'the spots below' : 'the right water'} should get around ${Math.round(bites)} bites today.`;
   return { bites, tough, text };
 }
 
@@ -653,4 +653,116 @@ export function advisorRoute(lake: LakeDef, c: Conditions, rig: Rig, stops = 6):
 /** Expected bites from one stop at a point with a given number of casts (the harness gate). */
 export function bitesPerVisitAt(lake: LakeDef, c: Conditions, clockMin: number, rig: Rig, at: Vec2, casts: number): number {
   return estimateRig(c, clockMin, rig, spotEnv(lake, c.season, at), casts).bitesPerVisit;
+}
+
+// ---------- Data for this point (the NES "Data for this point" screen) ----------
+// A one-line verdict for the water around the boat, from the advisor's model only: the bass the
+// placement odds put within reach and how active they are right now. It never looks at the live fish,
+// so it can't leak where they actually are, only where the model says they should be.
+
+export type PointVerdict = 'nice' | 'some' | 'little';
+export const POINT_VERDICT_TEXT: Record<PointVerdict, string> = { nice: 'NICE BASS POINT', some: 'SOME BASS HERE', little: 'LITTLE BASS HERE' };
+
+/** Above this share of the lake's points (by active bass within reach) the water is "nice"; below the second, "little". */
+export const POINT_NICE_Q = 0.75;
+export const POINT_LITTLE_Q = 0.4;
+/** Lattice spacing (m) of the reference points sampled across the lake. */
+const POINT_SAMPLE_M = 60;
+/** Reference points lie within this distance (m) of shore, or on cover. */
+const POINT_SHORE_M = 150;
+
+export interface PointData {
+  verdict: PointVerdict;
+  /** Bass the placement model expects within reach (SPOT_RADIUS) of the point. */
+  bass: number;
+  /** Their mean activity now (species-weighted). */
+  activity: number;
+  /** bass x activity relative to the lake's typical activity: compared against the lake's own quantiles. */
+  score: number;
+}
+
+/** Expected bass within reach, and the bass-weighted activity at a time. */
+function activeBass(env: CellEnv[], c: Conditions, clockMin: number): { bass: number; active: number } {
+  let bass = 0;
+  let active = 0;
+  for (const cell of env)
+    for (const [sp, dens] of Object.entries(cell.density) as [SpeciesId, number][]) {
+      const n = dens * cell.cellArea;
+      bass += n;
+      active += n * activityFor(sp, c, clockMin, 3);
+    }
+  return { bass, active };
+}
+
+const pointScales = new Map<string, { quantiles: [number, number]; refActivity: number }>();
+/**
+ * The lake's own range, per season: quantiles of expected bass within reach over points spread across
+ * its water, and its typical activity over sampled event days and windows. Thresholds relative to these
+ * keep the verdict informative on a small clear lake and a big stained reservoir alike.
+ */
+export function lakePointScale(lake: LakeDef, season: Season): { quantiles: [number, number]; refActivity: number } {
+  const key = `${lake.id}:${season}`;
+  const hit = pointScales.get(key);
+  if (hit) return hit;
+  const g = getLakeGrid(lake);
+  const step = Math.max(1, Math.round(POINT_SAMPLE_M / g.cellM));
+  const rad = Math.ceil(SPOT_RADIUS / g.cellM);
+  const dens = new Map<number, number>();
+  const cellBass = (i: number) => {
+    let v = dens.get(i);
+    if (v === undefined) {
+      v = 0;
+      for (const d of Object.values(cellDensity(lake, g, season, i))) v += (d ?? 0) * g.cellM * g.cellM;
+      dens.set(i, v);
+    }
+    return v;
+  };
+  const samples: number[] = [];
+  for (let r0 = 0; r0 < g.rows; r0 += step)
+    for (let c0 = 0; c0 < g.cols; c0 += step) {
+      const i0 = r0 * g.cols + c0;
+      // Reference points are places a player would stop: near a bank or on cover, not mid-lake.
+      if (!g.water[i0] || (g.shoreDistM[i0] > POINT_SHORE_M && !g.cover[i0])) continue;
+      let sum = 0;
+      for (let rr = r0 - rad; rr <= r0 + rad; rr++)
+        for (let cc = c0 - rad; cc <= c0 + rad; cc++) {
+          if (cc < 0 || rr < 0 || cc >= g.cols || rr >= g.rows) continue;
+          const i = rr * g.cols + cc;
+          if (!g.water[i] || Math.hypot(cc - c0, rr - r0) * g.cellM > SPOT_RADIUS) continue;
+          sum += cellBass(i);
+        }
+      samples.push(sum);
+    }
+  samples.sort((a, b) => a - b);
+  const q = (p: number) => samples[Math.min(samples.length - 1, Math.floor(p * samples.length))] ?? 0;
+  // Typical activity on this lake's event days (deterministic sample, like the scouting report).
+  const rng = new Rng(0xda7a + lake.id.length);
+  let act = 0;
+  let n = 0;
+  const mix = Object.entries(lake.species.default).filter(([sp]) => SPECIES[sp as SpeciesId]?.isBass) as [SpeciesId, number][];
+  for (let i = 0; i < 12; i++) {
+    const c = generateConditions(lake, rng);
+    for (const w of WINDOWS)
+      for (const [sp, frac] of mix) {
+        act += frac * activityFor(sp, c, w.at, 3);
+        n += frac;
+      }
+  }
+  const out = { quantiles: [q(POINT_LITTLE_Q), q(POINT_NICE_Q)] as [number, number], refActivity: n ? act / n : 1 };
+  pointScales.set(key, out);
+  return out;
+}
+
+/** The verdict for a score against the lake's quantiles. */
+export function pointVerdict(score: number, quantiles: [number, number]): PointVerdict {
+  return score >= quantiles[1] ? 'nice' : score >= quantiles[0] ? 'some' : 'little';
+}
+
+/** "Data for this point": the advisor's read of the water within reach of `at`, right now. */
+export function pointData(lake: LakeDef, c: Conditions, clockMin: number, at: Vec2): PointData {
+  const env = spotEnv(lake, c.season, { x: Math.round(at.x / 20) * 20, y: Math.round(at.y / 20) * 20 });
+  const { bass, active } = activeBass(env, c, clockMin);
+  const scale = lakePointScale(lake, c.season);
+  const score = active / Math.max(1e-6, scale.refActivity);
+  return { verdict: pointVerdict(score, scale.quantiles), bass, activity: bass ? active / bass : 0, score };
 }

@@ -43,6 +43,9 @@ dI/dt = gainPerSec x fit - leakPerSec x I          (fish time = real time x game
 - Interest settles toward `gainPerSec x fit / leakPerSec` (11 / 1.2 ~ 9 x fit). **Strike at 6**
   (fit ~0.65), **follow at 3** (fit ~0.33): a middling presentation draws followers that don't commit
   (the shadows behind your lure), a poor one is ignored.
+- What you see is the meter: the underwater view draws each fish by its interest (curious 2-3, following
+  3+, hot 5+, a dart just before the strike, a turn-away when a follower gives up), and the Angler's Eye
+  setting shows the top fish's number (`src/render/scenes/WaterScene.ts`, `Hud.tsx`).
 - `proximity = 1 - distance / detectRange`. Detection range is sight (scales with water clarity and
   light, 1.5-9 m) or vibration (lure vibration x 4.5 m, +3 m in muddy water), whichever is larger.
 - `depthMatch` is Gaussian in the gap between lure depth and fish depth (sigma 3 + 8 x activity ft):

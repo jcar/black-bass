@@ -2,8 +2,9 @@ import { LAKE_LADDER } from '../data/lakes';
 import { lureKey, STARTER_LURES } from '../data/lures';
 import { STARTER_RODS } from '../data/rods';
 import type { Rank, RodSetup, Tier, TournamentState } from '../sim/types';
+import { capLog, type LogEntry } from './logbook';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const KEY = 'blackbass.save';
 
 export interface TournamentResult {
@@ -28,7 +29,17 @@ export interface SaveData {
   deck: RodSetup[];
   personalBests: { bigFishLb: number; bestBagLb: number };
   history: TournamentResult[];
-  settings: { leftHanded: boolean; sound: boolean; debugMeter: boolean; seenWeighIn: boolean; coach: boolean };
+  settings: {
+    leftHanded: boolean;
+    sound: boolean;
+    debugMeter: boolean;
+    seenWeighIn: boolean;
+    coach: boolean;
+    /** Angler's Eye: show the lure-action number (the top fish's interest) while working a lure. */
+    anglersEye: boolean;
+  };
+  /** Every bass landed, newest last (capped at LOG_CAP). */
+  logbook: LogEntry[];
   activeTournament?: TournamentState;
 }
 
@@ -50,13 +61,17 @@ export function newSave(): SaveData {
     deck: defaultDeck(),
     personalBests: { bigFishLb: 0, bestBagLb: 0 },
     history: [],
-    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false, coach: true },
+    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false, coach: true, anglersEye: false },
+    logbook: [],
   };
 }
 
 type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
 /** Migrations keyed by the version they upgrade FROM. Add one per schema change. */
-const MIGRATIONS: Record<number, Migration> = {};
+const MIGRATIONS: Record<number, Migration> = {
+  // v2: the logbook, and the Angler's Eye setting (off).
+  1: (d) => ({ ...d, logbook: [], settings: { ...(d.settings as object), anglersEye: false } }),
+};
 
 export function migrate(raw: unknown): SaveData {
   if (!raw || typeof raw !== 'object') return newSave();
@@ -75,6 +90,7 @@ export function migrate(raw: unknown): SaveData {
   merged.player = { ...base.player, ...merged.player };
   merged.settings = { ...base.settings, ...merged.settings };
   merged.personalBests = { ...base.personalBests, ...merged.personalBests };
+  merged.logbook = capLog(Array.isArray(merged.logbook) ? merged.logbook : []);
   // Lake Fork was inserted as career stop 2 ahead of Guntersville. A promotion earned at Champlain
   // before that unlocked 'guntersville' (then stop 2, not yet playable): it now opens Lake Fork.
   if (merged.unlockedLakes.includes('guntersville') && !merged.unlockedLakes.includes('lakefork'))

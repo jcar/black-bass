@@ -1,13 +1,17 @@
 import { LAKES } from '../data/lakes';
-import { dragTick, playEvent, playUi } from '../audio/sound';
+import { dragTick, followCue, playEvent, playUi } from '../audio/sound';
 import { GameRenderer } from '../render/GameRenderer';
 import { getLakeGrid } from '../sim/lake';
 import { advisorRoute } from '../sim/advisor';
 import { coachStep, debrief, newCoach } from '../sim/coach';
-import { bearingTo, castRangeM, compassPoint, distanceM, markVisited, navCue, nearestInRange, nextStop, relativeBearing, steerPoint, waterPath, type NavStop } from '../sim/nav';
+import { bearingTo, castRangeM, compassPoint, distanceM, markVisited, navCue, nearestInRange, nextStop, relativeBearing, steerPoint, stumpsOnRoute, waterPath, type NavStop } from '../sim/nav';
+import { isKeeper } from '../sim/livewell';
+import { adviceFor } from '../sim/tierAdvice';
+import { appendLog, logEntry } from '../state/logbook';
+import { vibrate } from '../ui/kit/haptics';
 import type { Vec2 } from '../sim/types';
 import { drainEvents, stepTournament } from '../sim/tournament';
-import type { TournamentEvent, TournamentState } from '../sim/types';
+import type { GamePhase, TournamentEvent, TournamentState } from '../sim/types';
 import { lbOzText } from '../sim/format';
 import { buildHud, useStore, type NavHud, type Notice } from '../state/store';
 import { inputHub } from './input';
@@ -107,10 +111,17 @@ export class GameRunner {
   private bankAt = -Infinity;
   /** Water route to the destination (re-planned as the boat moves). */
   private path: { key: string; from: Vec2; at: number; pts: Vec2[] } | null = null;
+  private lastPhase: GamePhase | null = null;
+  private touch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
   async start(host: HTMLElement) {
     await this.renderer.init(host);
     this.initialized = true;
+    // A fish starts following the lure: a soft cue (and a tick on touch devices), like the shadow you see.
+    this.renderer.onFollow = () => {
+      followCue();
+      if (this.touch) vibrate();
+    };
     // Unmounted while Pixi was still initialising (e.g. React StrictMode double-mount).
     if (this.stopped) {
       this.renderer.destroy();
@@ -158,15 +169,23 @@ export class GameRunner {
       if (store.navTarget) store.setNavTarget(null);
       this.proKey = '';
     }
-    // Mark the advisor's stops for the rig in hand (recomputed when the day or rod changes).
-    const proKey = store.save.settings.coach ? `${t.day}:${t.activeRod}:${t.deck[t.activeRod]?.lureId}` : 'off';
+    // Mark the advisor's stops for the rig in hand (recomputed when the day or rod changes). How many
+    // depends on the tier: the co-anglers get the whole milk run, pros find their own water.
+    const stops = adviceFor(t.tier).proStops;
+    const proKey = store.save.settings.coach && stops > 0 ? `${t.day}:${t.activeRod}:${t.deck[t.activeRod]?.lureId}:${stops}` : 'off';
     if (proKey !== this.proKey) {
       this.proKey = proKey;
-      this.route = proKey === 'off' ? [] : advisorRoute(LAKES[t.lakeId], t.conditions, t.deck[t.activeRod]).map((s, i) => ({ id: s.spot.id, name: s.spot.name, x: s.spot.x, y: s.spot.y, pro: i + 1 }));
+      this.route = proKey === 'off' ? [] : advisorRoute(LAKES[t.lakeId], t.conditions, t.deck[t.activeRod], stops).map((s, i) => ({ id: s.spot.id, name: s.spot.name, x: s.spot.x, y: s.spot.y, pro: i + 1 }));
       this.renderer.setProStops(this.route);
       store.setNavRoute({ route: this.route, visited: [...this.visited] });
     }
     this.trackVisits(t);
+    // Stopping to fish (FISH): the data for this point, where the tier gives it for free.
+    if (t.phase !== this.lastPhase) {
+      if (t.phase === 'Cast' && this.lastPhase === 'Navigate') store.checkPoint(false);
+      else if (t.phase !== 'Cast' && store.point) store.clearPoint();
+      this.lastPhase = t.phase;
+    }
     const tip = coachStep(this.coach, t, events, this.realT, blocked ? 0 : dt, store.save.settings.coach);
     if (tip) store.notify({ kind: 'coach', title: tip.title, sub: tip.text, tone: 'info' });
     if (t.fight) dragTick(t.fight.tension, inputHub.reel, this.renderer.view.time);
@@ -210,6 +229,7 @@ export class GameRunner {
       if (e.type === 'rivalCatch' && e.data?.big) playUi('record');
       const c = CALLOUT[e.type];
       if (c && e.at) this.renderer.callout(c.text, c.color, e.at);
+      if ((e.type === 'landed' || e.type === 'cullNeeded') && t.lastLanded) this.logCatch(t);
       if (e.type === 'landed' || e.type === 'cullNeeded') store.persist();
       if (e.type === 'bank') {
         this.renderer.shake();
@@ -220,6 +240,13 @@ export class GameRunner {
       }
     }
     return events;
+  }
+
+  /** Every bass landed goes in the logbook (with the lure, line, conditions and where it bit). */
+  private logCatch(t: TournamentState) {
+    const c = t.lastLanded!;
+    const e = logEntry(t, c, !!c.cwr || isKeeper(c, LAKES[t.lakeId]));
+    if (e) useStore.getState().mutateSave((s) => void (s.logbook = appendLog(s.logbook, e)));
   }
 
   private castRange(t: TournamentState) {
@@ -246,10 +273,12 @@ export class GameRunner {
     const range = this.castRange(t);
     const boat = t.boat;
     const grid = getLakeGrid(LAKES[t.lakeId]);
-    const key = dest ? `${t.lakeId}:${dest.id}` : '';
+    // On the outboard the route keeps to the boat lanes through stump fields.
+    const running = boat.motor === 'outboard';
+    const key = dest ? `${t.lakeId}:${dest.id}:${running}` : '';
     const p = this.path;
     if (dest && (!p || p.key !== key || distanceM(p.from, boat.pos) > REPATH_M || this.realT - p.at > REPATH_SEC)) {
-      this.path = { key, from: { ...boat.pos }, at: this.realT, pts: waterPath(grid, boat.pos, dest) };
+      this.path = { key, from: { ...boat.pos }, at: this.realT, pts: waterPath(grid, boat.pos, dest, running) };
       useStore.getState().setNavPath(this.path.pts);
     }
     const path = dest && this.path ? this.path.pts : [];
@@ -258,7 +287,8 @@ export class GameRunner {
     if (!dest) return { hud: null, inRange };
     const d = distanceM(boat.pos, dest);
     // The arrow follows the water: round an island or a point rather than straight through it.
-    const steer = path.length ? steerPoint(grid, boat.pos, path) : dest;
+    const steer = path.length ? steerPoint(grid, boat.pos, path, running) : dest;
+    const stumps = running && grid.def.stumpZones?.length ? stumpsOnRoute(grid, boat.pos, path, boat.heading) : null;
     return {
       hud: {
         name: dest.name,
@@ -268,7 +298,7 @@ export class GameRunner {
         routed: steer !== path[path.length - 1] && steer !== dest,
         steerCompass: compassPoint(bearingTo(boat.pos, steer)),
         compass: compassPoint(bearingTo(boat.pos, dest)),
-        cue: navCue(d, boat.motor, range),
+        cue: navCue(d, boat.motor, range, stumps),
         outboard: boat.motor === 'outboard',
         manual: !!target,
       },

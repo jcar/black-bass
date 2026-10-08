@@ -6,10 +6,13 @@ import { CastScene } from './scenes/CastScene';
 import { MapScene } from './scenes/MapScene';
 import { HUD_FONT, sonarInsetRect, type Insets, type Scene, type View } from './scenes/types';
 import { WaterScene } from './scenes/WaterScene';
+import { destroyPixiApp } from './teardown';
 
 type SceneKey = 'map' | 'cast' | 'water';
 const SHAKE_SEC = 0.35;
 const SHAKE_PX = 7;
+/** Seconds the underwater view holds after a retrieve so followers can be seen turning away. */
+const LINGER_SEC = 1.1;
 
 const SCENE_FOR: Record<GamePhase, SceneKey> = {
   Navigate: 'map',
@@ -49,6 +52,10 @@ export class GameRenderer {
   private miniKey = '';
   private shakeT = 0;
   private reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** A fish started following the lure (the runner plays a cue). */
+  onFollow?: () => void;
+  /** Seconds left of holding the underwater view after a retrieve (null = not in that handover). */
+  private lingerT: number | null = null;
   /** The advisor's stops to mark on the map (empty hides them). */
   setProStops(stops: (Vec2 & { id?: string })[]) {
     this.proStops = stops;
@@ -79,7 +86,9 @@ export class GameRenderer {
     this.app.canvas.style.touchAction = 'none';
     // Overlay text uses the broadcast face; make sure it's decoded before the first Text is built.
     await Promise.race([document.fonts?.load(`700 20px ${HUD_FONT}`), new Promise((r) => setTimeout(r, 800))]).catch(() => {});
-    this.scenes = { map: new MapScene(), cast: new CastScene(), water: new WaterScene() };
+    const water = new WaterScene();
+    water.onFollow = () => this.onFollow?.();
+    this.scenes = { map: new MapScene(), cast: new CastScene(), water };
     (this.scenes.map as MapScene).setProStops(this.proStops);
     // World (graded) -> weather -> HUD overlay -> callouts: the HUD is never tinted or rained on.
     this.app.stage.addChild(this.layer, this.weather, this.overlay, this.calloutLayer);
@@ -165,7 +174,14 @@ export class GameRenderer {
       this.hudTimer = 0.5;
       this.layoutHud();
     }
-    const key = SCENE_FOR[t.phase];
+    let key = SCENE_FOR[t.phase];
+    // Back to casting with followers still turning away: hold the underwater view a moment (until
+    // they've gone, or you start the next cast).
+    if (this.active === 'water' && key === 'cast' && !t.cast?.powerCharging && !t.cast?.flying) {
+      if (this.lingerT === null) this.lingerT = (this.scenes.water as WaterScene).hasFollowers() ? LINGER_SEC : 0;
+      this.lingerT = Math.max(0, this.lingerT - dt);
+      if (this.lingerT > 0) key = 'water';
+    } else this.lingerT = null;
     const view = this.view;
     if (key !== this.active || (key === 'water' && t.phase === 'Present' && this.enteredPresent(t))) {
       if (key !== this.active) {
@@ -244,7 +260,13 @@ export class GameRenderer {
 
   destroy() {
     this.safeProbe?.remove();
-    this.app.destroy(true, { children: true, texture: true });
+    this.layer.filters = null;
+    this.grade.destroy();
+    destroyPixiApp(this.app);
+    // The lake charts are painted per game: free them once nothing can still be bound to them.
+    // Generated art (plates, the boat) stays in the Assets cache for the next game; destroying it
+    // here left the next session drawing dead textures.
+    for (const s of Object.values(this.scenes ?? {})) s.dispose?.();
   }
 }
 

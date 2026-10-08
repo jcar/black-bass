@@ -4,6 +4,7 @@ import { LAKES } from '../../data/lakes';
 import { paintLakeCanvas } from '../../render/lakeTexture';
 import { getLakeGrid } from '../../sim/lake';
 import { distanceM, nextStop, OFF_PLANE_M, scaleBarM, type NavStop } from '../../sim/nav';
+import { adviceFor } from '../../sim/tierAdvice';
 import { useStore } from '../../state/store';
 import { Icon, useEscapeClose } from '../kit';
 
@@ -202,7 +203,13 @@ function LakeMapPanel() {
             <Icon name="close" />
           </button>
         </div>
-        <span className="small lm-hint">{kb ? 'Click a stop, or 1-9 for a PRO stop, 0 to follow the route · M/Esc close' : 'Tap a stop to drive there'}</span>
+        <span className="small lm-hint">
+          {route.length
+            ? kb
+              ? 'Click a stop, or 1-9 for a PRO stop, 0 to follow the route · M/Esc close'
+              : 'Tap a stop to drive there'
+            : `${adviceFor(t.tier).proStops ? 'PRO stops are off (Coach tips in Settings).' : 'No PRO stops at this level: pros find their own water.'} ${kb ? 'Click a waypoint to drive there · M/Esc close' : 'Tap a waypoint to drive there'}`}
+        </span>
         {route.length > 0 && (
           <>
             <span className="kicker">Pro route</span>

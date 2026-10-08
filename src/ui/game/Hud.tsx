@@ -5,8 +5,9 @@ import { TUNING } from '../../data/tuning';
 import { inputHub } from '../../game/input';
 import { LIVEWELL_LIMIT } from '../../sim/livewell';
 import { OFF_PLANE_M } from '../../sim/nav';
+import { POINT_VERDICT_TEXT } from '../../sim/advisor';
 import type { RodSetup } from '../../sim/types';
-import type { Hud as HudData, NavHud } from '../../state/store';
+import type { Hud as HudData, NavHud, PointInfo } from '../../state/store';
 import { useStore } from '../../state/store';
 import { lbOz, LureIcon } from '../components';
 import { Icon, spring } from '../kit';
@@ -64,15 +65,19 @@ const NavChip = memo(function NavChip({ nav, onOpen }: { nav: NavHud; onOpen: ()
   const status =
     nav.cue === 'inRange'
       ? 'In range'
-      : nav.cue === 'idleIn'
-        ? 'Idle in now'
-        : nav.routed && nav.steerCompass !== nav.compass
+      : nav.cue === 'lane'
+        ? 'Stay in the lane'
+        : nav.cue === 'idleIn'
+          ? 'Idle in now'
+          : nav.cue === 'stumpsAhead'
+            ? 'Off plane: stumps ahead'
+            : nav.routed && nav.steerCompass !== nav.compass
           ? `Go round, head ${nav.steerCompass}`
           : nav.outboard
             ? `Off plane at ${OFF_PLANE_M} m`
             : null;
   return (
-    <button className={`nav-chip hud-box ${nav.cue ?? ''}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
+    <button className={`nav-chip hud-box ${nav.cue === 'lane' || nav.cue === 'stumpsAhead' ? 'idleIn' : (nav.cue ?? '')}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
       <span className="nav-arrow" style={{ transform: `rotate(${nav.rel}rad)` }} aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <path d="M12 2l8 18-8-4.5L4 20z" />
@@ -91,8 +96,67 @@ const NavChip = memo(function NavChip({ nav, onOpen }: { nav: NavHud; onOpen: ()
   );
 });
 
+/** NES "Data for this point" as a broadcast lower-third: the verdict, then clock, sky and water. Fades on its own. */
+const PointCard = memo(function PointCard({ point }: { point: PointInfo }) {
+  // Each reading (n) shows for a few seconds, then fades; a re-check replays it.
+  const [faded, setFaded] = useState<number | null>(null);
+  useEffect(() => {
+    const id = setTimeout(() => setFaded(point.n), 6000);
+    return () => clearTimeout(id);
+  }, [point.n]);
+  return (
+    <div className="point-card-wrap">
+      <AnimatePresence>
+        {faded !== point.n && (
+          <m.div
+            key={point.n}
+            className={`point-card hud-box ${point.verdict}`}
+            role="status"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.8 } }}
+            transition={spring}
+          >
+            <span className="kicker">Data for this point{point.costMin ? ` · ${point.costMin} min` : ''}</span>
+            <span className="point-verdict">{POINT_VERDICT_TEXT[point.verdict]}</span>
+            <span className="point-meta">
+              {point.clock} · {point.weather} · water {point.waterTempF}°F
+            </span>
+          </m.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+});
+
+/**
+ * Angler's Eye: the lure-action number (the most interested fish's meter, 0-10) with the follow line at 3
+ * and the strike line at 6, the number the NES "MIRUN" name cheat revealed. A setting, off by default.
+ */
+function AnglersEye({ meter }: { meter: number }) {
+  const v = Math.min(10, Math.max(0, meter));
+  const tone = v >= TUNING.attraction.strikeAt ? 'strike' : v >= 5 ? 'hot' : v >= TUNING.attraction.followAt ? 'follow' : '';
+  return (
+    <div className={`eye-meter hud-box ${tone}`} title="Angler's Eye: the most interested fish's lure-action number (follows at 3, strikes at 6)">
+      <span className="kicker">Lure action</span>
+      <span className="eye-num num">{v.toFixed(1)}</span>
+      <div className="eye-track" aria-hidden="true">
+        <div className="eye-fill" style={{ transform: `scaleX(${v / 10})` }} />
+        <span className="eye-mark" style={{ left: `${TUNING.attraction.followAt * 10}%` }}>
+          <b>3</b>
+        </span>
+        <span className="eye-mark strike" style={{ left: `${TUNING.attraction.strikeAt * 10}%` }}>
+          <b>6</b>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const coachOn = useStore((s) => s.save.settings.coach);
+  const eyeOn = useStore((s) => s.save.settings.anglersEye);
+  const point = useStore((s) => s.point);
   const setPaused = useStore((s) => s.setPaused);
   const setMapOpen = useStore((s) => s.setMapOpen);
   const openMap = () => setMapOpen(true);
@@ -203,14 +267,20 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
         )}
       </AnimatePresence>
 
-      {hud.phase === 'Present' && coachOn && !debug && (
-        <div className="retrieve-meter hud-box" title="How well you're working the lure (what the fish judge)">
-          <span className="kicker">Retrieve</span>
-          <div className="meter">
-            <div style={{ transform: `scaleX(${hud.match})`, background: hud.match >= 0.75 ? 'var(--good)' : hud.match >= 0.5 ? 'var(--accent)' : 'var(--bad)' }} />
-          </div>
+      {hud.phase === 'Present' && ((coachOn && !debug) || eyeOn) && (
+        <div className="present-meters">
+          {coachOn && !debug && (
+            <div className="retrieve-meter hud-box" title="How well you're working the lure (what the fish judge)">
+              <span className="kicker">Retrieve</span>
+              <div className="meter">
+                <div style={{ transform: `scaleX(${hud.match})`, background: hud.match >= 0.75 ? 'var(--good)' : hud.match >= 0.5 ? 'var(--accent)' : 'var(--bad)' }} />
+              </div>
+            </div>
+          )}
+          {eyeOn && <AnglersEye meter={hud.meter} />}
         </div>
       )}
+      {hud.phase === 'Cast' && point && <PointCard point={point} />}
       {hud.phase === 'Present' && debug && (
         <div className="fight-panel hud-box col" style={{ gap: 4 }}>
           <div className="row small" style={{ justifyContent: 'space-between' }}>

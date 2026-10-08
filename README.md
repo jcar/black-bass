@@ -21,8 +21,9 @@ full-screen landscape play that works offline.
 
 Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), M = lake
 map while driving (1-9 picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
-T = twitch/hop/shake, B = thumb brake, V = bow on a jump, M = move/burn in once fishing, P = pop hook, Esc = pause
-(or close the open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
+T = twitch/hop/shake, B = thumb brake, V = bow on a jump, M = move/burn in once fishing, I = data for this point
+(between casts), P = pop hook, Esc = pause (or close the open panel). Steering keys never twitch the lure; the
+on-screen hint follows the lure.
 
 Getting around: the chip beside the minimap points at the next PRO stop you haven't fished (name, metres,
 an arrow relative to the bow; a stop counts once you cast within casting range of it). Around it the chart
@@ -30,7 +31,27 @@ draws the advisor's come-off-plane ring (dashed amber) and your rig's casting ra
 "Idle in now" if you're still on the outboard inside the ring and says "In range" (FISH glows) once you can
 reach it. Tap the minimap, the map button or the chip (or press M) for the full lake map: tap a stop to
 make it the destination. The clock stops while the map is open, as it does in the pause menu. Hitting the
-bank bumps (sound, shake, callout); the boat scrapes along it, and steering away always backs it off.
+bank bumps (sound, shake, callout); the boat scrapes along it, and steering away always backs it off. On the
+outboard the route keeps to the buoyed boat lanes through stump fields; the chip says "Stay in the lane" when
+you run an off-lane stump field and "Off plane: stumps ahead" before the route leaves the lane.
+
+Reading the water (the NES game's soul): fish shadows are drawn from each fish's real interest in the lure.
+Curious fish (2-3) hang back faint and half-looking; followers (3+, the follow line) trail the lure at its
+depth with a light edge; hot fish (5+) crowd it, tail beating fast, fins flared and glowing; a quick dart
+means a strike is coming. A follower that loses interest (or is left at the boat) turns and fades away, and a
+soft cue plays (and a tick on touch devices) when one starts following. **Angler's Eye** (Settings, off by
+default) shows the lure-action number the NES "MIRUN" cheat revealed: the most interested fish's meter, 0-10,
+with the follow (3) and strike (6) lines marked. **Data for this point** (on FISH, the DATA button or I) gives
+the NES verdict for the water around the boat ("NICE BASS POINT" / "SOME BASS HERE" / "LITTLE BASS HERE") with
+the clock, sky and water temperature. It comes from the advisor's model (expected bass within reach and how
+active they are now, against the lake's own range), never from the live fish.
+
+Advice fades as you climb (`src/sim/tierAdvice.ts`, like the NES Class A lakes that hid the hot spots):
+Co-Angler gets 6 PRO stops, the Pro rod badge, the full day plan and free point data; Semi-Pro 3 stops; Pro no
+stops, a lure/window plan only, and point data costs 2 game minutes; Elite a scouting report and nothing
+else. The live coach and the weigh-in notes stay at every tier. The trophy room's **Logbook** keeps every bass
+you land (the latest 500): lure and colour, line, clock, weather, water temperature, depth and cover, with the
+best lures by lake and season and the record fish.
 
 ## Deploying
 

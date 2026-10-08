@@ -127,6 +127,20 @@ export function playEvent(type: TournamentEvent['type']) {
   SYNTH[type]?.();
 }
 
+/**
+ * A fish has started following the lure: a soft two-note "blip" under the water, quiet enough to
+ * sit under the reel. Rate-limited so a school of followers doesn't chatter.
+ */
+let followNext = 0;
+export function followCue() {
+  if (!ctx || !enabled) return;
+  const now = ctx.currentTime;
+  if (now < followNext) return;
+  followNext = now + 0.9;
+  tone(330, 0.16, 0.05, 'sine', 300);
+  setTimeout(() => tone(440, 0.2, 0.045, 'sine', 470), 120);
+}
+
 /** Continuous drag/reel sound driven by fight tension (called every frame during fights). */
 let dragNext = 0;
 export function dragTick(tension: number, reeling: boolean, now: number) {

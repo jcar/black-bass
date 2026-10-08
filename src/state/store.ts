@@ -4,12 +4,13 @@ import { PURSE } from '../data/lakes';
 import { LURES } from '../data/lures';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
-import { dayPlan, proPickNow, windowAt, type WindowPlan } from '../sim/advisor';
+import { dayPlan, pointData, proPickNow, windowAt, type PointVerdict, type WindowPlan } from '../sim/advisor';
 import { formatClock } from '../sim/conditions';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
-import type { NavStop } from '../sim/nav';
-import { createTournament, isTournamentOver, standings, startNextDay, switchRod } from '../sim/tournament';
-import type { CaughtFish, GamePhase, TournamentState, Vec2 } from '../sim/types';
+import type { NavCue, NavStop } from '../sim/nav';
+import { adviceFor } from '../sim/tierAdvice';
+import { createTournament, isTournamentOver, spendMinutes, standings, startNextDay, switchRod } from '../sim/tournament';
+import type { CaughtFish, GamePhase, TournamentState, Vec2, Weather } from '../sim/types';
 import { applyResult, tierOfLake } from './career';
 import type { TournamentResult } from './save';
 import { loadSave, writeSave, type SaveData } from './save';
@@ -44,7 +45,7 @@ export interface Hud {
   nearWaypoint: { name: string; tip: string } | null;
   pendingCull: CaughtFish | null;
   lastLanded: CaughtFish | null;
-  /** Advisor's rig for right now: the day plan's, unless the water here clearly suits another (deck index). */
+  /** Advisor's rig for right now: the day plan's, unless the water here clearly suits another (deck index; -1 = no Pro chip at this tier). */
   proPick: number;
   /** Where you're driving (Navigate only): the next unfished PRO stop, or the one you picked on the map. */
   nav: NavHud | null;
@@ -65,7 +66,7 @@ export interface NavHud {
   steerCompass: string;
   /** Compass point from the boat ("NE"). */
   compass: string;
-  cue: 'inRange' | 'idleIn' | null;
+  cue: NavCue;
   outboard: boolean;
   /** Picked on the map, rather than the route's next stop. */
   manual: boolean;
@@ -110,6 +111,11 @@ interface StoreState {
   navPath: Vec2[];
   setNavPath: (p: Vec2[]) => void;
   lastResult: { result: TournamentResult; promoted: string | null } | null;
+  /** The last "Data for this point" reading (n increments on each check so the lower-third replays). */
+  point: PointInfo | null;
+  /** Read the data for the water around the boat (Cast phase). `manual` = the player asked (may cost time at Pro). */
+  checkPoint: (manual: boolean) => void;
+  clearPoint: () => void;
 
   setScreen: (s: Screen) => void;
   mutateSave: (fn: (s: SaveData) => void) => void;
@@ -136,6 +142,17 @@ interface StoreState {
   /** Blast off from the briefing: the day starts on the plan's rod for the first window. */
   launchDay: () => void;
 }
+
+export interface PointInfo {
+  n: number;
+  verdict: PointVerdict;
+  clock: string;
+  weather: Weather;
+  waterTempF: number;
+  /** Game minutes the check cost (Pro tier). */
+  costMin: number;
+}
+let pointN = 0;
 
 /** Before blast-off each day you can still re-rig: nothing has happened on the water yet. */
 export const canRerig = (t: TournamentState | null) => !!t && t.phase === 'Navigate' && t.clockMin === TUNING.clock.dayStartMin;
@@ -174,6 +191,17 @@ export const useStore = create<StoreState>((set, get) => ({
   navPath: [],
   setNavPath: (navPath) => set({ navPath }),
   lastResult: null,
+  point: null,
+  checkPoint: (manual) => {
+    const t = get().tournament;
+    if (!t || t.phase !== 'Cast') return;
+    const cost = adviceFor(t.tier).pointDataMin;
+    if (cost === null || (!manual && cost > 0)) return;
+    if (cost > 0 && !spendMinutes(t, cost)) return;
+    const d = pointData(LAKES[t.lakeId], t.conditions, t.clockMin, t.boat.pos);
+    set({ point: { n: ++pointN, verdict: d.verdict, clock: formatClock(t.clockMin), weather: t.conditions.weather, waterTempF: Math.round(t.conditions.waterTempF), costMin: cost } });
+  },
+  clearPoint: () => set({ point: null }),
 
   setScreen: (screen) => set({ screen }),
   mutateSave: (fn) => {
@@ -267,13 +295,14 @@ export const useStore = create<StoreState>((set, get) => ({
     const t = get().tournament;
     if (!canRerig(t)) return;
     t!.deck = structuredClone(get().save.deck);
-    t!.activeRod = plannedRod(t!);
+    // Elite gets no plan, so the day doesn't start on the plan's rod either.
+    if (adviceFor(t!.tier).plan !== 'scouting') t!.activeRod = plannedRod(t!);
     get().persist();
   },
   launchDay: () => {
     const t = get().tournament;
     // Nothing has happened on the water yet: tie on what the briefing's plan says to throw first.
-    if (t && canRerig(t)) {
+    if (t && canRerig(t) && adviceFor(t.tier).plan !== 'scouting') {
       t.activeRod = plannedRod(t);
       get().persist();
     }
@@ -324,7 +353,7 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint'], 
     nearWaypoint,
     pendingCull: t.pendingCull,
     lastLanded: t.lastLanded,
-    proPick: t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos, planFor(t)) : t.activeRod,
+    proPick: !adviceFor(t.tier).proChip ? -1 : t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos, planFor(t)) : t.activeRod,
     nav: t.phase === 'Navigate' ? nav : null,
     inRange: t.phase === 'Navigate' && inRange,
   };

@@ -3,6 +3,7 @@ import type { LakeDef } from '../data/lakes/types';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { activeTackle, emit } from './context';
+import { coverAt, depthAt, getLakeGrid, nearCover } from './lake';
 import { transition } from './machine';
 import type { CaughtFish, FishEntity, TournamentState } from './types';
 
@@ -25,6 +26,7 @@ export const bagWeight = (fish: CaughtFish[]) => Math.round(fish.reduce((a, f) =
 export function landFish(s: TournamentState, f: FishEntity): void {
   const { setup } = activeTackle(s);
   const lake = LAKES[s.lakeId];
+  const hook = s.fight?.hook;
   const caught: CaughtFish = {
     fishId: f.id,
     species: f.species,
@@ -32,7 +34,16 @@ export function landFish(s: TournamentState, f: FishEntity): void {
     lengthIn: f.lengthIn,
     caughtAtMin: s.clockMin,
     lureId: setup.lureId,
+    colorId: setup.colorId,
+    line: { ...setup.line },
   };
+  if (hook) {
+    const g = getLakeGrid(lake);
+    const at = coverAt(g, hook.x, hook.y);
+    caught.depthFt = Math.round(hook.depthFt * 10) / 10;
+    caught.bottomFt = Math.round(depthAt(g, hook.x, hook.y) * 10) / 10;
+    caught.cover = at !== 'none' ? at : nearCover(g, hook.x, hook.y, 6);
+  }
   f.caught = true;
   f.interest = 0;
   s.fight = null;
