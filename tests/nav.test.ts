@@ -154,7 +154,7 @@ describe('shore contact', () => {
       }
       expect(contacts).toBeGreaterThan(5);
     }
-  });
+  }, 60_000); // sweeps ~1,100 bank contacts on both lakes; slow on CI runners
 });
 
 describe('water routing', () => {
