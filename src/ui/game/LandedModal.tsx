@@ -4,7 +4,7 @@ import { playUi } from '../../audio/sound';
 import { SPECIES } from '../../data/species';
 import { TUNING } from '../../data/tuning';
 import { LAKES } from '../../data/lakes';
-import { catchVerdict, healthOf, isDead, keeperMinIn } from '../../sim/livewell';
+import { catchVerdict, countsToBag, healthOf, isCwir, isDead, keeperMinIn } from '../../sim/livewell';
 import type { CaughtFish } from '../../sim/types';
 import { useStore } from '../../state/store';
 import { FishArt, lbOz } from '../components';
@@ -38,9 +38,14 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
   const verdict = catchVerdict(fish, lake);
   // A legal fish released under the one-big-fish rule still reads as a keeper-size fish, but it went back.
   const keeper = verdict === 'keeper' && fish.released !== 'bigFish';
-  const pb = keeper && fish.weightLb > bigFishPb && fish.weightLb >= tourneyBig;
+  // Catch-weigh-immediate-release (Lake Fork): the judge weighs every legal bass, slot fish included.
+  const cwir = isCwir(lake) && (fish.cwr || fish.stage);
+  const counts = countsToBag(fish, lake) && !fish.released;
+  // Under CWIR the card keeps the best five on its own: did this one make it?
+  const onCard = livewell.some((f) => f.fishId === fish.fishId);
+  const pb = counts && fish.weightLb > bigFishPb && fish.weightLb >= tourneyBig;
   // Texas Parks & Wildlife's ShareLunker program: 13 lb and up.
-  const lunker = keeper && fish.species === 'largemouth' && fish.weightLb >= 13;
+  const lunker = counts && fish.species === 'largemouth' && fish.weightLb >= 13;
 
   useEffect(() => {
     if (pb || lunker) setTimeout(() => playUi(lunker ? 'promote' : 'record'), 1300);
@@ -68,14 +73,28 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
         </div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <span className="badge">{fish.lengthIn}" long</span>
-          {verdict === 'slot' && <span className="badge warn">Protected slot · released</span>}
+          {cwir ? (
+            <span className="badge good">{fish.stage ? 'Weighed by your judge · kept for the stage' : verdict === 'slot' ? 'Slot fish — weighed and released' : 'Weighed by your judge · released'}</span>
+          ) : (
+            verdict === 'slot' && <span className="badge warn">Protected slot · released</span>
+          )}
           {(pb || lunker) && (
             <m.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 1.3 }}>
               <Slug tone="gold">{lunker ? 'ShareLunker class' : 'Personal best'}</Slug>
             </m.span>
           )}
         </div>
-        {verdict === 'slot' && lake?.regs?.slot && (
+        {cwir && (
+          <p className="small muted">
+            {verdict === 'slot' && lake?.regs?.slot ? `Texas protects ${lake.regs.slot.minIn}-${lake.regs.slot.maxIn}" largemouth: it can't be kept, but your judge weighed it in the boat and it counts. ` : ''}
+            {fish.stage
+              ? `Your one ${lake?.regs?.bigFish?.minIn ?? 24}"+ fish rides in the livewell to the weigh-in stage: keep it alive.`
+              : onCard
+                ? 'Back in the lake already. It is on your card: your best five count.'
+                : "Back in the lake already. Your best five are heavier, so it doesn't count."}
+          </p>
+        )}
+        {!cwir && verdict === 'slot' && lake?.regs?.slot && (
           <p className="small muted">
             Texas law protects {lake.regs.slot.minIn}-{lake.regs.slot.maxIn}" largemouth here: it goes straight back, never into the livewell, and it doesn't count. Keep fish under {lake.regs.slot.minIn}" and one {lake.regs.slot.maxIn}" or longer.
           </p>

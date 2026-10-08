@@ -8,7 +8,7 @@ import { promotionTarget } from '../../state/career';
 import { DayPlan } from '../ProAdvice';
 import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import type { Weather } from '../../sim/types';
-import { keeperMinIn } from '../../sim/livewell';
+import { isCwir, keeperMinIn } from '../../sim/livewell';
 import { formatClock } from '../../sim/conditions';
 import { TUNING } from '../../data/tuning';
 import { conditionsAdvice } from '../advice';
@@ -35,6 +35,7 @@ export function BriefingScreen() {
   const minIn = keeperMinIn(lake);
   const promo = promotionTarget(t.lakeId, unlocked);
   const slot = lake.regs?.slot;
+  const cwir = isCwir(lake);
   const access = adviceFor(t.tier);
 
   return (
@@ -62,11 +63,18 @@ export function BriefingScreen() {
             </span>
           )}
           <span className="badge">Bass {minIn}" minimum</span>
-          {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": release immediately (doesn't count)</span>}
-          {lake.regs?.bigFish && (
-            <span className="badge warn">
-              One {lake.regs.bigFish.minIn}"+ a day
+          {cwir ? (
+            <span
+              className="badge warn"
+              title={`Texas Parks & Wildlife catch-weigh-immediate-release: a judge in your boat weighs and records every bass ${minIn}" and longer and it goes straight back; your best five count.${slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") can't be kept but are weighed and count.` : ''}${lake.regs?.bigFish ? ` One ${lake.regs.bigFish.minIn}"+ fish a day may come to the weigh-in stage.` : ''}`}
+            >
+              Catch, weigh, release: judge in your boat{slot ? `, slot ${slot.minIn}-${slot.maxIn}" counts` : ''}
             </span>
+          ) : (
+            <>
+              {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": release immediately (doesn't count)</span>}
+              {lake.regs?.bigFish && <span className="badge warn">One {lake.regs.bigFish.minIn}"+ a day</span>}
+            </>
           )}
           <span className="badge" title={`Check in at ${lake.launch.name}: 1 lb a minute late, zero after ${TUNING.checkIn.lateMaxMin} minutes; dead fish cost ${TUNING.livewell.deadPenaltyLb * 16} oz each`}>
             Check-in {formatClock(TUNING.clock.dayEndMin)} at the launch

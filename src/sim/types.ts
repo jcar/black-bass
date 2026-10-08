@@ -78,11 +78,19 @@ export interface CaughtFish {
   caughtAtMin: number;
   lureId: string;
   /**
-   * Why a legal-length bass went back (Landed card): a protected-slot fish (released immediately), or a
-   * second fish over the one-per-day big-fish limit.
+   * Catch-weigh-immediate-release (lake `regs.format: 'cwir'`, Lake Fork): weighed and recorded by the
+   * judge in the boat and released on the spot. It counts toward the best five but was never in the
+   * livewell, so it can't die there.
+   */
+  cwr?: boolean;
+  /** Under CWIR, the one 24"+ bass kept in the livewell for the weigh-in stage (it can die there). */
+  stage?: boolean;
+  /**
+   * At a ramp weigh-in (no CWIR), why a legal-length bass went back (Landed card): a protected-slot fish,
+   * or a second fish over the one-per-day big-fish limit.
    */
   released?: 'slot' | 'bigFish';
-  /** Livewell health, 1 lively to 0 dead (livewell.ts). Missing on fish kept before it existed: lively. */
+  /** Livewell health, 1 lively to 0 dead (livewell.ts). Missing on fish kept before it existed, or released under CWIR: lively. */
   health?: number;
   /** This fish's hardiness (losses are divided by it). */
   hardy?: number;
@@ -289,6 +297,7 @@ export interface TournamentState {
   boat: BoatState;
   deck: RodSetup[];
   activeRod: number;
+  /** Today's five best bass: in the livewell, or under CWIR the judge's card (released fish plus any stage fish). */
   livewell: CaughtFish[];
   /** Fish waiting for a cull decision (6th bass). */
   pendingCull: CaughtFish | null;

@@ -1,9 +1,9 @@
 import { AnimatePresence, m } from 'motion/react';
 import { memo, useEffect, useState } from 'react';
-import { PURSE, TIER_FORMAT } from '../../data/lakes';
+import { LAKES, PURSE, TIER_FORMAT } from '../../data/lakes';
 import { TUNING } from '../../data/tuning';
 import { inputHub } from '../../game/input';
-import { healthOf, LIVEWELL_LIMIT } from '../../sim/livewell';
+import { healthOf, isCwir, LIVEWELL_LIMIT } from '../../sim/livewell';
 import { OFF_PLANE_M } from '../../sim/nav';
 import { POINT_VERDICT_TEXT } from '../../sim/advisor';
 import { formatClock } from '../../sim/conditions';
@@ -173,6 +173,8 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const unlocked = useStore((s) => s.save.unlockedLakes);
   const promo = lakeId ? promotionTarget(lakeId, unlocked) : null;
   const slots = Array.from({ length: LIVEWELL_LIMIT }, (_, i) => hud.livewell[i]);
+  // Catch-weigh-immediate-release (Lake Fork): the judge's card of your best five, not a livewell.
+  const cwir = isCwir(lakeId ? LAKES[lakeId] : undefined);
   const showRods = hud.phase === 'Navigate' || (hud.phase === 'Cast' && !hud.castFlying && !hud.castCharging);
   const trend = usePlaceTrend(hud.place);
   const left = Math.max(0, (C.dayEndMin - hud.clockMin) / (C.dayEndMin - C.dayStartMin));
@@ -205,7 +207,9 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
               <span className={`time-left ${late ? 'late' : ''}`} style={{ transform: `scaleX(${left})` }} />
             </div>
             <div className="sb-cell">
-              <span className="sb-label">Livewell</span>
+              <span className="sb-label" title={cwir ? 'Weighed by your judge and released: your best five count' : undefined}>
+                {cwir ? 'Weighed · best 5' : 'Livewell'}
+              </span>
               <div className="livewell">
                 {slots.map((f, i) => {
                   const health = f ? healthOf(f) : null;
@@ -213,8 +217,8 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
                     <div
                       key={i}
                       className={`lw-slot ${f ? 'full' : ''} ${health && health !== 'lively' ? health : ''}`}
-                      title={health ? (health === 'dead' ? `Dead: ${TUNING.livewell.deadPenaltyLb * 16} oz penalty, can't be culled` : health === 'sluggish' ? 'Sluggish: cull it or weigh in early' : 'Lively') : undefined}
-                      aria-label={f ? `${lbOz(f.weightLb)} lb, ${health}` : 'Empty'}
+                      title={f?.cwr ? 'Weighed and released' : health ? (health === 'dead' ? `Dead: ${TUNING.livewell.deadPenaltyLb * 16} oz penalty, can't be culled` : health === 'sluggish' ? 'Sluggish: cull it or weigh in early' : 'Lively') : undefined}
+                      aria-label={f ? `${lbOz(f.weightLb)} lb, ${f.cwr ? 'weighed and released' : health}` : 'Empty'}
                     >
                       {f ? lbOz(f.weightLb) : ''}
                     </div>

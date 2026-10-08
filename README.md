@@ -60,8 +60,10 @@ Tournament rules (B.A.S.S. and Texas Parks & Wildlife; see `docs/fish-model.md` 
 launch by 3:00 PM. CHECK IN (K) there ends your day early; late costs 1 lb a minute and more than 15 minutes
 late zeroes the day. "Head in" warns you in time for the run back (the chip then points home with the run
 time). Fish in the livewell go lively, sluggish, dead, faster in warm water, after long fights and for big
-fish; a dead fish can't be culled and costs 4 oz at the scales. At Lake Fork the 16-24" slot goes straight
-back (it never counts), only one 24"+ bass may be kept a day, and the minimum is 14".
+fish; a dead fish can't be culled and costs 4 oz at the scales. Lake Fork runs TPWD's catch-weigh-immediate-
+release format (since the 2007 Toyota Texas Bass Classic there): a judge in your boat weighs every bass 14"
+and longer, slot fish (16-24") included, and releases it on the spot; your best five count with no culling,
+and one 24"+ fish a day may ride in the livewell to the weigh-in stage.
 
 Advice fades as you climb (`src/sim/tierAdvice.ts`, like the NES Class A lakes that hid the hot spots):
 Co-Angler gets 6 PRO stops, the Pro rod badge, the full day plan and free point data; Semi-Pro 3 stops; Pro no
@@ -145,8 +147,8 @@ npm run simulate -- 30 lakefork SemiPro         # calibrate field.medianBagLb ag
 Then register it in `src/data/lakes/index.ts` (`LAKES` and `LAKE_LADDER`), add a plate description
 in the asset manifest (`plates.lakes`, optional `plates.lakeCovers`), and run
 `npm run assets -- --only "plate_<id>_*" --no-anchor`. Per-lake options: `regs` (minimum length, a
-protected slot released immediately, and a one-big-fish-a-day limit; `field.bigFishOdds` sets the rivals'
-kicker odds), `lanes`/`stumpZones` (boat lanes and the stump hazard), and
+protected slot, a one-big-fish-a-day limit, and `format: "cwir"` for catch-weigh-immediate-release, where
+every legal bass is weighed on the boat and counts), `lanes`/`stumpZones` (boat lanes and the stump hazard), and
 `standing` timber cover (fishable; can wrap light line in a fight).
 
 ## Architecture

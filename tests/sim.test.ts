@@ -14,7 +14,7 @@ import { tempFactor } from '../src/sim/fish/activity';
 import { coverAt, depthAt, getLakeGrid, inLane, isWater, nearCover, stumpHazardAt } from '../src/sim/lake';
 import { inputHub } from '../src/game/input';
 import { TUNING } from '../src/data/tuning';
-import { continueAfterLanded, inSlot, isKeeper, resolveCull, suggestedCull } from '../src/sim/livewell';
+import { continueAfterLanded, countsToBag, inSlot, isKeeper, resolveCull, suggestedCull } from '../src/sim/livewell';
 import { IllegalTransitionError, transition } from '../src/sim/machine';
 import { newPresentState } from '../src/sim/presentation';
 import { createTournament, drainEvents, endDay, standings, stepTournament } from '../src/sim/tournament';
@@ -278,9 +278,10 @@ describe('every lake', () => {
 describe('Lake Fork regulations', () => {
   const lake = LAKES.lakefork;
   const fish = (lengthIn: number) => ({ species: 'largemouth' as const, lengthIn });
-  it('protects 16-24" largemouth: slot fish are released, not kept', () => {
+  it('protects 16-24" largemouth: slot fish can\'t be kept, but under CWIR they are weighed and count', () => {
     expect(inSlot(fish(18), lake)).toBe(true);
     expect(isKeeper(fish(18), lake)).toBe(false);
+    expect(countsToBag(fish(18), lake)).toBe(true);
     expect(inSlot(fish(15.75), lake)).toBe(false);
     expect(inSlot(fish(24), lake)).toBe(false);
     expect(inSlot(fish(18), LAKES.champlain)).toBe(false);
@@ -346,8 +347,8 @@ describe('rival field', () => {
   it('catches individual fish of the lake species within the lake size limits', () => {
     const s = forkT(21);
     const caught = s.rivals.flatMap((r) => r.catches);
-    // Lake Fork's slot sends most fish back, so rivals keep fewer than the 5-11 they catch.
-    expect(caught.length).toBeGreaterThan(50);
+    // Catch-weigh-immediate-release: every legal fish a rival catches counts, slot fish included.
+    expect(caught.length).toBeGreaterThan(100);
     expect(caught.every((c) => c.species === 'largemouth')).toBe(true);
     expect(Math.max(...caught.map((c) => c.weightLb))).toBeLessThan(weightFromLength('largemouth', 28, 1.08 * 1.05) + 0.01);
     const champ = newT(21).rivals.flatMap((r) => r.catches);

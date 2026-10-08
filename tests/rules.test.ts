@@ -1,11 +1,13 @@
-// Tournament rules (Batch D2): Lake Fork's regulations, check-in (early, late, too late), livewell
-// survival and the B.A.S.S. dead-fish penalty, and the harness heading in on time.
+// Tournament rules (Batch D2): Lake Fork's regulations (TPWD catch-weigh-immediate-release), check-in
+// (early, late, too late), livewell survival and the B.A.S.S. dead-fish penalty, and the harness heading
+// in on time.
 import { describe, expect, it } from 'vitest';
 import { LAKES } from '../src/data/lakes';
 import { TUNING } from '../src/data/tuning';
 import { debrief, newCoach } from '../src/sim/coach';
 import { getLakeGrid } from '../src/sim/lake';
-import { catchVerdict, healthOf, heatFactor, inSlot, isBigFish, isDead, isKeeper, keeperMinIn, landFish, resolveCull, stepLivewell, suggestedCull } from '../src/sim/livewell';
+import { bagWeight, catchVerdict, countsToBag, healthOf, heatFactor, inSlot, isBigFish, isCwir, isDead, isKeeper, keeperMinIn, landFish, resolveCull, stepLivewell, suggestedCull } from '../src/sim/livewell';
+import { rivalDayWeight } from '../src/sim/field';
 import { atLaunch, etaHomeMin, headInDue, homeDistM, lateMinutes, leaveByMin } from '../src/sim/nav';
 import { Rng } from '../src/sim/rng';
 import { canCheckIn, checkInResult, createTournament, drainEvents, stepTournament } from '../src/sim/tournament';
@@ -36,9 +38,9 @@ function farPoint(lakeId: string) {
   return LAKES[lakeId].waypoints.reduce((a, b) => (homeDistM(g, b) > homeDistM(g, a) ? b : a));
 }
 
-describe('Lake Fork regulations (TPWD + tournament minimum)', () => {
+describe('Lake Fork regulations (TPWD catch-weigh-immediate-release + tournament minimum)', () => {
   const lake = LAKES.lakefork;
-  it('has a 14" tournament minimum, a 16-24" protected slot and one 24"+ a day', () => {
+  it('has a 14" tournament minimum, a 16-24" protected slot and one 24"+ stage fish a day', () => {
     expect(keeperMinIn(lake)).toBe(14);
     expect(catchVerdict(lm(13.75), lake)).toBe('short');
     expect(catchVerdict(lm(14), lake)).toBe('keeper');
@@ -56,34 +58,93 @@ describe('Lake Fork regulations (TPWD + tournament minimum)', () => {
     expect(isBigFish(lm(26), LAKES.champlain)).toBe(false);
   });
 
-  it('releases a slot fish immediately: never in the livewell, never weighed', () => {
-    const s = fork();
-    const { caught, text } = land(s, 19, 3.6);
-    expect(caught.released).toBe('slot');
-    expect(s.livewell).toHaveLength(0);
-    expect(s.pendingCull).toBeNull();
-    expect(text).toMatch(/slot/i);
-    expect(text).toMatch(/Released immediately/);
+  it('runs catch-weigh-immediate-release: every bass 14"+ counts, slot fish included', () => {
+    expect(isCwir(lake)).toBe(true);
+    expect(isCwir(LAKES.champlain)).toBe(false);
+    expect(countsToBag(lm(13.75), lake)).toBe(false);
+    expect(countsToBag(lm(14), lake)).toBe(true);
+    expect(countsToBag(lm(19), lake)).toBe(true);
+    expect(countsToBag(lm(25), lake)).toBe(true);
   });
 
-  it('keeps only one 24"+ bass a day: the heavier stays', () => {
+  it('weighs a slot fish in the boat and releases it: it counts', () => {
     const s = fork();
-    land(s, 25, 10.2);
+    const { caught, text } = land(s, 19, 3.6);
+    expect(caught.cwr).toBe(true);
+    expect(caught.released).toBeUndefined();
+    expect(caught.health).toBeUndefined(); // never in the livewell
+    expect(s.livewell).toEqual([caught]);
+    expect(s.pendingCull).toBeNull();
+    expect(bagWeight(s.livewell)).toBe(3.6);
+    expect(text).toMatch(/^Slot fish \(16-24"\): 3\.60 lb, weighed by your judge and released\./);
+  });
+
+  it('keeps the best five on the card by itself: no cull decision', () => {
+    const s = fork();
+    for (const [i, w] of [1.8, 2.2, 3.1, 1.5, 2.6].entries()) {
+      land(s, 15 + i * 0.25, w, i + 1);
+      s.phase = 'Cast';
+    }
+    const { text } = land(s, 17, 3.4, 7);
+    expect(s.pendingCull).toBeNull();
+    expect(s.phase).toBe('Landed');
+    expect(text).toMatch(/replaces your 1\.50 on the card/);
+    expect(bagWeight(s.livewell)).toBe(13.1);
     s.phase = 'Cast';
-    land(s, 24.5, 9.1);
-    expect(s.livewell.filter((f) => isBigFish(f, LAKES.lakefork))).toHaveLength(1);
-    expect(s.livewell[0].weightLb).toBe(10.2);
-    expect(s.lastLanded!.released).toBe('bigFish');
+    const small = land(s, 14.5, 1.2, 8);
+    expect(small.text).toMatch(/Your best five are heavier: it doesn't count/);
+    expect(small.caught.cwr).toBe(true);
+    expect(bagWeight(s.livewell)).toBe(13.1);
+    expect(s.livewell).toHaveLength(5);
+  });
+
+  it('lets one 24"+ bass a day ride to the stage: the heavier one, never a swap for a dead one', () => {
+    const s = fork();
+    const first = land(s, 25, 10.2);
+    expect(first.caught.stage).toBe(true);
+    expect(first.caught.health).toBeGreaterThan(0);
+    expect(first.text).toMatch(/weigh-in stage/);
     s.phase = 'Cast';
-    const { text } = land(s, 26, 12.4);
-    expect(s.livewell.map((f) => f.weightLb)).toEqual([12.4]);
-    expect(text).toMatch(/Only 1 bass 24" or longer/);
-    // A dead big fish can't be swapped out.
-    s.livewell[0].health = 0;
+    const second = land(s, 24.5, 9.1);
+    expect(second.caught.stage).toBeUndefined();
+    expect(second.caught.cwr).toBe(true); // weighed and released, and it still counts
+    expect(bagWeight(s.livewell)).toBe(19.3);
+    s.phase = 'Cast';
+    land(s, 26, 12.4);
+    expect(s.livewell.filter((f) => f.stage).map((f) => f.weightLb)).toEqual([12.4]);
+    const old = s.livewell.find((f) => f.weightLb === 10.2)!;
+    expect(old.cwr).toBe(true);
+    expect(old.health).toBeUndefined();
+    expect(bagWeight(s.livewell)).toBe(31.7);
+    // A dead stage fish stays the stage fish.
+    s.livewell.find((f) => f.stage)!.health = 0;
     s.phase = 'Cast';
     land(s, 27, 13.5);
-    expect(s.livewell.map((f) => f.weightLb)).toEqual([12.4]);
-    expect(s.lastLanded!.released).toBe('bigFish');
+    expect(s.livewell.filter((f) => f.stage).map((f) => f.weightLb)).toEqual([12.4]);
+    expect(s.lastLanded!.cwr).toBe(true);
+  });
+
+  it('released fish never die; only the stage fish can, and only it draws the dead-fish penalty', () => {
+    const s = fork();
+    s.conditions.waterTempF = 88;
+    land(s, 15, 2, 1);
+    s.phase = 'Cast';
+    land(s, 19, 3.5, 2);
+    s.phase = 'Cast';
+    land(s, 25, 9.5, 3);
+    stepLivewell(s, 600);
+    expect(s.livewell.filter((f) => f.cwr).every((f) => !isDead(f) && f.health === undefined)).toBe(true);
+    expect(isDead(s.livewell.find((f) => f.stage)!)).toBe(true);
+    expect(checkInResult(s.livewell, C.dayEndMin)).toMatchObject({ grossLb: 15, deadFish: 1, deadPenaltyLb: 0.25, netLb: 14.75 });
+  });
+
+  it('rivals weigh slot fish too: the field is calibrated for catch-weigh-release bags', () => {
+    const bags: number[] = [];
+    for (let seed = 1; seed <= 6; seed++) bags.push(...fork(seed).rivals.map((r) => rivalDayWeight(r)).filter((w) => w > 0));
+    bags.sort((a, b) => a - b);
+    const median = bags[Math.floor(bags.length / 2)];
+    expect(median).toBeGreaterThan(8);
+    expect(median).toBeLessThan(20);
   });
 });
 
@@ -207,11 +268,11 @@ describe('livewell survival and the dead-fish penalty', () => {
 
   it('is deterministic: the same seed and play give the same livewell', () => {
     const run = () => {
-      const s = fork(9);
+      const s = champ(9);
       s.conditions.waterTempF = 84;
       land(s, 15, 1.9, 4);
       s.phase = 'Cast';
-      land(s, 25, 9.5, 5);
+      land(s, 21, 5.5, 5);
       stepLivewell(s, 300);
       return s.livewell.map((f) => `${f.hardy}:${f.health!.toFixed(6)}`).join();
     };

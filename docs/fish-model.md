@@ -134,13 +134,25 @@ The advice is the strike model run forward analytically, not a separate heuristi
 
 ## 8. Tournament rules (`livewell.ts`, `tournament.ts`, `nav.ts`)
 
-- **Lake Fork regulations** (TPWD, `lakefork.json` `regs`): 16-24" largemouth are a protected slot and go
-  back immediately: never in the livewell, never weighed (the catch card says so). Only one bass 24" or
-  longer may be kept a day; a second is released, or swapped for the smaller one (not a dead one). The
-  tournament minimum is 14". (The 2024 Elite at Lake Fork ran catch-weigh-release with on-boat judges,
-  so slot fish counted there; this game's events weigh in at the ramp, which the slot rule forbids.)
-  Rivals keep only legal fish; their kicker (24"+) comes from `field.bigFishOdds` and keeps its own
-  weight, so the field swings on big fish. Champlain: 12" minimum, no slot.
+- **Lake Fork: catch-weigh-immediate-release** (`lakefork.json` `regs.format: "cwir"`). Texas grants no
+  tournament exemption from Fork's 16-24" protected slot, so events there use Texas Parks & Wildlife's
+  CWIR format, born at the 2007 Toyota Texas Bass Classic on Lake Fork: a judge in each boat weighs and
+  records every bass and it is released immediately; only one fish over the slot (24"+) may be brought to
+  the weigh-in stage (TPWD magazine, Aug 2007, https://tpwmagazine.com/archive/2007/aug/scout2/ ;
+  Bassmaster, "Get over it", https://www.bassmaster.com/news/get-over-it/ ; Anglers Channel on the
+  Toyota Bassmaster Texas Fest at Lake Fork,
+  https://anglerschannel.com/toyota-bassmaster-texas-fest-tournament-to-be-held-on-lake-fork/ ; the
+  2024 Elite there also weighed 14"+ bass on the boat). In the game every bass 14" and longer (the
+  tournament minimum) is weighed and released, slot fish included, and the day's weight is the best five
+  on the judge's card: no cull decision (`landCwir` in `livewell.ts`). The catch card says "Weighed by
+  your judge · released" ("Slot fish — weighed and released" for a 16-24" fish) and whether it made the
+  best five. The first 24"+ bass of the day (or a heavier one later, unless the kept one died) is the
+  stage fish: it rides in the livewell, so it alone can die there and draw the dead-fish penalty.
+  Released fish have no livewell health. Rivals weigh every legal bass too (no slot discard); the field
+  calibration is the pre-check-in one (Amateur 10.5 / Semi-Pro 12.5 / Pro 15 / Elite 19 lb, sigma 0.3).
+  A lake without `format: "cwir"` weighs in at the ramp: a protected slot goes straight back and doesn't
+  count, and `regs.bigFish.perDay` limits big fish kept (no lake uses that today). Champlain: 12"
+  minimum, no slot, ramp weigh-in.
 - **Check-in** (B.A.S.S. "Rules are rules: the late penalty"): be back at the launch (within 60 m) by
   3:00 PM. CHECK IN (K) there ends the day early, from an hour after blast-off. Sitting at the launch at
   check-in time checks you in. Out on the water the day runs on: 1 lb per minute late (any part of a
@@ -149,7 +161,7 @@ The advice is the strike model run forward analytically, not a separate heuristi
   from the launch on the outboard's route (lanes through stump fields, which count at just under stump
   speed), at 80% of top speed. After it, the destination chip points home with the run time. About 2.5%
   of rivals check in late (15% of those too late to count).
-- **Livewell survival:** each kept fish has health 1 (lively) to 0 (dead), "sluggish" below 0.5. It comes
+- **Livewell survival** (fish kept in the livewell; not CWIR-released ones): each kept fish has health 1 (lively) to 0 (dead), "sluggish" below 0.5. It comes
   aboard at `1 - 0.0025 x fight seconds x sqrt(heat) x size / hardiness` and loses
   `0.02/h x heat x size / hardiness` in the livewell, where `heat = 1 + ((T - 72F)/7)^2` above 72F,
   `size = (lb / 3)^0.35` and hardiness ~ lognormal(1, 0.35) from the sim rng when it's landed

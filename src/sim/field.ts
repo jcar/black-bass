@@ -3,7 +3,7 @@ import { SPECIES, weightFromLength } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { activityFor } from './fish/activity';
 import { sampleLength } from './fish/population';
-import { inSlot, isBigFish, keeperMinIn } from './livewell';
+import { inSlot, isBigFish, isCwir, keeperMinIn } from './livewell';
 import type { Rng } from './rng';
 import type { Conditions, Rival, SpeciesId, Tier } from './types';
 
@@ -43,7 +43,8 @@ export function biteFactor(c: Conditions, lake?: LakeDef): number {
  * from the lake's own population model (so trophy lakes produce real kickers), then the weights are
  * scaled so the best five equal a bag drawn from the lognormal calibrated per lake and tier
  * (e.g. Champlain Elite days: ~18-22 lb winners). Calibration is unchanged; the shape is the lake's.
- * Rivals keep only legal fish (minimum, protected slot, one big fish a day) and can be late to check-in.
+ * Rivals weigh only legal fish (the minimum; at a ramp weigh-in also the slot and big-fish limits) and
+ * can be late to check-in.
  */
 export function rollRivalDay(r: Rival, lake: LakeDef, tier: Tier, c: Conditions, rng: Rng): void {
   const T = TUNING.clock;
@@ -57,52 +58,43 @@ export function rollRivalDay(r: Rival, lake: LakeDef, tier: Tier, c: Conditions,
   const keepers = rng.int(5, 11);
   const mix = bassMix(lake);
   const minIn = keeperMinIn(lake);
-  // Rivals play by the lake's rules: shorts go back (and are re-rolled, as before) and protected-slot
-  // fish are released. On a lake with a one-big-fish rule, a rival's kicker comes from its own odds
-  // (field.bigFishOdds, scaled by skill), so the field swings on big fish as a slot lake's does.
-  const big = lake.regs?.bigFish;
+  // Rivals play by the lake's rules: shorts go back (and are re-rolled). Under catch-weigh-immediate-
+  // release (Lake Fork) every legal bass is weighed on the boat and counts, slot fish included. At a
+  // ramp weigh-in, protected-slot fish go back and only `regs.bigFish.perDay` fish over its length stay.
+  const ramp = !isCwir(lake);
+  const big = ramp ? lake.regs?.bigFish : undefined;
+  let bigKept = 0;
   const fish: { species: SpeciesId; len: number; w: number }[] = [];
-  const pickSpecies = () =>
-    rng.weighted(
+  for (let i = 0; i < keepers; i++) {
+    const species = rng.weighted(
       mix.map(([sp]) => sp),
       (sp) => mix.find(([x]) => x === sp)![1],
     );
-  for (let i = 0; i < keepers; i++) {
-    const species = pickSpecies();
     let len = 0;
-    for (let k = 0; k < 6 && (len < minIn || (big && isBigFish({ species, lengthIn: len }, lake))); k++) len = sampleLength(rng, lake, species, rng.chance(0.7));
+    for (let k = 0; k < 6 && len < minIn; k++) len = sampleLength(rng, lake, species, rng.chance(0.7));
     len = Math.max(len, minIn);
-    if (big && isBigFish({ species, lengthIn: len }, lake)) continue;
     const w = weightFromLength(species, len, lake.species.condition * rng.normal(1, 0.05));
-    if (inSlot({ species, lengthIn: len }, lake)) continue;
+    if (ramp && inSlot({ species, lengthIn: len }, lake)) continue;
+    if (big && isBigFish({ species, lengthIn: len }, lake) && ++bigKept > big.perDay) continue;
     fish.push({ species, len, w });
   }
-  if (big && rng.chance(Math.min(1, (lake.field.bigFishOdds ?? 0) * r.skill))) {
-    const species: SpeciesId = 'largemouth';
-    let len = 0;
-    for (let k = 0; k < 60 && len < big.minIn; k++) len = sampleLength(rng, lake, species, true);
-    len = Math.max(len, big.minIn);
-    fish.push({ species, len, w: weightFromLength(species, len, lake.species.condition * rng.normal(1, 0.05)) });
-  }
   if (!fish.length) return;
-  // The best five are scaled so they equal the drawn bag. On a lake with a one-big-fish rule the bag
-  // is the rest of the limit: the kicker keeps its own weight, so the field's bags swing on it as a
-  // slot lake's do.
-  const best = [...fish].sort((a, b) => b.w - a.w).slice(0, 5);
-  const fixed = (f: (typeof fish)[number]) => isBigFish({ species: f.species, lengthIn: f.len }, lake);
-  const scaled = best.filter((f) => !fixed(f)).reduce((a, f) => a + f.w, 0);
-  const k = scaled > 0 ? bag / scaled : 1;
+  const best5 = [...fish]
+    .sort((a, b) => b.w - a.w)
+    .slice(0, 5)
+    .reduce((a, f) => a + f.w, 0);
+  const k = bag / best5;
   // A weak day sometimes means fewer than 5 keepers.
   const kept = rng.chance(0.08) ? fish.slice(0, rng.int(2, 4)) : fish;
-  // Never scale a fish past the biggest the lake can grow (keeps Champlain kickers plausible), nor a
-  // fish under a protected slot past the slot's bottom length (it would have to be a slot fish).
-  const slot = lake.regs?.slot;
+  // Never scale a fish past the biggest the lake can grow (keeps Champlain kickers plausible), nor, at a
+  // ramp weigh-in, a fish under a protected slot past the slot's bottom length (it would be a slot fish).
+  const slot = ramp ? lake.regs?.slot : undefined;
   const cap = (f: (typeof fish)[number]) =>
     slot && f.species === 'largemouth' && f.len < slot.minIn
       ? weightFromLength(f.species, slot.minIn, lake.species.condition)
       : weightFromLength(f.species, lake.species.sizes[f.species]?.maxIn ?? 22, lake.species.condition * 1.05);
   for (const f of kept)
-    r.catches.push({ atMin: rng.range(T.dayStartMin + 10, T.dayEndMin - 15), weightLb: Math.max(0.9, Math.round(Math.min(cap(f), f.w * (fixed(f) ? 1 : k)) * 100) / 100), species: f.species });
+    r.catches.push({ atMin: rng.range(T.dayStartMin + 10, T.dayEndMin - 15), weightLb: Math.max(0.9, Math.round(Math.min(cap(f), f.w * k) * 100) / 100), species: f.species });
   r.catches.sort((a, b) => a.atMin - b.atMin);
 }
 

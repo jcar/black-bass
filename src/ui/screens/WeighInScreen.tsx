@@ -33,7 +33,7 @@ const sortRows = (rows: Standing[]) => rows.sort((a, b) => Number(a.cut) - Numbe
 function FishThumb({ f, small }: { f: CaughtFish; small?: boolean }) {
   const url = assetUrl(portraitId(f.species, f.weightLb));
   return (
-    <div className={`fish-thumb ${isDead(f) ? 'dead' : ''}`} style={small ? { width: 70, height: 50 } : undefined} title={isDead(f) ? `${SPECIES[f.species].name} (dead: 4 oz penalty)` : SPECIES[f.species].name}>
+    <div className={`fish-thumb ${isDead(f) ? 'dead' : ''}`} style={small ? { width: 70, height: 50 } : undefined} title={isDead(f) ? `${SPECIES[f.species].name} (dead: 4 oz penalty)` : f.cwr ? `${SPECIES[f.species].name} (weighed in the boat by your judge and released)` : SPECIES[f.species].name}>
       {url && <img src={url} alt="" />}
       <span className="fw">{lbOz(f.weightLb)}</span>
     </div>
@@ -274,7 +274,7 @@ export function WeighInScreen() {
                     )}
                   </>
                 )}
-                <span className="small muted">{lbOz(data.checkIn.grossLb)} in the livewell</span>
+                <span className="small muted">{lbOz(data.checkIn.grossLb)} {data.bag.some((f) => f.cwr) ? 'on your card' : 'in the livewell'}</span>
               </m.div>
             )}
 

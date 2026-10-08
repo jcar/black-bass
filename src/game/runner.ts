@@ -5,7 +5,7 @@ import { getLakeGrid } from '../sim/lake';
 import { advisorRoute } from '../sim/advisor';
 import { coachStep, debrief, newCoach } from '../sim/coach';
 import { bearingTo, castRangeM, compassPoint, distanceM, markVisited, navCue, nearestInRange, nextStop, relativeBearing, steerPoint, stumpsOnRoute, waterPath, type NavStop } from '../sim/nav';
-import { isKeeper } from '../sim/livewell';
+import { countsToBag } from '../sim/livewell';
 import { TUNING } from '../data/tuning';
 import { adviceFor } from '../sim/tierAdvice';
 import { appendLog, logEntry } from '../state/logbook';
@@ -267,7 +267,7 @@ export class GameRunner {
   /** Every bass landed goes in the logbook (with the lure, line, conditions and where it bit). */
   private logCatch(t: TournamentState) {
     const c = t.lastLanded!;
-    const e = logEntry(t, c, isKeeper(c, LAKES[t.lakeId]) && !c.released);
+    const e = logEntry(t, c, countsToBag(c, LAKES[t.lakeId]) && !c.released);
     if (e) useStore.getState().mutateSave((s) => void (s.logbook = appendLog(s.logbook, e)));
   }
 

@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react';
 import { LAKES } from '../data/lakes';
 import { KEY_HINTS } from '../game/input';
-import { keeperMinIn } from '../sim/livewell';
+import { isCwir, keeperMinIn } from '../sim/livewell';
 import { formatClock } from '../sim/conditions';
 import { TUNING } from '../data/tuning';
 import type { TournamentState } from '../sim/types';
@@ -42,6 +42,7 @@ export function HowToFishSheet({ lakeId, open, onClose }: { lakeId: string; open
   const autoHookset = useStore((s) => s.save.settings.autoHookset);
   const minIn = keeperMinIn(lake);
   const slot = lake?.regs?.slot;
+  const cwir = isCwir(lake);
   return (
     <Sheet open={open} onClose={onClose} title="How to fish">
       <div className="col small" style={{ gap: 10, fontSize: 15 }}>
@@ -76,14 +77,15 @@ export function HowToFishSheet({ lakeId, open, onClose }: { lakeId: string; open
           <strong>Keyboard:</strong> {KEY_HINTS}.
         </p>
         <p>
-          Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under {minIn}" and other species don't count.
-          {slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") are protected: they go straight back and don't count.` : ''}
-          {lake?.regs?.bigFish ? ` Only ${lake.regs.bigFish.perDay} bass ${lake.regs.bigFish.minIn}" or longer may be kept a day.` : ''}
+          Your <strong>five heaviest bass</strong> count. Shorts under {minIn}" and other species don't count.
+          {cwir
+            ? ` ${lake.name} runs catch-weigh-immediate-release (Texas Parks & Wildlife): a judge in your boat weighs and records every legal bass and it goes straight back, so there's no culling: your best five are kept on the card for you.${slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") can't be kept, but they're weighed and count.` : ''}${lake.regs?.bigFish ? ` One ${lake.regs.bigFish.minIn}"+ bass a day rides in the livewell to the weigh-in stage.` : ''}`
+            : ` A sixth keeper means culling your smallest.${slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") are protected: they go straight back and don't count.` : ''}${lake?.regs?.bigFish ? ` Only ${lake.regs.bigFish.perDay} bass ${lake.regs.bigFish.minIn}" or longer may be kept a day.` : ''}`}
         </p>
         <p>
           <strong>Keep them alive:</strong> fish in the livewell go from lively to sluggish to dead, faster in warm water (80°F and up), after a long
           fight, and the bigger they are. Cull a sluggish fish first. A dead fish can't be culled and costs {TUNING.livewell.deadPenaltyLb * 16} oz at
-          the scales.
+          the scales.{cwir ? ' Under catch-weigh-release only your stage fish is in the livewell; the rest are already swimming.' : ''}
         </p>
         <p>
           <strong>Check in</strong> at the launch by {formatClock(TUNING.clock.dayEndMin)}: CHECK IN (K) there ends your day early. Late costs{' '}

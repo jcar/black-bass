@@ -857,20 +857,19 @@
  },
  "field": {
   "medianBagLb": {
-   "Amateur": 1.9,
-   "SemiPro": 2.2,
-   "Pro": 2.6,
-   "Elite": 3.3
+   "Amateur": 10.5,
+   "SemiPro": 12.5,
+   "Pro": 15,
+   "Elite": 19
   },
-  "sigma": 0.35,
-  "bigFishOdds": 0.1
+  "sigma": 0.3
  },
  "regs": {
   "minIn": 14,
+  "format": "cwir",
   "slot": {
    "minIn": 16,
-   "maxIn": 24,
-   "mode": "release"
+   "maxIn": 24
   },
   "bigFish": {
    "minIn": 24,
