@@ -102,6 +102,8 @@ export interface Rival {
 }
 
 export type LureState = 'air' | 'water';
+/** Why a strike didn't become a hooked fish. */
+export type HookMiss = 'early' | 'late' | 'noHook';
 
 export interface CastState {
   aimAngle: number; // radians relative to boat heading
@@ -146,10 +148,20 @@ export interface PresentState {
   edgeCast: boolean;
   lastDeflectT: number;
   stillFor: number;
-  /** Fish currently charging the lure (strike animation). */
+  /** Fish currently charging the lure (strike animation), then holding it until the hook is set or it spits. */
   strikingFishId: number | null;
   strikeT: number;
   lastCover: CoverType;
+  /** Drop shot held mid-water (spool thumbed on the fall) instead of resting on the bottom. */
+  held?: boolean;
+  /** BRAKE level last step (the hold latches on a press). */
+  brakeDown?: boolean;
+  /** Fish seconds each fish (by id) has watched a bait shaken in place this cast. */
+  dwell?: Record<number, number>;
+  /** A treble bait carrying grass: runs wrong until ripped free. */
+  fouled?: boolean;
+  /** When it was last ripped free (it clears the grass for a moment). */
+  ripT?: number;
 }
 
 export interface FightState {
@@ -176,6 +188,8 @@ export interface FightState {
   rodSide: number; // -1..1 from stick
   /** Where the fish took the lure (position and depth), for the logbook. */
   hook?: Vec2 & { depthFt: number };
+  /** Trebles on braid: the hooks tear out more on a jump. */
+  tearOut?: boolean;
 }
 
 export interface TournamentEvent {
@@ -185,6 +199,9 @@ export interface TournamentEvent {
     | 'shore'
     | 'edge'
     | 'strike'
+    | 'bite'
+    | 'missed'
+    | 'fouled'
     | 'hooked'
     | 'snap'
     | 'thrown'
@@ -206,7 +223,7 @@ export interface TournamentEvent {
   text?: string;
   at?: Vec2;
   /** Structured payload for the broadcast feed (rival name, weight, place...). */
-  data?: { name?: string; weightLb?: number; species?: SpeciesId; place?: number; big?: boolean };
+  data?: { name?: string; weightLb?: number; species?: SpeciesId; place?: number; big?: boolean; miss?: HookMiss; topwater?: boolean };
 }
 
 /** Running state of the live broadcast feed (leader, player place, rate limiting). */
@@ -257,7 +274,10 @@ export interface TournamentState {
   present: PresentState | null;
   fight: FightState | null;
   events: TournamentEvent[];
-  stats: { casts: number; bites: number; lost: number; bycatch: number; bigFishLb: number };
+  /** bites = hooked fish; missed = strikes where the hook wasn't set in time or didn't stick. */
+  stats: { casts: number; bites: number; lost: number; bycatch: number; bigFishLb: number; missed?: number };
+  /** Settings: the sim sets the hook for you (otherwise the player must, input.hookSet). */
+  autoHookset?: boolean;
   timeWarned: boolean;
   lastAimAngle: number;
   /** Round-robin cursor for population updates. */
@@ -283,6 +303,8 @@ export interface InputFrame {
   twitch: boolean;
   fishHere: boolean;
   moveOn: boolean;
+  /** Set the hook (keyboard H, touch HOOK). */
+  hookSet: boolean;
 }
 
 export const emptyInput = (): InputFrame => ({
@@ -295,4 +317,5 @@ export const emptyInput = (): InputFrame => ({
   twitch: false,
   fishHere: false,
   moveOn: false,
+  hookSet: false,
 });

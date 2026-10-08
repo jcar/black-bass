@@ -21,9 +21,19 @@ full-screen landscape play that works offline.
 
 Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), M = lake
 map while driving (1-9 picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
-T = twitch/hop/shake, B = thumb brake, V = bow on a jump, M = move/burn in once fishing, I = data for this point
-(between casts), P = pop hook, Esc = pause (or close the open panel). Steering keys never twitch the lure; the
-on-screen hint follows the lure.
+T = twitch/hop/shake, H = set the hook, B = thumb brake (also stops a drop shot on the fall), V = bow on a jump,
+M = move/burn in once fishing, I = data for this point (between casts), P = pop hook, Esc = pause (or close the
+open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
+
+Setting the hook: a strike is a fish charging the lure; once it has the bait (a thump and a buzz, "HOOK HIM!", and
+on touch the HOOK button that replaces REEL glows) you have about a second to set (H or HOOK) before it spits a hard
+bait, a little longer with soft plastics. Set while it's still coming and you pull the bait away; on topwater the
+blow-up comes first, so wait to feel the weight. Hook-ups also depend on the tackle: a single hook on a long cast
+with stretchy mono or fluoro, trebles on braid, a rod too light for a heavy weedless bait and hollow frogs all miss a
+few more. Settings has **Auto hookset** (off by default) to set it for you. Space isn't the hookset key because it's
+held to reel. Weedless baits (Texas rig, flipping jig, frog; a spinnerbait mostly) can be pitched into docks and
+wood without crashing; treble baits ticking into grass foul until you rip them free (T), which is also a strike
+trigger for a lipless crank.
 
 Getting around: the chip beside the minimap points at the next PRO stop you haven't fished (name, metres,
 an arrow relative to the bow; a stop counts once you cast within casting range of it). Around it the chart
@@ -63,7 +73,7 @@ Generated assets are committed, so CI never needs the Gemini key.
 
 ```bash
 cp .env.example .env.local      # then insert your own GEMINI_API_KEY
-npm run assets -- --dry-run     # list all 94 jobs and their prompts; no API calls
+npm run assets -- --dry-run     # list every job and its prompt; no API calls
 npm run assets -- --only "plate_champlain_bluebird_*"
 npm run assets                  # everything that's missing or whose prompt changed
 ```
@@ -104,7 +114,10 @@ node --import tsx tools/advisor-check.ts champlain
 ```
 
 The harness (`tools/harness/`) plays through the real inputs (keyboard or stick) with expert, average
-and naive-keyboard profiles; see `docs/model-reports/` for its reports. It caps itself at 8 worker
+and naive-keyboard profiles, each setting the hook with its own timing (the expert on the thump, the
+average player sometimes late, the naive one often early or late) and drop-shotting the marks it saw
+on the sonar as it stopped; see `docs/model-reports/` for its reports. Bass/day counts strikes, as the
+advisor predicts; hooked and missed show the hookset. It caps itself at 8 worker
 processes and its workers refuse to spawn more.
 
 ## Adding a lake

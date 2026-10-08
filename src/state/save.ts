@@ -37,6 +37,8 @@ export interface SaveData {
     coach: boolean;
     /** Angler's Eye: show the lure-action number (the top fish's interest) while working a lure. */
     anglersEye: boolean;
+    /** Set the hook automatically when a fish has the bait (off: you set it, H / HOOK). */
+    autoHookset: boolean;
   };
   /** Every bass landed, newest last (capped at LOG_CAP). */
   logbook: LogEntry[];
@@ -61,7 +63,7 @@ export function newSave(): SaveData {
     deck: defaultDeck(),
     personalBests: { bigFishLb: 0, bestBagLb: 0 },
     history: [],
-    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false, coach: true, anglersEye: false },
+    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false, coach: true, anglersEye: false, autoHookset: false },
     logbook: [],
   };
 }

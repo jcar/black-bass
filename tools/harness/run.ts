@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { LAKES } from '../../src/data/lakes';
 import { COLORS, LURES } from '../../src/data/lures';
-import { RODS } from '../../src/data/rods';
+import { RODS, rodCasts, rodPowerOk } from '../../src/data/rods';
 import { TUNING } from '../../src/data/tuning';
 import { advisorRoute } from '../../src/sim/advisor';
 import { coverAt, getLakeGrid, HARD_COVER } from '../../src/sim/lake';
@@ -42,9 +42,18 @@ export function plainRig(lakeId: string, lureId: string): RodSetup {
   const clear = lake.clarity.defaultSecchiFt >= TUNING.attraction.clearSecchiFt;
   const family = clear ? 'natural' : 'bright';
   const colorId = lure.colors.find((c) => COLORS[c].family === family) ?? lure.colors[0];
-  const rodId = Object.values(RODS).find((r) => lure.weightOz >= r.lureOz[0] && lure.weightOz <= r.lureOz[1])?.id ?? 'rod-m';
+  // The lightest rod that casts it and has the power its description asks for.
+  const rodId = Object.values(RODS).find((r) => rodCasts(r, lure) && rodPowerOk(r, lure))?.id ?? 'rod-m';
   const heavy = lake.cover.some((c) => c.type === 'standing');
-  const line = lure.motion === 'surface' ? { type: 'mono' as const, testLb: 14 } : { type: 'fluoro' as const, testLb: heavy ? 15 : lure.weightOz <= 0.25 ? 8 : 12 };
+  // Weedless cover baits go on heavy line (a frog on braid, as its description says).
+  const line =
+    lure.motion === 'surface'
+      ? lure.weedless
+        ? { type: 'braid' as const, testLb: 50 }
+        : { type: 'mono' as const, testLb: 14 }
+      : lure.weedless === 'full'
+        ? { type: 'fluoro' as const, testLb: lure.weightOz >= 0.5 ? 20 : heavy ? 17 : 15 }
+        : { type: 'fluoro' as const, testLb: heavy ? 15 : lure.weightOz <= 0.25 ? 8 : 12 };
   return { id: `rig-${lureId}`, rodId, line, lureId, colorId };
 }
 
@@ -136,13 +145,13 @@ async function main() {
   console.log(`${lakeId} (${tier}) · plan ${plan} · ${days} paired days · ${rigs.length} rigs · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
   for (const profile of profiles) {
     console.log(`\n${profile}`);
-    console.log('rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag');
+    console.log('rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag   hooked  missed  s/cast');
     const sorted = [...rigs].sort((a, b) => report[profile][b.lureId].bass.mean - report[profile][a.lureId].bass.mean);
     for (const rig of sorted) {
       const r = report[profile][rig.lureId];
       console.log(
         `${rig.lureId.padEnd(13)} ${r.bass.mean.toFixed(2).padStart(6)}  [${r.bass.lo.toFixed(2)}, ${r.bass.hi.toFixed(2)}]`.padEnd(40) +
-          `${r.other.toFixed(1).padStart(5)}  ${r.casts.toFixed(0).padStart(5)}  ${(r.followRate * 100).toFixed(0).padStart(6)}%  ${r.match.toFixed(2)}  ${(r.spooked * 100).toFixed(0).padStart(6)}%  ${r.crashes.toFixed(1).padStart(8)}  ${r.bag.toFixed(1).padStart(5)}`,
+          `${r.other.toFixed(1).padStart(5)}  ${r.casts.toFixed(0).padStart(5)}  ${(r.followRate * 100).toFixed(0).padStart(6)}%  ${r.match.toFixed(2)}  ${(r.spooked * 100).toFixed(0).padStart(6)}%  ${r.crashes.toFixed(1).padStart(8)}  ${r.bag.toFixed(1).padStart(5)}  ${r.hooked.toFixed(1).padStart(6)}  ${r.missed.toFixed(1).padStart(6)}  ${r.secPerCast.toFixed(1).padStart(6)}`,
       );
     }
   }
@@ -165,6 +174,10 @@ function summarise(ms: DayMetrics[]) {
     crashes: mean(ms.map((m) => m.crashes)),
     bag: mean(ms.map((m) => m.bag)),
     landed: mean(ms.map((m) => m.bassLanded)),
+    hooked: mean(ms.map((m) => m.bassHooked ?? 0)),
+    missed: mean(ms.map((m) => m.missedSets ?? 0)),
+    /** Real seconds the lure is in the water per cast (the advisor's retrieve time per cast). */
+    secPerCast: mean(ms.map((m) => (m.casts ? m.presentSec / m.casts : 0))),
   };
 }
 

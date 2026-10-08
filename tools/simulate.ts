@@ -52,7 +52,8 @@ interface BotStats {
 }
 
 export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amateur', skill = 1, deck?: RodSetup[]): BotStats {
-  const s: TournamentState = createTournament({ lakeId, tier, seed, deck: deck ?? botDeck(lakeId) });
+  // The balance bot sets the hook automatically (the human-proxy harness sets its own).
+  const s: TournamentState = createTournament({ lakeId, tier, seed, deck: deck ?? botDeck(lakeId), autoHookset: true });
   const feedCount = { rivalCatch: 0, leaderChange: 0, playerPlace: 0, wraps: 0 };
   const rng = new Rng(seed ^ 0x9e3779b9);
   const lake = LAKES[lakeId];

@@ -87,6 +87,10 @@ const SYNTH: Partial<Record<TournamentEvent['type'], () => void>> = {
     tone(90, 0.3, 0.35, 'sine', 50);
   },
   hooked: () => tone(520, 0.12, 0.1, 'triangle', 780),
+  // The thump of a fish taking the bait: the cue to set the hook.
+  bite: () => tone(70, 0.12, 0.4, 'sine', 45),
+  missed: () => tone(330, 0.25, 0.1, 'triangle', 160),
+  fouled: () => noiseBurst(0.25, 500, 1.2, 0.3, 200),
   jump: () => noiseBurst(0.7, 1200, 0.5, 0.7, 250),
   snap: () => {
     tone(1800, 0.08, 0.2, 'square', 400);

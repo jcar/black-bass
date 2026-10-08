@@ -20,6 +20,8 @@ export interface NewTournamentOptions {
   seed: number;
   deck: RodSetup[];
   conditions?: Partial<Pick<Conditions, 'month' | 'weather'>>;
+  /** Set the hook automatically when a fish has the bait (the game runner keeps this in step with Settings). */
+  autoHookset?: boolean;
 }
 
 export function createTournament(o: NewTournamentOptions): TournamentState {
@@ -58,7 +60,8 @@ export function createTournament(o: NewTournamentOptions): TournamentState {
     present: null,
     fight: null,
     events: [],
-    stats: { casts: 0, bites: 0, lost: 0, bycatch: 0, bigFishLb: 0 },
+    stats: { casts: 0, bites: 0, lost: 0, bycatch: 0, bigFishLb: 0, missed: 0 },
+    autoHookset: !!o.autoHookset,
     timeWarned: false,
     lastAimAngle: 0,
     popCursor: 0,

@@ -27,4 +27,12 @@ export const LINE_OPTIONS: Record<LineType, number[]> = {
 
 export const STARTER_RODS = ['rod-ml', 'rod-m', 'rod-mh'];
 
+export const POWER_RANK: Record<RodPower, number> = { ML: 0, M: 1, MH: 2, H: 3, XH: 4 };
+
+/** The lure's weight is inside the rod's casting range (else casts lose distance). */
+export const rodCasts = (rod: RodDef, lure: { weightOz: number }) => lure.weightOz >= rod.lureOz[0] && lure.weightOz <= rod.lureOz[1];
+
+/** The rod has the backbone the lure asks for (heavy weedless baits); lighter rods hook fewer fish. */
+export const rodPowerOk = (rod: RodDef, lure: { rodPower?: RodPower }) => !lure.rodPower || POWER_RANK[rod.power] >= POWER_RANK[lure.rodPower];
+
 export const lineLabel = (l: Line) => `${l.testLb} lb ${l.type === 'fluoro' ? 'Fluoro' : l.type === 'mono' ? 'Mono' : 'Braid'}`;

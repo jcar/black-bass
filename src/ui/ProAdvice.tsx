@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { LAKES } from '../data/lakes';
 import { COLORS, LURES, lureKey } from '../data/lures';
 import { lineLabel, RODS } from '../data/rods';
-import { APPROACH_TIP, dayOutlook, dayPlan, rigIssues, scoutLake, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
+import { APPROACH_TIP, dayOutlook, dayPlan, rigIssues, rodNeed, scoutLake, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
 import { adviceFor } from '../sim/tierAdvice';
 import type { Conditions, RodSetup, Tier } from '../sim/types';
 import { tierOfLake } from '../state/career';
@@ -61,7 +61,7 @@ export function ScoutingReport({ lakeId, spots }: { lakeId: string; spots: boole
                 </span>
               </div>
               <span className="small">
-                {COLORS[p.colorId].name} · {lineLabel(p.line)} · {rod ? RODS[rod].name : `needs a ${LURES[p.lureId].weightOz} oz rod`}
+                {COLORS[p.colorId].name} · {lineLabel(p.line)} · {rod ? RODS[rod].name : `needs ${rodNeed(p.lureId)}`}
                 {!owned && <span className="muted"> · shop {money(LURES[p.lureId].price)}</span>}
               </span>
               <span className="small muted">{p.reasons.join(' · ')}</span>

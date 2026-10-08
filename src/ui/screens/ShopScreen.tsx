@@ -18,7 +18,13 @@ interface Flight {
 
 const lureSpec = (id: string) => {
   const l = LURES[id];
-  return [`${l.weightOz} oz`, l.motion === 'surface' ? 'Topwater' : l.motion === 'sinking' ? 'Bottom' : `Runs ${l.runDepthFt} ft`, l.treble ? 'Trebles' : 'Single hook'];
+  return [
+    `${l.weightOz} oz`,
+    l.motion === 'surface' ? 'Topwater' : l.motion === 'sinking' ? 'Bottom' : `Runs ${l.runDepthFt} ft`,
+    l.weedless === 'full' ? 'Weedless' : l.weedless === 'partial' ? 'Snag-resistant' : l.treble ? 'Trebles' : 'Single hook',
+    ...(l.rodPower ? [`${l.rodPower}+ rod`] : []),
+    ...(l.bigFishLean ? ['Big fish'] : []),
+  ];
 };
 
 /** Rocket League-style shop: one featured product large, the shelf as a rail below. */

@@ -7,7 +7,7 @@ const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
 
 /** Desktop key map, shown in the HUD and README. */
 export const KEY_HINTS =
-  'WASD/arrows steer (trolling) · Shift+steer run · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · Esc pause';
+  'WASD/arrows steer (trolling) · Shift+steer run · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · Esc pause';
 
 /**
  * How to work the lure on the line, by the cadence the attraction model rewards (presentationMatch).
@@ -24,7 +24,7 @@ export function retrieveHint(lure: Pick<LureDef, 'motion' | 'style'>, keyboard: 
     case 'bottom':
       return `Let it sink to the bottom · short ${reel} pulses to drag · ${k ? 'T' : 'tap to'} hop${burn}`;
     case 'shake':
-      return `Let it sink to the bottom · ${k ? 'T' : 'tap to'} shake it in place, barely moving${burn}`;
+      return `Drop it on a fish · ${k ? 'B' : 'THUMB'} on the fall stops it at a suspended fish · ${k ? 'T' : 'tap to'} shake it in place${burn}`;
     case 'twitchPause':
       return `${k ? 'T' : 'Tap to'} twitch 1-3 times, then pause: strikes come on the pause${burn}`;
     case 'walk':
@@ -42,7 +42,7 @@ class InputHub {
   reel = false;
   brake = false;
   private keysDown = new Set<string>();
-  private pending = { castTap: 0, popTap: 0, bowFlick: 0, twitch: 0, fishHere: 0, moveOn: 0 };
+  private pending = { castTap: 0, popTap: 0, bowFlick: 0, twitch: 0, fishHere: 0, moveOn: 0, hookSet: 0 };
 
   tap(kind: keyof InputHub['pending']) {
     this.pending[kind]++;
@@ -113,6 +113,10 @@ class InputHub {
           break;
         case 'p':
           this.tap('popTap');
+          break;
+        // A dedicated hookset key: Space is held to reel, so a press on it can't tell a set from a retrieve.
+        case 'h':
+          this.tap('hookSet');
           break;
       }
       this.updateKeyStick();

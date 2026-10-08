@@ -8,7 +8,10 @@ import { LURES } from '../../src/data/lures';
 import { SPECIES } from '../../src/data/species';
 import { TUNING } from '../../src/data/tuning';
 import { inputHub } from '../../src/game/input';
+import { RODS } from '../../src/data/rods';
+import { maxCastDistance } from '../../src/sim/cast';
 import { jerkPauseWindow } from '../../src/sim/fish/attraction';
+import { biteAtSec } from '../../src/sim/presentation';
 import { getLakeGrid, HARD_COVER, isWater, coverAt, depthAt } from '../../src/sim/lake';
 import { bagWeight, continueAfterLanded } from '../../src/sim/livewell';
 import { Rng } from '../../src/sim/rng';
@@ -40,6 +43,20 @@ export interface Profile {
   arrowFidgetPerSec: number;
   bowSkill: number;
   fightSkill: 'good' | 'ok' | 'poor';
+  /**
+   * Hookset timing: reaction to the bite cue (the thump, or the weight after a topwater blow-up),
+   * normal(mean, sd) seconds; and the chance of setting on the strike itself (the fish's charge, or
+   * the blow-up on topwater) before the fish has the bait.
+   */
+  hookReactSec: [number, number];
+  hookEarly: number;
+  hookEarlyTopwater: number;
+  /** Drop shot: casts at fish seen on the forward sonar and stops the bait at a suspended fish's depth. */
+  sonarTargets: boolean;
+  /** Drop shot: seconds of shaking before reeling up for another cast (longer while a fish is looking). */
+  dropShotWorkSec: number;
+  /** Seconds before ripping a treble bait free of grass (null: never notices). */
+  ripDelaySec: number | null;
 }
 
 export const PROFILES: Record<string, Profile> = {
@@ -60,6 +77,12 @@ export const PROFILES: Record<string, Profile> = {
     arrowFidgetPerSec: 0,
     bowSkill: 0.85,
     fightSkill: 'good',
+    hookReactSec: [0.28, 0.08],
+    hookEarly: 0.01,
+    hookEarlyTopwater: 0.05,
+    sonarTargets: true,
+    dropShotWorkSec: 18,
+    ripDelaySec: 0.3,
   },
   average: {
     name: 'average',
@@ -78,6 +101,12 @@ export const PROFILES: Record<string, Profile> = {
     arrowFidgetPerSec: 0,
     bowSkill: 0.5,
     fightSkill: 'ok',
+    hookReactSec: [0.5, 0.22],
+    hookEarly: 0.05,
+    hookEarlyTopwater: 0.25,
+    sonarTargets: true,
+    dropShotWorkSec: 25,
+    ripDelaySec: 1,
   },
   naiveKeyboard: {
     name: 'naiveKeyboard',
@@ -96,14 +125,24 @@ export const PROFILES: Record<string, Profile> = {
     arrowFidgetPerSec: 0.4,
     bowSkill: 0.25,
     fightSkill: 'poor',
+    hookReactSec: [0.7, 0.35],
+    hookEarly: 0.25,
+    hookEarlyTopwater: 0.5,
+    sonarTargets: false,
+    dropShotWorkSec: 40,
+    ripDelaySec: null,
   },
 };
 
 export interface DayMetrics {
   seed: number;
   casts: number;
+  /** Strikes (a fish charges the lure), whether or not the hook is then set. */
   bassStrikes: number;
   otherStrikes: number;
+  /** Bass hooked (fights started) and strikes missed at the hookset (early, late or the hook didn't stick). */
+  bassHooked: number;
+  missedSets: number;
   followCasts: number;
   crashes: number;
   snags: number;
@@ -225,6 +264,29 @@ function planRoute(lakeId: string, from: Vec2, to: Vec2): Vec2[] {
   return out;
 }
 
+/**
+ * Fish returns on the forward-facing sonar (MapScene: trolling motor, 45 m, +/-0.5 rad cone; spooked
+ * fish show grey) near the spot and within a cast, nearest the spot first. The chart (and its sonar)
+ * is only on screen while driving, so a player remembers these marks when they press FISH and casts to
+ * where the fish were, not where they've wandered since.
+ */
+function sonarMarks(s: TournamentState, spot: Spot, maxD: (aim: number) => number): Vec2[] {
+  if (s.boat.motor !== 'trolling') return [];
+  const out: { at: Vec2; toSpot: number }[] = [];
+  for (const f of s.fish) {
+    if (f.caught || f.spookUntil > s.clockMin) continue;
+    const dx = f.pos.x - s.boat.pos.x;
+    const dy = f.pos.y - s.boat.pos.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 6 || d > 45) continue;
+    const da = Math.atan2(Math.sin(Math.atan2(dy, dx) - s.boat.heading), Math.cos(Math.atan2(dy, dx) - s.boat.heading));
+    if (Math.abs(da) > 0.5 || d > maxD(da) * 0.95) continue;
+    const toSpot = Math.hypot(f.pos.x - spot.x, f.pos.y - spot.y);
+    if (toSpot < 25) out.push({ at: { ...f.pos }, toSpot });
+  }
+  return out.sort((a, b) => a.toSpot - b.toSpot).map((m) => m.at);
+}
+
 /** Stick vector that makes stepNavigate head toward world heading h at magnitude m. */
 const stickFor = (h: number, m: number) => ({ x: Math.cos(h) * m, y: -Math.sin(h) * m });
 
@@ -290,9 +352,19 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
   let bowAt: number | null = null;
   let arrived = false;
   let castMaxInterest = 0;
+  // Hookset plan for the strike in progress (strike seconds at which the player sets).
+  let setAt: number | null = null;
+  // Drop shot: the sonar mark this cast is aimed at, the aim/power for it, and whether it was thumbed.
+  let marks: Vec2[] = [];
+  let markIdx = 0;
+  let dsTarget: Vec2 | null = null;
+  let dsAim = 0;
+  let dsPower = 0;
+  let heldDone = false;
+  let fouledAt: number | null = null;
   let matchSum = 0;
   let matchN = 0;
-  const m: DayMetrics = { seed: opts.seed, casts: 0, bassStrikes: 0, otherStrikes: 0, followCasts: 0, crashes: 0, snags: 0, stumps: 0, arrivals: 0, spookedAtArrival: 0, avgMatch: 0, bassLanded: 0, bag: 0, presentSec: 0, visits: [] };
+  const m: DayMetrics = { seed: opts.seed, casts: 0, bassStrikes: 0, otherStrikes: 0, bassHooked: 0, missedSets: 0, followCasts: 0, crashes: 0, snags: 0, stumps: 0, arrivals: 0, spookedAtArrival: 0, avgMatch: 0, bassLanded: 0, bag: 0, presentSec: 0, visits: [] };
   let spookSum = 0;
   const jit = (v: number) => v * (1 + (rng.next() * 2 - 1) * P.timingJitter);
   const maxSec = opts.maxRealSec ?? 3600;
@@ -307,10 +379,8 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
     let input: InputFrame = emptyInput();
     if (s.phase !== lastPhase) {
       // Fight just started: record what took the bait.
-      if (s.phase === 'Fight' && s.fight) {
-        if (SPECIES[s.fight.species].isBass) m.bassStrikes++;
-        else m.otherStrikes++;
-      }
+      if (s.phase === 'Fight' && s.fight && SPECIES[s.fight.species].isBass) m.bassHooked++;
+      if (lastPhase === 'Present') dsTarget = null;
       if (lastPhase === 'Present') {
         if (castMaxInterest >= TUNING.attraction.followAt) m.followCasts++;
         castMaxInterest = 0;
@@ -323,6 +393,9 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
       nextTwitch = 0;
       bottomAt = null;
       bowAt = null;
+      setAt = null;
+      heldDone = false;
+      fouledAt = null;
       kb?.releaseAll();
     }
     phaseT += DT;
@@ -392,6 +465,11 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
             }
           spookSum += near ? spooked / near : 0;
           aimTarget = Math.atan2(sp.y - s.boat.pos.y, sp.x - s.boat.pos.x) - s.boat.heading;
+          // A drop-shotter notes the marks on the sonar as they stop.
+          const rig = s.deck[s.activeRod];
+          const lure0 = LURES[rig.lureId];
+          marks = lure0.style === 'shake' && P.sonarTargets ? sonarMarks(s, sp, (a) => maxCastDistance(lure0, RODS[rig.rodId], rig.line, s.conditions, s.boat.heading + a)) : [];
+          markIdx = 0;
         }
         if (!cs || cs.flying) break;
         if (castsLeft <= 0) {
@@ -403,6 +481,33 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
         if (wait > 0) {
           wait -= DT;
           break;
+        }
+        const castLure = LURES[s.deck[s.activeRod].lureId];
+        if (!cs.powerCharging && castLure.style === 'shake' && P.sonarTargets) {
+          // Drop shot: cast at a fish on the forward sonar near the spot (the technique), aim and power for it.
+          if (dsTarget === null && marks.length) {
+            // Work the best few marks in turn.
+            const tgt = marks[markIdx++ % Math.min(3, marks.length)];
+            const rig = s.deck[s.activeRod];
+            dsTarget = tgt;
+            const a = Math.atan2(tgt.y - s.boat.pos.y, tgt.x - s.boat.pos.x) - s.boat.heading;
+            dsAim = Math.atan2(Math.sin(a), Math.cos(a)) + rng.normal(0, P.aimSdRad);
+            const frac = Math.hypot(tgt.x - s.boat.pos.x, tgt.y - s.boat.pos.y) / maxCastDistance(castLure, RODS[rig.rodId], rig.line, s.conditions, s.boat.heading + dsAim);
+            dsPower = Math.min(0.99, Math.max(0.05, (2 / Math.PI) * Math.asin(Math.min(1, Math.max(0, (frac - 0.15) / 0.85))) + rng.normal(0, P.powerSd)));
+          }
+          if (dsTarget !== null) {
+            const diff = Math.atan2(Math.sin(dsAim - cs.aimAngle), Math.cos(dsAim - cs.aimAngle));
+            if (Math.abs(diff) > 0.03 && Math.abs(cs.aimAngle) < TUNING.cast.aimLimit - 0.01) {
+              if (kb) kb.set([diff > 0 ? 'd' : 'a']);
+              else input.stick = { x: Math.sign(diff) * Math.min(1, Math.abs(diff) * 4 + 0.2), y: 0 };
+              break;
+            }
+            kb?.set([]);
+            powerTarget = dsPower;
+            if (kb) kb.tap('c');
+            else input.castTap = true;
+            break;
+          }
         }
         if (!cs.powerCharging) {
           // Aim with the stick, then start the power bar.
@@ -442,11 +547,33 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
         }
         let reel = false;
         let twitch = false;
-        switch (lure.style) {
+        let brake = false;
+        let moveOn = false;
+        let hookSet = false;
+        if (p.strikingFishId !== null) {
+          // A strike: set on the bite cue (the thump, or the weight after a topwater blow-up) with this
+          // player's reaction time, or jump the gun on the charge / blow-up itself.
+          const topwater = lure.motion === 'surface';
+          if (setAt === null) {
+            const react = Math.max(0.08, rng.normal(P.hookReactSec[0], P.hookReactSec[1]));
+            setAt = rng.chance(topwater ? P.hookEarlyTopwater : P.hookEarly) ? (topwater ? TUNING.attraction.strikeChargeSec : 0) + react * 0.5 : biteAtSec(lure) + react;
+          }
+          if (p.strikeT >= setAt) {
+            hookSet = true;
+            setAt = Infinity;
+          }
+        } else {
+          setAt = null;
+        }
+        if (p.strikingFishId === null) switch (lure.style) {
           case 'steady':
             // A swimming bait (bladed jig) is counted down first by a player who reads the sonar, per the tip.
             if (lure.motion === 'swimming' && P.readsBottom) {
-              if (bottomAt === null && (p.onBottom || p.lureDepthFt >= 0.7 * depthAt(dayGrid, p.lurePos.x, p.lurePos.y) || phaseT > 8)) bottomAt = phaseT;
+              // Lipless: count it to the grass tops so it ticks the grass (then rip it free).
+              const bottomHere = depthAt(dayGrid, p.lurePos.x, p.lurePos.y);
+              const grassHere = ['grass', 'reeds'].includes(coverAt(dayGrid, p.lurePos.x, p.lurePos.y));
+              const countTo = lure.ripsGrass && grassHere ? bottomHere - TUNING.grass.canopyFt + 0.3 : 0.7 * bottomHere;
+              if (bottomAt === null && (p.onBottom || p.lureDepthFt >= countTo || phaseT > 8)) bottomAt = phaseT;
               reel = bottomAt !== null;
             } else reel = phaseT > jit(0.35);
             if (reelLapse > 0) {
@@ -468,7 +595,17 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
             break;
           }
           case 'shake': {
-            const down = P.readsBottom ? p.onBottom : phaseT > jit(2.5);
+            // A suspended fish's arc beside the bait on the sonar inset: thumb the spool at its depth.
+            if (P.sonarTargets && !heldDone && !p.onBottom && !p.held) {
+              const bottomHere = depthAt(dayGrid, p.lurePos.x, p.lurePos.y);
+              for (const f of s.fish)
+                if (!f.caught && Math.hypot(f.pos.x - p.lurePos.x, f.pos.y - p.lurePos.y) < 3 && bottomHere - f.depthFt > 4 && p.lureDepthFt >= f.depthFt - 0.5) {
+                  brake = true;
+                  heldDone = true;
+                  break;
+                }
+            }
+            const down = P.readsBottom ? p.onBottom || !!p.held : phaseT > jit(2.5);
             if (down && bottomAt === null) bottomAt = phaseT;
             if (bottomAt !== null) {
               const k = phaseT - bottomAt;
@@ -478,6 +615,10 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
                 nextTwitch = k + jit(0.95) + (twitchCount % 8 === 0 ? 2 : 0);
               }
               reel = twitchCount % 10 === 9;
+              // Reel up and make another cast after a while, longer while a fish is looking at it.
+              let looking = false;
+              for (const f of s.fish) if (!f.caught && f.interest >= TUNING.attraction.followAt && Math.hypot(f.pos.x - p.lurePos.x, f.pos.y - p.lurePos.y) < 12) looking = true;
+              if (k > P.dropShotWorkSec * (looking ? 2 : 1)) moveOn = true;
             }
             break;
           }
@@ -500,15 +641,28 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
             }
             break;
         }
+        // A treble bait fouled in the grass: rip it free (a twitch) once the player notices.
+        if (p.fouled && P.ripDelaySec !== null && p.strikingFishId === null) {
+          fouledAt ??= phaseT;
+          if (phaseT - fouledAt >= P.ripDelaySec) {
+            twitch = true;
+            fouledAt = null;
+          }
+        } else fouledAt = null;
         if (kb) {
-          const keys: string[] = reel ? [' '] : [];
+          const keys: string[] = [...(reel ? [' '] : []), ...(brake ? ['b'] : [])];
           kb.set(keys);
           if (twitch) kb.tap('t');
+          if (hookSet) kb.tap('h');
+          if (moveOn) kb.tap('m');
           // Instinct: reach for ↑ while reeling, or to steer the lure.
           if (rng.chance(P.arrowFidgetPerSec * DT)) kb.tap(rng.next() < 0.7 ? 'arrowup' : 'arrowdown');
         } else {
           input.reel = reel;
           input.twitch = twitch;
+          input.brake = brake;
+          input.hookSet = hookSet;
+          input.moveOn = moveOn;
         }
         break;
       }
@@ -548,6 +702,11 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
     opts.onStep?.(s, events, t);
     for (const e of events) {
       if (e.type === 'crash') m.crashes++;
+      if (e.type === 'strike' && s.present?.strikingFishId != null) {
+        if (SPECIES[s.fish[s.present.strikingFishId].species].isBass) m.bassStrikes++;
+        else m.otherStrikes++;
+      }
+      if (e.type === 'missed') m.missedSets++;
       if (process.env.HARNESS_TRACE && (e.type === 'crash' || e.type === 'edge' || e.type === 'splash') && m.casts < 30) console.log(e.type, 'boat', s.boat.pos.x.toFixed(0), s.boat.pos.y.toFixed(0), 'at', e.at?.x.toFixed(0), e.at?.y.toFixed(0), 'spot', spots[spotIdx % spots.length].x, spots[spotIdx % spots.length].y);
       if (e.type === 'shore') m.snags++;
       if (e.type === 'stump') m.stumps++;

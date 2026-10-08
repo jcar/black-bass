@@ -57,12 +57,45 @@ dI/dt = gainPerSec x fit - leakPerSec x I          (fish time = real time x game
   drop shots want shaking in place.
 - Colour is deliberately small (about +/-10%): research finds little catch-rate difference at constant
   clarity (Moraga et al. 2015). Natural colours in clear water, bright/dark in stained.
-- Reaction strikes: a crankbait deflecting off rock/wood/docks, a pause after a steady retrieve, or a
-  tube landing on rock add an interest spike to nearby fish.
+- Reaction strikes: a crankbait deflecting off rock/wood/docks, a pause after a steady retrieve, a
+  tube landing on rock, or a treble bait ripped free of the grass add an interest spike to nearby fish.
+- Big-fish baits (swimbait, frog, flipping jig) multiply fit by `(length / lake median)^(3 x lean)`,
+  clamped 0.5-1.8: roughly weight^lean, so bigger fish eat them and small ones less, with the mean
+  barely changed. The swimbait's low bite rate comes from its species affinity (0.65-0.7).
+- **Dwell** (shake-in-place baits): a fish within detection range of a drop shot shaken in place
+  (on the bottom or held mid-water, under 0.1 m/s, shaken in the last 3 s) drifts in to look. Its
+  effective proximity climbs from `p` toward the lure by up to `dwellCap` (0.6) of the gap after
+  `dwellFullSec` (15 s fish time, 5 s real): `p' = p + (1 - p) x min(cap, cap x dwell / full)`. This is
+  how vertical drop-shotting works: hold the bait on a fish and it comes to it.
 - Time compression: lure motion runs `gameSpeedScale` (3) x real time so a retrieve takes seconds, and
   fish react in the same game time, so fast baits get the same exposure per metre they would in life.
 
-## 5. Why the leaky meter (audit, Oct 2026)
+## 5. Tackle mechanics (`cast.ts`, `presentation.ts`, `fight.ts`)
+
+- **Weedless** (`LureDef.weedless`): `'full'` baits (Texas rig, flipping jig, frog) landing on docks or
+  laydowns go into the cover instead of crashing: no spook, an edge cast (cover bonus) beside the fish
+  that live there. `'partial'` (spinnerbait) still crashes 40% of the time. The advisor doesn't
+  discount weedless baits at hard cover.
+- **Grass**: a treble bait without a weed guard running within 3 ft of the bottom of a grass or reeds
+  cell fouls: its cadence match drops to 35% until a twitch rips it free, which pops it up 2 ft and
+  fires a reaction spike (strongest for the lipless crank, built for it).
+- **Leader rigs** (`leaderFt`): the drop shot's bait rides 1.5 ft above the weight, the Carolina rig's
+  about 1 ft, so "on the bottom" for them is the leader's height off it.
+- **Suspended drop shot**: BRAKE (thumb the spool) on the fall stops the drop shot at that depth
+  (`present.held`); shaking works there as on the bottom, so you can hold it at a suspended fish's
+  depth read off the sonar inset. Another press lets it fall again.
+- **Hookset**: a strike is the fish charging the lure (0.55 s). Subsurface, it has the bait on reaching
+  it; on topwater the blow-up comes first and it has the bait 0.3 s later. The player must set
+  (`InputFrame.hookSet`: keyboard H, touch HOOK, which replaces REEL during a strike and glows once the
+  fish has it) within 0.9 s of the bite (soft plastics: 1.4 s). Too early (before it has the bait, which
+  is the topwater trap) or too late misses; a set on time hooks with probability
+  `0.95 x hookRate x (single hook: 1 - 0.6 x stretch x min(1, lineOut / 25 m)) x (trebles on braid: 0.96)
+  x (rod lighter than the lure's power: 0.85)`. A missed fish is spooked 10 game minutes and gains 0.2
+  hook-shyness; the cast goes on. Trebles on braid also throw the hook 1.35x as often on a jump.
+  **Auto hookset** (Settings, off by default; `TournamentState.autoHookset`) sets 0.15 s after the bite.
+  H is a dedicated key because Space is held to reel, so a press on it can't tell a set from a retrieve.
+
+## 6. Why the leaky meter (audit, Oct 2026)
 
 The first model used `dI/dt = gain x fit - 0.4`. Any fish with fit above ~0.04 eventually crossed the
 strike line, so bites measured water covered, not fit: lure choice and technique barely mattered and
@@ -70,7 +103,7 @@ the pro advice could not be meaningfully right or wrong. With the leak, fit sets
 fish can get, so the right lure, depth, cadence and spot matter, and skill separates players.
 See `docs/model-reports/` for before/after harness numbers.
 
-## 6. The pro advisor (`advisor.ts`)
+## 7. The pro advisor (`advisor.ts`)
 
 The advice is the strike model run forward analytically, not a separate heuristic:
 
@@ -84,15 +117,23 @@ The advice is the strike model run forward analytically, not a separate heuristi
   swims at the lure and takes its depth; if the bait is slow enough to catch (follow speed vs lure
   speed), it strikes at full proximity and depth match. This is why slow baits convert followers.
 - **Time:** cast cycle from the lure's reel speed and the pace an expert works it (measured), fall time,
-  ~60 s per move and ~15 s per fish. Expected bites per stop visit become bites per day.
+  ~60 s per move and ~15 s per fish. Expected bites per stop visit become bites per day. The retrieve
+  path scales with cast distance (heavy baits cast further and sweep more water).
+- **Drop shot:** the expert casts to fish it saw on the forward sonar when it stopped, thumbs the bait at
+  a suspended fish's depth, and shakes ~15 s before reeling up. The advisor applies the dwell to the
+  proximity a fish needs, a depth match of 0.8 for suspended fish, and a sonar-targeting factor (1.75 x
+  the encounter rate) fitted so the drop shot's harness/predicted ratio matches the other lures'.
+- Hook-ups are not in the prediction: the advisor and the gate count strikes; missed sets show in bags.
 - **Outputs:** lure ranking, a milk run of distinct stops (marked PRO 1-6 on the map), best windows,
   technique and approach tips, and the day's outlook (scaled by the measured play calibration, 0.75).
 - **Gate:** `tools/advisor-check.ts` (README, "Pro advice"). The live coach (`coach.ts`) explains
   misses with the same rules: spooked arrivals, crashes, broken retrieves, followers that won't commit,
   fishless water.
 
-## 7. Known simplifications
+## 8. Known simplifications
 
 - Fish don't school or relate to each other; bait (shad) isn't modelled.
 - Wind direction doesn't move fish to banks yet (wind only affects lure fit and casting).
 - Fight outcome doesn't depend on cover except standing timber (line wraps).
+- Only exposed trebles foul in grass; single-hook baits (Ned, tube, bladed jig) come through it clean.
+- The advisor treats big-fish baits' size lean as extra spread in vulnerability, not by fish size.

@@ -124,7 +124,13 @@ function land(s: TournamentState, ctx: SimCtx, cs: CastState) {
   }
 
   const cov = coverAt(grid, at.x, at.y);
-  if (HARD_COVER.has(cov)) {
+  const { lure } = activeTackle(s);
+  // Weedless baits go into the cover itself; a partly weedless one (spinnerbait) slides off more often than not.
+  const slidesIn = HARD_COVER.has(cov) && (lure.weedless === 'full' || (lure.weedless === 'partial' && !ctx.rng.chance(C.partialWeedlessCrash)));
+  if (slidesIn) {
+    cs.result = 'edge';
+    emit(s, 'edge', `In the ${cov === 'dock' ? 'dock' : 'wood'}: weedless!`, at);
+  } else if (HARD_COVER.has(cov)) {
     cs.result = 'crash';
     // Fish under the cover scatter. The lure bounces back off the edge toward the boat.
     for (const f of s.fish) {

@@ -68,6 +68,8 @@ export const TUNING = {
     flightSecPerM: 0.022,
     crashSpookRadius: 12,
     crashSpookMin: 20,
+    /** Partly weedless baits (spinnerbaits) landing on docks/wood still hang up and crash this often. */
+    partialWeedlessCrash: 0.4,
   },
 
   lure: {
@@ -86,6 +88,61 @@ export const TUNING = {
     steadyGraceSec: 0.3,
     /** Swimming baits plane up this fast on a steady retrieve (ft/s, 12 lb line). */
     swimRiseFtPerSec: 0.25,
+    /**
+     * Drop shot: the bait is tied this far above the weight (anglers use 6-24 in leaders; longer for
+     * fish off the bottom), so it rides above the bottom where a weight-dragged bait can't.
+     */
+    dropShotLeaderFt: 1.5,
+    /** Carolina rig: the floating bait rides about this high off the bottom behind the sinker. */
+    carolinaLeaderFt: 1,
+  },
+
+  /** Grass: lures with exposed trebles that run through the canopy foul (pick up weeds). */
+  grass: {
+    /** Grass tops: a lure within this many ft of the bottom in a grass or reeds cell is in the canopy. */
+    canopyFt: 3,
+    /** A fouled lure runs wrong: its cadence match is multiplied by this until it's ripped free. */
+    fouledMatch: 0.35,
+    /** Ripping it free (a twitch) is a classic reaction trigger; lipless baits are built for it. */
+    ripSpike: 0.6,
+    ripSpikeLipless: 1,
+    ripRangeM: 6,
+    /** A rip pops the bait up out of the canopy (ft); it can't foul again for ripClearSec. */
+    ripLiftFt: 2,
+    ripClearSec: 1,
+  },
+
+  /**
+   * Setting the hook. A strike is a fish charging the lure (attraction.strikeChargeSec). Subsurface,
+   * the fish has the bait when it reaches it; on topwater the blow-up comes first and the fish only has
+   * it a beat later ("wait to feel the weight"). Set before that and you pull it away; wait past the
+   * window and it spits the bait.
+   */
+  hookset: {
+    /** Topwater: from the blow-up to the fish having the bait (s). */
+    topwaterDelaySec: 0.3,
+    /** Real seconds after the fish has the bait before it spits a hard bait. */
+    windowSec: 0.9,
+    /** Bass hold soft plastics (no trebles, bottom/shake baits) longer before spitting them. (game) */
+    softPlasticExtraSec: 0.5,
+    /** Auto hookset (Settings): sets this long after the fish has it. */
+    autoDelaySec: 0.15,
+    /** Hook-up chance for a set on time, before tackle effects. (game) */
+    base: 0.95,
+    /**
+     * Single hooks need the line to drive them home: hook-up odds drop by this x line stretch (braid
+     * 0.02, fluoro 0.12, mono 0.25) x line out / longCastM. Mono on a long cast: about -15%.
+     */
+    singleStretchPenalty: 0.6,
+    longCastM: 25,
+    /** Trebles on no-stretch braid tear out: hook-up x this, and thrown-hook chances x trebleBraidTearOut. */
+    trebleBraidHook: 0.96,
+    trebleBraidTearOut: 1.35,
+    /** A rod lighter than the lure's power rating can't drive a heavy hook through plastic. */
+    underpoweredRod: 0.85,
+    /** A fish that felt the hook (or the bait yanked away) is wary for a while, and a little warier for good. */
+    missSpookMin: 10,
+    hookShyPerMiss: 0.2,
   },
 
   attraction: {
@@ -119,6 +176,19 @@ export const TUNING = {
     colorEffect: 0.1,
     hookShyPenalty: 0.7,
     coverBonus: 1.3,
+    /**
+     * Dwell (shake-in-place baits): a fish within detection range of a bait shaken in place drifts in
+     * to look, so its effective proximity climbs from where it sits toward the lure, by up to dwellCap
+     * of the gap after dwellFullSec of fish time watching it. This is why a drop shot held on a
+     * sonar-spotted fish gets bit even though it barely moves.
+     */
+    dwellFullSec: 15,
+    dwellCap: 0.6,
+    /** The bait counts as "in place" below this speed (m/s, real units). */
+    dwellMaxSpeed: 0.1,
+    /** Big-fish baits: fit x (length / lake median length)^(3 x lean), clamped. */
+    sizeLeanMin: 0.5,
+    sizeLeanMax: 1.8,
   },
 
   activity: {

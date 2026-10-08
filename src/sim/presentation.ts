@@ -1,8 +1,12 @@
+import type { LakeDef } from '../data/lakes/types';
+import type { LureDef } from '../data/lures';
+import { rodPowerOk, type RodDef } from '../data/rods';
 import { TUNING } from '../data/tuning';
 import { lightLevel } from './conditions';
 import { activeTackle, dist, emit, fishActivity, type SimCtx } from './context';
 import { newFightState } from './fight';
 import {
+  countSince,
   detectRange,
   interestRate,
   presentationMatch,
@@ -10,10 +14,73 @@ import {
 } from './fish/attraction';
 import { coverAt, depthAt, nearCover, secchiAt } from './lake';
 import { transition } from './machine';
-import type { InputFrame, PresentState, TournamentState, Vec2 } from './types';
+import type { FishEntity, HookMiss, InputFrame, Line, PresentState, SpeciesId, TournamentState, Vec2 } from './types';
 
 const L = TUNING.lure;
 const A = TUNING.attraction;
+const H = TUNING.hookset;
+const G = TUNING.grass;
+
+const medians = new Map<string, Partial<Record<SpeciesId, number>>>();
+/** The lake's median length per species (big-fish baits lean on length relative to it). */
+function medianLengths(lake: LakeDef): Partial<Record<SpeciesId, number>> {
+  let m = medians.get(lake.id);
+  if (!m) {
+    m = Object.fromEntries(Object.entries(lake.species.sizes).map(([sp, prof]) => [sp, prof!.medianIn])) as Partial<Record<SpeciesId, number>>;
+    medians.set(lake.id, m);
+  }
+  return m;
+}
+
+// ---------- Hookset ----------
+
+/** Seconds into a strike when the fish has the bait: on reaching it, or a beat after a topwater blow-up. */
+export function biteAtSec(lure: Pick<LureDef, 'motion'>): number {
+  return A.strikeChargeSec + (lure.motion === 'surface' ? H.topwaterDelaySec : 0);
+}
+
+/** How long after it has the bait a fish holds on before spitting it (soft plastics are held longer). */
+export function hookWindowSec(lure: Pick<LureDef, 'treble' | 'style' | 'weedless'>): number {
+  const soft = !lure.treble && (lure.style === 'bottom' || lure.style === 'shake');
+  return H.windowSec + (soft ? H.softPlasticExtraSec : 0);
+}
+
+/**
+ * Chance an on-time hookset sticks. Single hooks need the line to drive them: stretchy mono or fluoro
+ * on a long cast loses some; trebles on no-stretch braid tear out a little; a rod too light for a
+ * heavy weedless bait can't bury the hook; hollow frogs miss more than most.
+ */
+export function hookUpChance(lure: LureDef, rod: RodDef, line: Line, lineOutM: number): number {
+  let p = H.base * (lure.hookRate ?? 1);
+  if (!lure.treble) p *= 1 - H.singleStretchPenalty * TUNING.fight.stretch[line.type] * Math.min(1, lineOutM / H.longCastM);
+  else if (line.type === 'braid') p *= H.trebleBraidHook;
+  if (!rodPowerOk(rod, lure)) p *= H.underpoweredRod;
+  return Math.max(0, Math.min(1, p));
+}
+
+const MISS_TEXT: Record<HookMiss, (topwater: boolean) => string> = {
+  early: (top) => (top ? 'Too early! You pulled it away from the fish.' : 'Too early! The fish never had it.'),
+  late: () => 'Too late: it spat the bait.',
+  noHook: () => "Missed! The hook didn't stick.",
+};
+
+/** The strike came to nothing: the fish lets go (or never had it), is wary for a while, and the cast goes on. */
+function missStrike(s: TournamentState, p: PresentState, f: FishEntity, why: HookMiss, topwater: boolean) {
+  f.interest = 0;
+  f.spookUntil = s.clockMin + H.missSpookMin;
+  f.hookShy = Math.min(1, f.hookShy + H.hookShyPerMiss);
+  p.strikingFishId = null;
+  p.strikeT = 0;
+  s.stats.missed = (s.stats.missed ?? 0) + 1;
+  if (why === 'early') {
+    // The rod sweep yanks the bait a metre or two toward the boat.
+    const b = s.boat.pos;
+    const d = Math.max(0.01, dist(b, p.lurePos));
+    const k = Math.min(1.5, d - 0.5) / d;
+    p.lurePos = { x: p.lurePos.x + (b.x - p.lurePos.x) * k, y: p.lurePos.y + (b.y - p.lurePos.y) * k };
+  }
+  emit(s, 'missed', MISS_TEXT[why](topwater), p.lurePos, { miss: why, topwater });
+}
 
 export function newPresentState(at: Vec2, edgeCast: boolean): PresentState {
   return {
@@ -56,25 +123,37 @@ function reactionImpulse(s: TournamentState, p: PresentState, strength: number, 
 export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: number): void {
   const p = s.present;
   if (!p) return;
-  const { lure, color, setup } = activeTackle(s);
+  const { lure, color, setup, rod } = activeTackle(s);
   const grid = ctx.grid;
   p.t += dt;
 
-  // A fish is charging the lure: finish the strike animation, then hook up.
+  // A fish is charging the lure, then holding it: the player has to set the hook in time.
   if (p.strikingFishId !== null) {
     const f = s.fish[p.strikingFishId];
+    const prevT = p.strikeT;
     p.strikeT += dt;
-    const k = Math.min(1, dt * 8);
+    const topwater = lure.motion === 'surface';
+    const reachAt = A.strikeChargeSec;
+    const biteAt = biteAtSec(lure);
+    const k = p.strikeT < reachAt ? Math.min(1, dt * 8) : 1;
     f.pos = { x: f.pos.x + (p.lurePos.x - f.pos.x) * k, y: f.pos.y + (p.lurePos.y - f.pos.y) * k };
     f.depthFt += (p.lureDepthFt - f.depthFt) * k;
-    if (p.strikeT >= A.strikeChargeSec) {
+    // The cue to set: the thump (or, on topwater, the weight after the blow-up).
+    if (prevT < biteAt && p.strikeT >= biteAt) emit(s, 'bite', undefined, p.lurePos, { topwater });
+    const set = input.hookSet || (!!s.autoHookset && p.strikeT >= biteAt + H.autoDelaySec);
+    if (set) {
+      if (p.strikeT < biteAt) return missStrike(s, p, f, 'early', topwater);
+      if (!ctx.rng.chance(hookUpChance(lure, rod, setup.line, dist(p.lurePos, s.boat.pos)))) return missStrike(s, p, f, 'noHook', topwater);
       s.stats.bites++;
       f.hookShy = Math.min(1, f.hookShy + TUNING.multiDay.hookShyPerCatch);
       s.fight = newFightState(s, ctx, f, p.lurePos);
+      if (lure.treble && setup.line.type === 'braid') s.fight.tearOut = true;
       emit(s, 'hooked', 'Fish on!', p.lurePos);
       s.present = null;
       transition(s, 'Fight');
+      return;
     }
+    if (p.strikeT >= biteAt + hookWindowSec(lure)) missStrike(s, p, f, 'late', topwater);
     return;
   }
 
@@ -107,6 +186,13 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
   }
 
   if (input.twitch) {
+    // Ripping a fouled bait free of the grass: the classic lipless reaction strike.
+    if (p.fouled) {
+      p.fouled = false;
+      p.ripT = p.t;
+      p.lureDepthFt = Math.max(0, p.lureDepthFt - G.ripLiftFt);
+      reactionImpulse(s, p, lure.ripsGrass ? G.ripSpikeLipless : G.ripSpike, G.ripRangeM);
+    }
     p.twitchTimes.push(p.t);
     if (p.twitchTimes.length > 24) p.twitchTimes.shift();
     switch (lure.style) {
@@ -196,23 +282,30 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
       p.onBottom = p.lureDepthFt >= bottom;
       break;
     case 'sinking': {
+      // Leader rigs: the bait rides above the weight, so "on the bottom" is the leader's height off it.
+      const floorFt = Math.max(0, bottom - (lure.leaderFt ?? 0));
+      // Drop shot: thumbing the spool on the fall stops it mid-water (a press toggles the hold).
+      if (lure.style === 'shake' && input.brake && !p.brakeDown && p.t > 0.2) p.held = !p.held && !p.onBottom;
+      p.brakeDown = input.brake;
       if (p.hopT > 0) {
         p.hopT -= vdt;
         p.lureDepthFt = Math.max(0, p.lureDepthFt - (L.hopHeightFt / 0.3) * vdt);
         p.onBottom = false;
-      } else if (!p.onBottom) {
+      } else if (!p.onBottom && !p.held) {
         p.lureDepthFt += lure.fallRateFtPerSec * (input.reel ? 0.5 : 1) * vdt;
       }
-      if (p.lureDepthFt >= bottom) {
+      if (p.lureDepthFt >= floorFt) {
         if (!p.onBottom && p.hopT <= 0 && p.t > 0.5) {
           // Touchdown on hard bottom is a small reaction trigger (tube on rock).
           const cov = coverAt(grid, p.lurePos.x, p.lurePos.y);
           if (cov === 'rock' || cov === 'timber') reactionImpulse(s, p, 0.3, 4);
         }
         p.onBottom = true;
+        p.held = false;
+        p.lureDepthFt = floorFt;
       }
       // Dragging along the bottom follows the contour; a drop-off makes it fall again.
-      if (p.onBottom && bottom > p.lureDepthFt + 0.5) p.onBottom = false;
+      if (p.onBottom && floorFt > p.lureDepthFt + 0.5) p.onBottom = false;
       break;
     }
   }
@@ -227,11 +320,25 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     }
   }
   p.lastCover = coverAt(grid, p.lurePos.x, p.lurePos.y);
+  // Exposed trebles running through the grass canopy pick up weeds; weedless baits come through clean.
+  if (
+    !p.fouled &&
+    p.t - (p.ripT ?? -10) > G.ripClearSec &&
+    lure.treble &&
+    !lure.weedless &&
+    lure.motion !== 'surface' &&
+    moving &&
+    (p.lastCover === 'grass' || p.lastCover === 'reeds') &&
+    p.lureDepthFt >= bottom - G.canopyFt
+  ) {
+    p.fouled = true;
+    emit(s, 'fouled', 'Grass on the hooks: rip it free!', p.lurePos);
+  }
 
   // --- Attraction meter for every fish that can perceive the lure ---
   const light = lightLevel(s.clockMin, s.conditions.weather);
   const secchi = secchiAt(grid, p.lurePos.x, p.lurePos.y);
-  p.match = presentationMatch(lure, p, s.conditions.waterTempF);
+  p.match = presentationMatch(lure, p, s.conditions.waterTempF) * (p.fouled ? G.fouledMatch : 1);
   const ctxA: AttractionContext = {
     lure,
     color,
@@ -243,11 +350,16 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
     coverNear: p.lastCover !== 'none' || (p.edgeCast && p.t < 4) || nearCover(grid, p.lurePos.x, p.lurePos.y, 4) !== 'none',
     pressure: s.pressure,
     clockMin: s.clockMin,
+    medianIn: medianLengths(ctx.lake),
   };
   const range = detectRange(lure, secchi, light);
   // Fish react in the same compressed game time the lure moves in (lure motion runs k x real time),
   // so a fast bait gets the same exposure per metre it would in the real world.
   const fdt = dt * k;
+  // Shaken in place (on the bottom or held mid-water): nearby fish drift in to look (dwell).
+  const shaking = lure.style === 'shake';
+  const inPlace = shaking && (p.onBottom || !!p.held) && p.avgSpeed < A.dwellMaxSpeed && countSince(p.twitchTimes, p.t - 3) >= 1;
+  if (shaking) p.dwell ??= {};
   let striker: number | null = null;
   let best = 0;
   for (const f of s.fish) {
@@ -262,8 +374,17 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
       continue;
     }
     const act = fishActivity(s, f);
+    let prox = d < range ? 1 - d / range : 0;
+    if (p.dwell) {
+      if (prox <= 0) delete p.dwell[f.id];
+      else {
+        const dw = (p.dwell[f.id] ?? 0) + (inPlace ? fdt : 0);
+        if (dw > 0) p.dwell[f.id] = dw;
+        prox += (1 - prox) * Math.min(A.dwellCap, (A.dwellCap * dw) / A.dwellFullSec);
+      }
+    }
     // Leaky interest: rises toward gain*fit/leak while the fish can perceive the lure, fades otherwise.
-    const gain = d < range ? interestRate(f, ctxA, act, 1 - d / range, p.lureDepthFt) : 0;
+    const gain = prox > 0 ? interestRate(f, ctxA, act, prox, p.lureDepthFt) : 0;
     f.interest += (gain - A.leakPerSec * f.interest) * fdt;
     f.interest = Math.max(0, Math.min(A.max, f.interest));
 

@@ -52,6 +52,8 @@ function noticeFor(e: TournamentEvent): Omit<Notice, 'id'> | null {
       return { kind: 'bug', title: '30 min to weigh-in', tone: 'bad' };
     case 'popped':
       return { kind: 'bug', title: 'Shook it off', tone: 'info' };
+    case 'missed':
+      return { kind: 'bug', title: e.text ?? 'Missed', tone: 'bad' };
     case 'popFailed':
       return { kind: 'bug', title: 'Still hooked', tone: 'info' };
     case 'playerPlace':
@@ -77,6 +79,9 @@ const CALLOUT: Partial<Record<TournamentEvent['type'], { text: string; color: nu
   crash: { text: 'CRASH', color: 0xff5d4d },
   shore: { text: 'SNAGGED', color: 0xff5d4d },
   bank: { text: 'BANK!', color: 0xff9a4d },
+  bite: { text: 'HOOK HIM!', color: 0xffe066 },
+  missed: { text: 'MISSED', color: 0xff5d4d },
+  fouled: { text: 'GRASS', color: 0xffb347 },
 };
 
 /**
@@ -143,6 +148,8 @@ export class GameRunner {
     this.renderer.debug = store.save.settings.debugMeter;
 
     const blocked = store.paused || store.mapOpen || store.screen !== 'game' || t.phase === 'WeighIn' || t.phase === 'Landed';
+    // Settings can change mid-day (pause menu): the sim reads the auto-hookset choice from the state.
+    t.autoHookset = store.save.settings.autoHookset;
     if (!blocked) {
       this.acc += dt;
       let n = 0;
@@ -227,6 +234,8 @@ export class GameRunner {
       const n = noticeFor(e);
       if (n) store.notify(n);
       if (e.type === 'rivalCatch' && e.data?.big) playUi('record');
+      // The fish has it: a tick under the thumb is the cue to set the hook.
+      if (e.type === 'bite' && this.touch) vibrate();
       const c = CALLOUT[e.type];
       if (c && e.at) this.renderer.callout(c.text, c.color, e.at);
       if ((e.type === 'landed' || e.type === 'cullNeeded') && t.lastLanded) this.logCatch(t);

@@ -15,7 +15,7 @@
 // tools/advisor-check.ts gates the advice against harness play.
 import type { LakeDef } from '../data/lakes/types';
 import { COLORS, LURES, type LureDef } from '../data/lures';
-import { RODS } from '../data/rods';
+import { POWER_RANK, RODS, rodCasts, rodPowerOk } from '../data/rods';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { generateConditions, lightLevel } from './conditions';
@@ -52,8 +52,13 @@ const SPOT_RADIUS = 40;
 const CAST_PATH_M = 20;
 /** Per-cast overhead (aim, power bar, flight, pick-up), real seconds (harness: 4-5 s). */
 const CAST_OVERHEAD_SEC = 4.5;
-/** A slow bait is worked at most this long before the angler reels in (harness drop shot: ~57 s). */
+/** A slow bait is worked at most this long before the angler reels in. */
 const MAX_WORK_SEC = 55;
+/**
+ * A drop shot is shaken on a mark for a while, then reeled up for another cast (harness expert: 14.7 s
+ * in the water per cast, fall included; the cast ends early when a fish takes it).
+ */
+const SHAKE_WORK_SEC = 14.7;
 /** Casts a skilled angler makes per stop (harness expert: 8-14). */
 const CASTS_PER_VISIT = 11;
 /** Real seconds to run and idle in to the next stop. */
@@ -63,8 +68,18 @@ const FIGHT_SEC = 15;
 
 /** Cadence match a skilled player actually achieves per technique (harness expert profile). */
 const EXPERT_MATCH: Record<LureDef['style'], number> = { steady: 0.88, twitchPause: 0.67, walk: 0.75, bottom: 0.75, shake: 0.91 };
-/** A bladed jig counted down (as advised) loses some steadiness to the stop-start: harness 0.72. */
-const expertMatch = (lure: LureDef) => (lure.motion === 'swimming' ? 0.72 : EXPERT_MATCH[lure.style]);
+/**
+ * Swimming baits are counted down (as advised), which costs some steadiness to the stop-start (bladed
+ * jig: harness 0.72). Per-lure measurements override the style where they differ.
+ */
+const LURE_MATCH: Partial<Record<string, number>> = {
+  // Harness expert, Champlain, 12 days (docs/model-reports): a slow, steady swimbait holds its band;
+  // a lipless counted to the grass tops loses a little to the rips; a C-rig drags cleanly.
+  swimbait: 0.88,
+  lipless: 0.78,
+  carolinaRig: 0.8,
+};
+const expertMatch = (lure: LureDef) => LURE_MATCH[lure.id] ?? (lure.motion === 'swimming' ? 0.72 : EXPERT_MATCH[lure.style]);
 
 // ---------- Where the lure runs ----------
 
@@ -77,7 +92,8 @@ export function lureWorkingDepth(lure: LureDef, line: Line, bottomFt: number): n
     case 'suspending':
       return Math.min(bottomFt, lure.runDepthFt * lineFactor);
     case 'sinking':
-      return bottomFt;
+      // Leader rigs ride above the weight (drop shot, Carolina rig).
+      return Math.max(0, bottomFt - (lure.leaderFt ?? 0));
     case 'swimming':
       // A good angler counts a bladed jig down to just above the fish.
       return Math.max(0, bottomFt * 0.7);
@@ -92,12 +108,26 @@ const PACE: Record<LureDef['style'], number> = { steady: 1, twitchPause: 1, walk
 /** Share of the time the lure is actually moving (pauses, pulses), for whether a follower can catch it. */
 const MOVING: Record<LureDef['style'], number> = { steady: 1, twitchPause: 0.35, walk: 0.8, bottom: 0.5, shake: 0.1 };
 
+/**
+ * Path a cast is retrieved along: CAST_PATH_M for a typical 3/8 oz bait, longer for heavy baits that
+ * cast further (cast distance ~ base + k sqrt(oz), cast.ts). Harness: a 1.5 oz swimbait was
+ * under-predicted ~1.6x on both lakes without it; with it the new lures' harness/predicted ratios sit
+ * with the old ones (docs/model-reports/d1-newlures-*.txt).
+ */
+function castPathM(lure: LureDef): number {
+  const C = TUNING.cast;
+  return (CAST_PATH_M * (C.baseDistM + C.distPerSqrtOz * Math.sqrt(lure.weightOz))) / (C.baseDistM + C.distPerSqrtOz * Math.sqrt(0.375));
+}
+
 /** Real seconds the lure spends being worked per cast (fall plus retrieve), and the path it covers (m). */
 function retrieveProfile(lure: LureDef, bottomFt: number): { workSec: number; pathM: number } {
   const v = lure.retrieveSpeed * PACE[lure.style] * K;
   const fall = lure.motion === 'sinking' ? bottomFt / (lure.fallRateFtPerSec * K) : lure.motion === 'swimming' ? (bottomFt * 0.7) / (lure.fallRateFtPerSec * K) : 0;
-  const swim = Math.min(MAX_WORK_SEC, CAST_PATH_M / v);
-  return { workSec: swim + fall, pathM: Math.min(CAST_PATH_M, v * swim) };
+  // A drop shot's measured time in the water already includes the fall.
+  if (lure.style === 'shake') return { workSec: SHAKE_WORK_SEC, pathM: Math.min(CAST_PATH_M, v * Math.max(0, SHAKE_WORK_SEC - fall)) };
+  const path = castPathM(lure);
+  const swim = Math.min(MAX_WORK_SEC, path / v);
+  return { workSec: swim + fall, pathM: Math.min(path, v * swim) };
 }
 
 // ---------- Fish around a spot ----------
@@ -212,12 +242,29 @@ export function spotEnv(lake: LakeDef, season: Season, at: Vec2): CellEnv[] {
 // ---------- Strike probability ----------
 
 /** Vulnerability quantiles of lognormal(1, 0.45) clipped to [0.2, 2.5] (population.ts). */
-const VULN_Q = Array.from({ length: 24 }, (_, i) => {
-  const p = (i + 0.5) / 24;
-  // Inverse normal via Acklam's rational approximation (good to ~1e-4, plenty here).
-  const z = invNorm(p);
-  return Math.min(2.5, Math.max(0.2, Math.exp(0.45 * z)));
-});
+const VULN_Q = vulnQuantiles(0);
+/**
+ * The same with a big-fish bait's size lean folded in: sizeLeanFit is ~lognormal with sigma
+ * 3 x lean x the length sigma (~0.18), independent of vulnerability, so the product is lognormal
+ * with the sigmas added in quadrature. Its mean is ~1, but the spread puts more fish over the line.
+ */
+function vulnQuantiles(extraSigma: number): number[] {
+  const sigma = Math.hypot(0.45, extraSigma);
+  return Array.from({ length: 24 }, (_, i) => {
+    // Inverse normal via Acklam's rational approximation (good to ~1e-4, plenty here).
+    const z = invNorm((i + 0.5) / 24);
+    return extraSigma ? Math.min(2.5 * A.sizeLeanMax, Math.max(0.2 * A.sizeLeanMin, Math.exp(sigma * z))) : Math.min(2.5, Math.max(0.2, Math.exp(sigma * z)));
+  });
+}
+const LEN_SIGMA = 0.18;
+const leanQ = new Map<number, number[]>();
+const vulnFor = (lure: LureDef) => {
+  const lean = lure.bigFishLean ?? 0;
+  if (!lean) return VULN_Q;
+  let q = leanQ.get(lean);
+  if (!q) leanQ.set(lean, (q = vulnQuantiles(3 * lean * LEN_SIGMA)));
+  return q;
+};
 function invNorm(p: number): number {
   const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
   const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
@@ -273,19 +320,31 @@ export interface RigEstimate {
  * depth; on a bait slow enough to catch (closing chance c) it then strikes at full proximity if its
  * depth-matched fit clears the strike line, which is why slow baits convert followers fast ones lose.
  */
-function visitStrikeChance(f0: number, f0Closed: number, lambda: number, closing: number): number {
+function visitStrikeChance(f0: number, f0Closed: number, lambda: number, closing: number, dwell = 0, vq = VULN_Q): number {
   const th = (A.strikeAt * A.leakPerSec) / A.gainPerSec;
   const followFrac = A.followAt / A.strikeAt;
   let p = 0;
-  for (const v of VULN_Q) {
-    const xd = th / (v * Math.max(1e-6, f0));
+  for (const v of vq) {
+    // Dwell (a bait shaken in place): proximity climbs by `dwell` of the gap, so the fish only has to start
+    // where p + (1 - p) dwell reaches the proximity it needs.
+    const xd = Math.max(0, (th / (v * Math.max(1e-6, f0)) - dwell) / (1 - dwell));
     const direct = xd < 1 ? 1 - Math.exp(-lambda * (1 - xd)) : 0;
     const xf = xd * followFrac;
-    const follow = v * f0Closed >= th && xf < 1 ? 1 - Math.exp(-lambda * (1 - xf)) : direct;
+    const follow = v * f0Closed >= th && xf < 1 ? 1 - Math.exp(-lambda * Math.max(0, 1 - xf)) : direct;
     p += closing * Math.max(follow, direct) + (1 - closing) * direct;
   }
-  return p / VULN_Q.length;
+  return p / vq.length;
 }
+
+/**
+ * Drop-shotting casts at fish seen on the forward sonar rather than blind, so each cast meets more
+ * fish than its sight footprint over a random patch of the stop would. Fitted so the harness expert's
+ * drop shot (casting to the marks it saw when it stopped) has the same harness/predicted ratio as the
+ * other lures (0.72 on Champlain, 12 days; 1.12 with no targeting term).
+ */
+const SONAR_TARGETING = 1.75;
+/** Depth match an expert gets on a suspended fish by thumbing the drop shot at its depth (some casts miss it). */
+const SUSPEND_HIT = 0.8;
 
 /** Share of the retrieve a following fish can keep up with the lure (follow speed vs lure speed). */
 function closingChance(lure: LureDef): number {
@@ -319,17 +378,22 @@ export function estimateRig(c: Conditions, clockMin: number, rig: Rig, env: Cell
   let lsum = 0;
   for (const cell of env) {
     const R = detectRange(lure, cell.secchi, light);
-    const lambda = (casts * (2 * R * pathM + Math.PI * R * R)) / area;
+    const lambda = (casts * (2 * R * pathM + Math.PI * R * R) * (lure.style === 'shake' ? SONAR_TARGETING : 1)) / area;
     const lureFt = lureWorkingDepth(lure, rig.line, cell.depth);
     const common =
       match * (cell.cover !== 'none' ? A.coverBonus : 1) * temp * lightWind * colorFit(color, cell.secchi, light) * lineVisibilityFit(rig.line, cell.secchi, lure);
-    const hard = HARD_COVER.has(cell.cover) ? 0.85 : 1; // some casts at hard cover crash and spook
+    // Some casts at hard cover crash and spook; weedless baits go in clean (a spinnerbait mostly).
+    const hard = !HARD_COVER.has(cell.cover) ? 1 : lure.weedless === 'full' ? 1 : lure.weedless === 'partial' ? 1 - 0.15 * TUNING.cast.partialWeedlessCrash : 0.85;
+    const dwell = lure.style === 'shake' ? A.dwellCap : 0;
+    const vq = vulnFor(lure);
     for (const [sp, dens] of Object.entries(cell.density) as [SpeciesId, number][]) {
       const act = activityFor(sp, c, clockMin, 3);
       const fishFt = holdingDepth(cell.depth, light, act);
       const base = act * common * (SPECIES[sp].lureAffinity?.[lure.id] ?? 1);
       const fishHere = dens * cell.cellArea;
-      strikes += fishHere * hard * visitStrikeChance(base * depthMatch(lureFt, fishFt, act), base, lambda, closing);
+      // A drop shot is stopped at a suspended fish's depth (thumbed on the fall) or rides the leader over the bottom.
+      const dm = lure.style === 'shake' ? Math.max(depthMatch(lureFt, fishFt, act), cell.depth - fishFt > 4 ? SUSPEND_HIT : 0) : depthMatch(lureFt, fishFt, act);
+      strikes += fishHere * hard * visitStrikeChance(base * dm, base, lambda, closing, dwell, vq);
       fishN += fishHere;
       dsum += fishHere * cell.depth;
       fsum += fishHere * fishFt;
@@ -360,18 +424,32 @@ export function needsHeavyLine(lake: LakeDef): boolean {
 export function suggestedLine(lake: LakeDef, lureId: string): Line {
   const lure = LURES[lureId];
   const clear = lake.clarity.defaultSecchiFt >= TUNING.attraction.clearSecchiFt;
-  if (lure.motion === 'surface') return { type: 'mono', testLb: needsHeavyLine(lake) ? 17 : 14 };
-  if (needsHeavyLine(lake)) return lure.style === 'bottom' && lure.weightOz >= 0.375 ? { type: 'fluoro', testLb: 17 } : { type: 'fluoro', testLb: 15 };
+  const heavy = needsHeavyLine(lake);
+  // Frogs: braid winches fish out of the grass and drives the hook (no stretch); fish can't see line on top.
+  if (lure.motion === 'surface') return lure.weedless ? { type: 'braid', testLb: 50 } : { type: 'mono', testLb: heavy ? 17 : 14 };
+  // Flipping: heavy fluoro to pull fish out of the cover (braid shows in clear water).
+  if (lure.weedless === 'full') return { type: 'fluoro', testLb: lure.weightOz >= 0.5 ? 20 : heavy ? 17 : 15 };
+  if (heavy) return lure.style === 'bottom' && lure.weightOz >= 0.375 ? { type: 'fluoro', testLb: 17 } : { type: 'fluoro', testLb: 15 };
+  if (lure.bigFishLean && lure.weightOz >= 1) return { type: 'fluoro', testLb: 17 };
+  // Deep cranks: thin line dives deeper.
+  if (lure.motion === 'diving' && lure.runDepthFt >= 10) return { type: 'fluoro', testLb: 10 };
   if (lure.weightOz <= 0.25) return { type: 'fluoro', testLb: clear ? 8 : 10 };
   return { type: 'fluoro', testLb: 12 };
 }
 
-/** Lightest owned rod whose lure-weight range fits (cast distance penalty otherwise). */
+/** Lightest owned rod whose lure-weight range fits and has the power the lure asks for. */
 export function suggestedRod(lureId: string, ownedRods: string[]): string | null {
-  const w = LURES[lureId].weightOz;
+  const lure = LURES[lureId];
   // RODS is listed light to heavy; owned rods are in purchase order.
-  const fits = Object.keys(RODS).filter((r) => ownedRods.includes(r) && w >= RODS[r].lureOz[0] && w <= RODS[r].lureOz[1]);
+  const fits = Object.keys(RODS).filter((r) => ownedRods.includes(r) && rodCasts(RODS[r], lure) && rodPowerOk(RODS[r], lure));
   return fits[0] ?? null;
+}
+
+/** "a 0.75 oz XH rod": what to buy when no owned rod suits the lure. */
+export function rodNeed(lureId: string): string {
+  const lure = LURES[lureId];
+  const power = lure.rodPower ?? (Object.values(RODS).find((r) => rodCasts(r, lure))?.power ?? 'M');
+  return `a ${power}${POWER_RANK[power] < 4 ? '+' : ''} rod for ${lure.weightOz} oz`;
 }
 
 /** Best colour of a lure for the clarity where it will be fished and the day's light. */
@@ -401,6 +479,14 @@ export function rigIssues(lake: LakeDef, rig: RodSetup): RigIssue[] {
   const rod = RODS[rig.rodId];
   if (lure.weightOz < rod.lureOz[0] || lure.weightOz > rod.lureOz[1])
     out.push({ severity: 'warn', text: `${lure.weightOz} oz is outside the rod's ${rod.lureOz[0]}-${rod.lureOz[1]} oz range: casts lose ${Math.round((1 - TUNING.cast.rodMismatchPenalty) * 100)}% distance.` });
+  if (!rodPowerOk(rod, lure))
+    out.push({ severity: 'warn', text: `The ${lure.name} wants a ${lure.rodPower} rod or heavier: a ${rod.power} can't drive the hook home (-${Math.round((1 - TUNING.hookset.underpoweredRod) * 100)}% hook-ups).` });
+  if (lure.motion === 'surface' && lure.weedless && rig.line.type !== 'braid')
+    out.push({ severity: 'warn', text: `Frog on ${rig.line.type}: stretch costs hook-ups and grass cuts it. Spool 50 lb braid.` });
+  if (lure.weedless === 'full' && lure.motion !== 'surface' && rig.line.type !== 'braid' && rig.line.testLb < 15)
+    out.push({ severity: 'tip', text: `${rig.line.testLb} lb is light for pulling fish out of cover with a ${lure.name}: 15-20 lb fluoro.` });
+  if (lure.motion === 'diving' && lure.runDepthFt >= 10 && rig.line.testLb >= 15 && rig.line.type !== 'braid')
+    out.push({ severity: 'tip', text: `${rig.line.testLb} lb line planes a deep crankbait up about 10%: 10 lb gets it down.` });
   const clear = lake.clarity.defaultSecchiFt >= TUNING.attraction.clearSecchiFt;
   if (clear && lure.motion !== 'surface' && rig.line.type !== 'fluoro')
     out.push({ severity: 'tip', text: `Clear water: fish see ${rig.line.type} line (${rig.line.type === 'braid' ? '-10' : '-4'}% bites). Fluoro is invisible.` });
@@ -412,6 +498,23 @@ export function rigIssues(lake: LakeDef, rig: RodSetup): RigIssue[] {
 /** How to work the lure so the attraction model rewards it (presentationMatch). */
 export function techniqueTip(lureId: string, waterTempF: number): string {
   const lure = LURES[lureId];
+  switch (lure.id) {
+    case 'texasRig':
+    case 'flipJig':
+      return `Pitch it right into the docks, wood or grass (weedless: no crash, it lands beside the fish). Let it hit bottom, hop it once or twice, and set on the thump.`;
+    case 'frog':
+      return `Walk it over grass, pads and wood with an even rhythm, pausing in the holes. On a blow-up wait to feel the weight, then set (H / HOOK).`;
+    case 'lipless':
+      return `Count it down to the grass tops, then reel steadily. When it ticks into the grass, rip it free (twitch): that's when they hit.`;
+    case 'deepCrank':
+      return `Make a long cast and reel steadily: it dives to ~14 ft over the first part of the retrieve. Dig it into deep rock and ledges.`;
+    case 'swimbait':
+      return `Count it down near the fish and swim it slowly and steadily. Fewer bites, bigger fish.`;
+    case 'spinnerbait':
+      return `Count it down, then reel steadily; bump it off wood and through grass. Best in wind and stained water.`;
+    case 'carolinaRig':
+      return `Let it hit bottom, then drag it slowly across flats and points with short pulls: the bait floats about a foot behind and above the sinker.`;
+  }
   if (lure.motion === 'swimming') return `Count it down on a slack line to just above the fish, then hold REEL steadily. A slip under ⅓ s is fine; longer stops kill it.`;
   switch (lure.style) {
     case 'steady':
@@ -425,7 +528,7 @@ export function techniqueTip(lureId: string, waterTempF: number): string {
     case 'bottom':
       return `Let it hit bottom first (watch the sonar), then drag slowly and hop it every few seconds. Don't leave it dead for more than ~12 s.`;
     case 'shake':
-      return `Let it reach bottom, then shake it in place: two or more shakes every few seconds, barely moving.`;
+      return `Cast to fish you saw on the sonar. Thumb the spool on the fall to stop it at a suspended fish (or let it reach bottom), then shake it in place: the longer it sits on a fish, the closer the fish comes.`;
   }
 }
 
@@ -476,6 +579,8 @@ function reasonsFor(lake: LakeDef, c: Conditions, lureId: string, est: RigEstima
   if (est.cycleSec < 12) r.push('covers water fast');
   else if (est.cycleSec > 30) r.push('slow: lets followers catch up and commit');
   if (lure.vibration >= 0.6 && lake.clarity.defaultSecchiFt < TUNING.attraction.clearSecchiFt) r.push('vibration carries in stained water');
+  if (lure.weedless === 'full') r.push('weedless: pitch it into the cover');
+  if (lure.bigFishLean) r.push('a big-fish bait');
   return r;
 }
 

@@ -76,7 +76,15 @@
       "squarebill": "a chunky hard-plastic squarebill crankbait with a square diving lip and two treble hooks",
       "walker": "a cigar-shaped hard-plastic walking topwater plug with two treble hooks",
       "chatterbait": "a bladed swim jig with a hexagonal metal blade at the nose, silicone skirt and a soft-plastic trailer",
-      "footballJig": "a tungsten football-head jig with a flowing silicone skirt, weed guard and a craw trailer"
+      "footballJig": "a tungsten football-head jig with a flowing silicone skirt, weed guard and a craw trailer",
+      "texasRig": "a soft-plastic ribbon-tail worm Texas-rigged on an offset worm hook with the point buried in the plastic, a pegged bullet weight at the nose",
+      "flipJig": "a heavy flipping jig with a bullet-shaped head, a thick fibre weed guard, a full silicone skirt and a soft-plastic craw trailer",
+      "spinnerbait": "a spinnerbait: a safety-pin wire frame with a willow-leaf and a Colorado blade on the upper arm and a skirted jig head with a single hook on the lower arm",
+      "frog": "a hollow-bodied soft topwater frog with two upturned double hooks tucked tight against its back and rubber-strand legs",
+      "lipless": "a flat-sided lipless rattling crankbait with no diving lip, the line tie on its back and two treble hooks",
+      "deepCrank": "a fat-bodied deep-diving crankbait with a long clear diving bill and two treble hooks",
+      "swimbait": "a large soft-plastic paddle-tail swimbait on a weighted swimbait hook, realistic baitfish shape",
+      "carolinaRig": "a Carolina rig: a brass egg sinker and glass bead on the main line, a swivel, then a leader to a soft-plastic lizard on an offset hook"
     }
   },
   "music": {

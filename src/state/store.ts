@@ -8,6 +8,7 @@ import { dayPlan, pointData, proPickNow, windowAt, type PointVerdict, type Windo
 import { formatClock } from '../sim/conditions';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
 import type { NavCue, NavStop } from '../sim/nav';
+import { biteAtSec } from '../sim/presentation';
 import { adviceFor } from '../sim/tierAdvice';
 import { createTournament, isTournamentOver, spendMinutes, standings, startNextDay, switchRod } from '../sim/tournament';
 import type { CaughtFish, GamePhase, TournamentState, Vec2, Weather } from '../sim/types';
@@ -51,6 +52,8 @@ export interface Hud {
   nav: NavHud | null;
   /** Within casting range of the destination, a PRO stop or a charted waypoint: the FISH button lights up. */
   inRange: boolean;
+  /** A strike in progress: 'wait' while the fish closes on it (or blows up on a topwater), 'set' once it has the bait. */
+  hook: 'none' | 'wait' | 'set';
 }
 
 export interface NavHud {
@@ -225,6 +228,7 @@ export const useStore = create<StoreState>((set, get) => ({
       tier,
       seed: seed ?? (Date.now() & 0x7fffffff),
       deck: save.deck,
+      autoHookset: save.settings.autoHookset,
     });
     const next = structuredClone(save);
     next.player.cash = Math.max(0, next.player.cash - entry);
@@ -356,6 +360,7 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint'], 
     proPick: !adviceFor(t.tier).proChip ? -1 : t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos, planFor(t)) : t.activeRod,
     nav: t.phase === 'Navigate' ? nav : null,
     inRange: t.phase === 'Navigate' && inRange,
+    hook: t.present?.strikingFishId == null ? 'none' : t.present.strikeT < biteAtSec(LURES[t.deck[t.activeRod].lureId]) ? 'wait' : 'set',
   };
 }
 

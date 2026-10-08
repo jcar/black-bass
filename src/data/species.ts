@@ -50,7 +50,8 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { standing: 1.7, grass: 1.6, dock: 1.5, timber: 1.5, reeds: 1.4, rock: 0.8, none: 0.5 },
     jumpRate: 0.05,
     power: 1.0,
-    lureAffinity: { squarebill: 1.15, chatterbait: 1.2, walker: 1.1, dropShot: 0.85 },
+    // Largemouth: the cover and grass fish. Weedless plastics, jigs, frogs and spinnerbaits are their baits.
+    lureAffinity: { squarebill: 1.15, chatterbait: 1.2, walker: 1.1, dropShot: 0.85, texasRig: 1.15, flipJig: 1.15, spinnerbait: 1.15, frog: 1.15, swimbait: 0.7 },
   },
   smallmouth: {
     id: 'smallmouth',
@@ -62,7 +63,8 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { rock: 1.8, dock: 0.7, grass: 0.5, timber: 0.6, standing: 0.6, reeds: 0.2, none: 0.7 },
     jumpRate: 0.13,
     power: 1.2,
-    lureAffinity: { tube: 1.2, ned: 1.15, dropShot: 1.2, jerkbait: 1.15, chatterbait: 0.85 },
+    // Smallmouth: rock and open-water fish; finesse and deep cranks, rarely in the slop.
+    lureAffinity: { tube: 1.2, ned: 1.15, dropShot: 1.2, jerkbait: 1.15, chatterbait: 0.85, deepCrank: 1.1, carolinaRig: 1.05, flipJig: 0.85, frog: 0.6, spinnerbait: 0.9, swimbait: 0.65 },
   },
   spotted: {
     id: 'spotted',
@@ -74,6 +76,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { rock: 1.6, timber: 1.0, standing: 1.0, dock: 0.8, grass: 0.6, none: 0.8 },
     jumpRate: 0.05,
     power: 1.15,
+    lureAffinity: { deepCrank: 1.05, carolinaRig: 1.05, frog: 0.7 },
   },
   pike: {
     id: 'pike',
@@ -85,7 +88,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { grass: 1.8, reeds: 1.0, none: 0.4 },
     jumpRate: 0.02,
     power: 1.1,
-    lureAffinity: { jerkbait: 1.4, chatterbait: 1.3, squarebill: 1.1 },
+    lureAffinity: { jerkbait: 1.4, chatterbait: 1.3, squarebill: 1.1, spinnerbait: 1.4, swimbait: 1.3, lipless: 1.2, frog: 1.1 },
   },
   pickerel: {
     id: 'pickerel',
@@ -97,7 +100,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { grass: 1.6, reeds: 1.6, none: 0.3 },
     jumpRate: 0.03,
     power: 0.8,
-    lureAffinity: { jerkbait: 1.3, walker: 1.2, chatterbait: 1.2 },
+    lureAffinity: { jerkbait: 1.3, walker: 1.2, chatterbait: 1.2, spinnerbait: 1.3, frog: 1.2, lipless: 1.1 },
   },
   bowfin: {
     id: 'bowfin',
@@ -109,7 +112,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { grass: 1.5, reeds: 1.7, standing: 1.0, none: 0.2 },
     jumpRate: 0,
     power: 1.4,
-    lureAffinity: { ned: 0.8, tube: 1.0, footballJig: 1.2 },
+    lureAffinity: { ned: 0.8, tube: 1.0, footballJig: 1.2, texasRig: 1.1, flipJig: 1.1, frog: 1.2 },
   },
   drum: {
     id: 'drum',
@@ -121,7 +124,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
     cover: { rock: 1.2, standing: 0.8, none: 1.0 },
     jumpRate: 0,
     power: 1.0,
-    lureAffinity: { ned: 1.3, dropShot: 1.3, tube: 1.2, footballJig: 1.2 },
+    lureAffinity: { ned: 1.3, dropShot: 1.3, tube: 1.2, footballJig: 1.2, carolinaRig: 1.3 },
   },
 };
 

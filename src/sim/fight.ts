@@ -150,7 +150,9 @@ export function stepFight(s: TournamentState, ctx: SimCtx, input: InputFrame, dt
     const tight = reeling || braking ? 1 : 0.25;
     if (!fight.jumpBowed) target += F.jumpSpikeMult * w * tight * Math.max(0.2, 1 - stretch * 1.2) * (fight.jumpT > F.jumpWindowSec * 0.5 ? 1 : 0.6);
     if (fight.jumpT <= 0) {
-      const chance = fight.jumpBowed ? F.thrownChanceBowed : lure.treble ? F.thrownChanceTreble : F.thrownChanceUnbowed;
+      // Trebles on no-stretch braid tear out of the fish's mouth more easily.
+      const tear = fight.tearOut ? TUNING.hookset.trebleBraidTearOut : 1;
+      const chance = (fight.jumpBowed ? F.thrownChanceBowed : lure.treble ? F.thrownChanceTreble : F.thrownChanceUnbowed) * tear;
       if (rng.chance(chance)) {
         loseFish(s, 'thrown', 'It threw the hook on the jump!');
         return;

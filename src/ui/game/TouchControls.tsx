@@ -129,10 +129,12 @@ interface ControlsProps {
   lureId: string;
   /** "Data for this point" at this tier: game minutes it costs (0 = free), null = not available. */
   dataMin: number | null;
+  /** A strike: HOOK replaces REEL ('wait' while the fish closes or blows up, glowing 'set' once it has it). */
+  hook: 'none' | 'wait' | 'set';
 }
 
 /** Memoised: the HUD snapshot ticks at 10 Hz, but the controls only change with these props. */
-export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId, dataMin }: ControlsProps) {
+export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId, dataMin, hook }: ControlsProps) {
   const [stick, setStick] = useState<{ ox: number; oy: number; x: number; y: number } | null>(null);
   const touch = useRef<{ id: number; t0: number; x0: number; y0: number } | null>(null);
 
@@ -180,7 +182,9 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
       : phase === 'Cast'
         ? 'A/D aim · C cast, C again to release · B thumb · M move'
         : phase === 'Present'
-          ? retrieveHint(LURES[lureId], true)
+          ? hook !== 'none'
+            ? 'H set the hook when it has it (wait for the weight on topwater)'
+            : retrieveHint(LURES[lureId], true)
           : phase === 'Fight'
             ? 'Space reel · B thumb · A/D pull opposite · V bow on jumps'
             : ''
@@ -190,7 +194,9 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
       : phase === 'Cast'
         ? 'Drag left/right to aim'
         : phase === 'Present'
-          ? retrieveHint(LURES[lureId], false)
+          ? hook !== 'none'
+            ? 'HOOK when it has it (wait for the weight on topwater)'
+            : retrieveHint(LURES[lureId], false)
           : phase === 'Fight'
             ? 'Pull opposite the fish · flick ↓ to bow on jumps'
             : '';
@@ -227,10 +233,18 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
         )}
         {phase === 'Present' && (
           <>
-            <TapButton label="BURN IN" size="md" onTap={() => inputHub.tap('moveOn')} />
+            <div className="btn-row">
+              {/* Drop shot: thumb the spool on the fall to stop it at a suspended fish's depth. */}
+              {LURES[lureId]?.style === 'shake' && hook === 'none' && <HoldButton label="THUMB" size="md" onChange={(v) => (inputHub.brake = v)} />}
+              <TapButton label="BURN IN" size="md" onTap={() => inputHub.tap('moveOn')} />
+            </div>
             <div className="btn-row">
               <TapButton label="TWITCH" size="lg" onTap={() => inputHub.tap('twitch')} />
-              <HoldButton label="REEL" size="xl" onChange={(v) => (inputHub.reel = v)} />
+              {hook !== 'none' ? (
+                <TapButton label="HOOK" size="xl" accent haptic cue={hook === 'set'} onTap={() => inputHub.tap('hookSet')} />
+              ) : (
+                <HoldButton label="REEL" size="xl" onChange={(v) => (inputHub.reel = v)} />
+              )}
             </div>
           </>
         )}

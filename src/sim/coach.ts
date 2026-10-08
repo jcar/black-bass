@@ -3,10 +3,11 @@
 // tournament.ts), so "hardcore" stays fair: you're told why a fish didn't eat, not given fish.
 import { LAKES } from '../data/lakes';
 import { LURES } from '../data/lures';
+import { RODS, rodPowerOk } from '../data/rods';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { advisorRoute, APPROACH_TIP, techniqueTip } from './advisor';
-import type { GamePhase, TournamentEvent, TournamentState, Vec2 } from './types';
+import type { GamePhase, HookMiss, RodSetup, TournamentEvent, TournamentState, Vec2 } from './types';
 
 export interface CoachTip {
   id: string;
@@ -26,6 +27,8 @@ export interface DayStats {
   strikes: number;
   /** Per lure: casts and summed end-of-cast retrieve match. */
   match: Record<string, { n: number; sum: number }>;
+  /** Strikes that didn't become hooked fish, by why (presentation.ts hookset). */
+  missed?: Record<HookMiss, number>;
 }
 
 export interface CoachState {
@@ -56,7 +59,7 @@ const REACH_M = 40;
 
 export function newCoach(): CoachState {
   return {
-    stats: { casts: 0, arrivals: 0, spookedArrivals: 0, crashes: 0, fishlessCasts: 0, followNoStrike: 0, strikes: 0, match: {} },
+    stats: { casts: 0, arrivals: 0, spookedArrivals: 0, crashes: 0, fishlessCasts: 0, followNoStrike: 0, strikes: 0, match: {}, missed: { early: 0, late: 0, noHook: 0 } },
     lastTipAt: -Infinity,
     tipAt: {},
     tipCount: {},
@@ -71,6 +74,28 @@ export function newCoach(): CoachState {
     stopFollowNoStrike: 0,
     visited: [],
   };
+}
+
+/** Why the hook didn't stick, from the same rules hookUpChance applies. */
+export function noHookReason(rig: RodSetup): string {
+  const lure = LURES[rig.lureId];
+  const rod = RODS[rig.rodId];
+  if (!rodPowerOk(rod, lure)) return `The ${lure.name} needs a ${lure.rodPower} rod or heavier to drive the hook; a ${rod.power} bends instead.`;
+  if (lure.hookRate && lure.hookRate < 1) return `${lure.name}s miss a share of strikes however you set. Keep at it, on braid and a heavy rod.`;
+  if (!lure.treble && rig.line.type !== 'braid') return `${rig.line.type === 'mono' ? 'Mono' : 'Fluoro'} stretches: on a long cast a single hook doesn't get driven home. Shorter casts, braid, or less stretchy line hook more.`;
+  if (lure.treble && rig.line.type === 'braid') return 'Trebles on braid have no give: they tear out. Mono or fluoro (or a braid-to-fluoro leader) keeps them pinned.';
+  return 'Some strikes just miss the hook. Set on the thump, not before.';
+}
+
+/** The coach's explanation for a missed hookset. */
+export function missTip(why: HookMiss, topwater: boolean, rig: RodSetup): CoachTip {
+  if (why === 'early')
+    return topwater
+      ? { id: 'miss-early-top', title: 'Too early: wait to feel the weight on topwater', text: "The blow-up isn't the bite. Let the fish turn down with it, feel the weight (the thump), then set: H or HOOK." }
+      : { id: 'miss-early', title: 'Too early', text: "You set while the fish was still coming. Wait for the thump (HOOK glows), then set: H or HOOK." };
+  if (why === 'late')
+    return { id: 'miss-late', title: 'Too late', text: 'Bass spit a hard bait in under a second (soft plastics a little later). Set as soon as you feel the thump: H or HOOK.' };
+  return { id: 'miss-nohook', title: "The hook didn't stick", text: noHookReason(rig) };
 }
 
 function bassNear(t: TournamentState, at: Vec2, r: number): { n: number; spooked: number } {
@@ -119,6 +144,17 @@ export function coachStep(c: CoachState, t: TournamentState, events: TournamentE
       c.castStruck = true;
       c.stats.strikes++;
     }
+    if (e.type === 'missed' && e.data?.miss && rig) {
+      const m = (c.stats.missed ??= { early: 0, late: 0, noHook: 0 });
+      m[e.data.miss]++;
+      candidates.push(missTip(e.data.miss, !!e.data.topwater, rig));
+    }
+    if (e.type === 'fouled' && lure)
+      candidates.push({
+        id: 'fouled',
+        title: 'Grass on the hooks',
+        text: `A treble bait in the grass comes back fouled and won't get bit. Twitch (T) to rip the ${lure.name} free: the rip is a reaction trigger. Weedless baits come through clean.`,
+      });
   }
 
   if (t.phase === 'Present' && t.present && lure) {
@@ -142,7 +178,7 @@ export function coachStep(c: CoachState, t: TournamentState, events: TournamentE
     c.lastMatch = p.match;
     const speed = Math.hypot(p.lureVel.x, p.lureVel.y);
     const sinks = lure.motion === 'sinking';
-    if (sinks && !p.onBottom && p.t < 6 && speed > 0.15) c.earlyReelSec += dt;
+    if (sinks && !p.onBottom && !p.held && p.t < 6 && speed > 0.15) c.earlyReelSec += dt;
     if (p.t > 1.5 && p.match < 0.45 && (!sinks || p.onBottom)) c.lowMatchSec += dt;
     if (c.earlyReelSec > 1.2) candidates.push({ id: 'bottom', title: 'Let it hit bottom first', text: `The ${lure.name} gets bit on the bottom. Watch the sonar depth and wait for it to touch down before you reel.` });
     if (c.lowMatchSec > 1.5) candidates.push({ id: `match-${lure.style}`, title: `Work the ${lure.name} right`, text: techniqueTip(lure.id, t.conditions.waterTempF) });
@@ -193,6 +229,12 @@ export function debrief(s: DayStats, waterTempF: number): string[] {
     if (m.n < 4) continue;
     const avg = m.sum / m.n;
     if (avg < 0.6) out.push({ cost: (0.8 - avg) * 12, text: `Your ${LURES[id].name} retrieve rated ${Math.round(avg * 100)}% (a pro gets ~80%+). ${techniqueTip(id, waterTempF)}` });
+  }
+  const missed = s.missed ? s.missed.early + s.missed.late + s.missed.noHook : 0;
+  if (missed >= 3 && s.missed) {
+    const m = s.missed;
+    const worst = m.early >= m.late && m.early >= m.noHook ? 'set too early (on topwater, wait for the weight)' : m.late >= m.noHook ? 'set too late (set on the thump)' : "set on time but the hook didn't stick (check rod power and line stretch)";
+    out.push({ cost: missed * 0.9, text: `${missed} strikes missed at the hookset, most ${worst}.` });
   }
   if (s.followNoStrike >= 4) out.push({ cost: s.followNoStrike * 0.4, text: `${s.followNoStrike} casts drew followers that didn't eat: close, but not enough. Match the fish's depth or switch to the Pro pick.` });
   out.sort((a, b) => b.cost - a.cost);

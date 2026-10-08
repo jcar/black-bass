@@ -115,6 +115,7 @@ export function GameScreen() {
               leftHanded={settings.leftHanded}
               lureId={lureId}
               dataMin={dataMin}
+              hook={hud.hook}
             />
           )}
           <Hud hud={hud} debug={settings.debugMeter} />

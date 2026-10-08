@@ -5,6 +5,7 @@ import { KEY_HINTS } from '../game/input';
 import { keeperMinIn } from '../sim/livewell';
 import type { TournamentState } from '../sim/types';
 import { adviceFor } from '../sim/tierAdvice';
+import { useStore } from '../state/store';
 import { DayPlan, RigCheck, ScoutingReport } from './ProAdvice';
 import { Sheet } from './kit';
 
@@ -36,6 +37,7 @@ export function ProPlanSheet({ t, open, onClose, footer }: { t: TournamentState;
 /** Controls and the rules of the bag. */
 export function HowToFishSheet({ lakeId, open, onClose }: { lakeId: string; open: boolean; onClose: () => void }) {
   const lake = LAKES[lakeId];
+  const autoHookset = useStore((s) => s.save.settings.autoHookset);
   const minIn = keeperMinIn(lake);
   const slot = lake?.regs?.slot;
   return (
@@ -50,6 +52,19 @@ export function HowToFishSheet({ lakeId, open, onClose }: { lakeId: string; open
         <p>
           <strong>Work the bait the way it's built:</strong> hold REEL steady for crankbaits and bladed jigs; let bottom baits sink, then drag
           with short pulls and hops; twitch then pause a jerkbait; walk a topwater with an even rhythm. The on-screen hint follows the lure on your rod.
+        </p>
+        <p>
+          <strong>Set the hook:</strong> when a fish has the bait you feel the thump and HOOK (H on a keyboard) glows where REEL was. Set then:
+          too soon and you pull it away (on topwater, wait to feel the weight after the blow-up); too late and it spits it. Stretchy line on a long
+          cast, trebles on braid and a rod too light for the bait cost a few hook-ups. {autoHookset ? 'Auto hookset is on (Settings): it sets for you.' : 'Prefer it done for you? Turn on Auto hookset in Settings.'}
+        </p>
+        <p>
+          <strong>Cover and grass:</strong> weedless baits (Texas rig, flipping jig, frog; a spinnerbait mostly) go right into docks and wood
+          without spooking the fish. Treble baits that tick into grass come back fouled: twitch to rip them free, which is a strike trigger too.
+        </p>
+        <p>
+          <strong>Drop shot:</strong> cast to fish you saw on the sonar. THUMB (B) on the fall stops it at a suspended fish's depth; then shake it in
+          place. The longer it sits on a fish, the closer the fish comes.
         </p>
         <p>
           <strong>The fight:</strong> hold REEL and let the drag do the work. Past the drag the line warns you; thumbing the spool or a jump on a

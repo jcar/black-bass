@@ -7,7 +7,7 @@
 import { type ColorDef, type LureDef } from '../../data/lures';
 import { SPECIES } from '../../data/species';
 import { TUNING } from '../../data/tuning';
-import type { Conditions, FishEntity, Line, PresentState } from '../types';
+import type { Conditions, FishEntity, Line, PresentState, SpeciesId } from '../types';
 
 const A = TUNING.attraction;
 
@@ -21,7 +21,7 @@ export function jerkPauseWindow(tempF: number): [number, number] {
   return [0.8, 2.5];
 }
 
-function countSince(times: number[], since: number, until = Infinity): number {
+export function countSince(times: number[], since: number, until = Infinity): number {
   let n = 0;
   for (const t of times) if (t >= since && t <= until) n++;
   return n;
@@ -79,7 +79,8 @@ export function presentationMatch(lure: LureDef, p: PresentState, tempF: number)
       return speedFit * hopFit * boredom;
     }
     case 'shake': {
-      if (!p.onBottom) return 0.3;
+      // Shaken on the bottom, or held mid-water at a suspended fish (spool thumbed on the fall).
+      if (!p.onBottom && !p.held) return 0.3;
       const speedFit = p.avgSpeed <= 0.15 ? 1 : 0.3;
       const shakes = countSince(p.twitchTimes, now - 3);
       return speedFit * (shakes >= 2 ? 1 : shakes === 1 ? 0.8 : 0.55);
@@ -153,6 +154,20 @@ export interface AttractionContext {
   coverNear: boolean;
   pressure: number;
   clockMin: number;
+  /** The lake's median length by species (for big-fish baits); absent = no size lean. */
+  medianIn?: Partial<Record<SpeciesId, number>>;
+}
+
+/**
+ * Big-fish baits (swimbaits, frogs, flipping jigs): fit scales with the fish's length against the
+ * lake's median, (L / median)^(3 x lean), roughly weight^lean. Lengths are lognormal around the
+ * median, so the lean shifts bites toward big fish while barely changing the mean.
+ */
+export function sizeLeanFit(lure: LureDef, f: Pick<FishEntity, 'species' | 'lengthIn'>, medianIn?: Partial<Record<SpeciesId, number>>): number {
+  const lean = lure.bigFishLean ?? 0;
+  const med = medianIn?.[f.species];
+  if (!lean || !med) return 1;
+  return Math.min(A.sizeLeanMax, Math.max(A.sizeLeanMin, Math.pow(f.lengthIn / med, 3 * lean)));
 }
 
 /** Per-fish gain rate for the interest meter (per second). Exported for tests and the debug overlay. */
@@ -173,6 +188,7 @@ export function interestRate(f: FishEntity, ctx: AttractionContext, activity: nu
     colorFit(ctx.color, ctx.secchiFt, ctx.light) *
     lineVisibilityFit(ctx.line, ctx.secchiFt, ctx.lure) *
     affinity *
+    sizeLeanFit(ctx.lure, f, ctx.medianIn) *
     (1 - ctx.pressure * 0.4)
   );
 }
