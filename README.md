@@ -19,7 +19,8 @@ npm run build        # typecheck + production build + zero-runtime-API guard
 On iOS: open the LAN URL in Safari, accept the certificate, then **Share → Add to Home Screen** for
 full-screen landscape play that works offline.
 
-Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), M = lake
+Desktop keyboard: drive like Rock n' Roll Racing: ←/→ (A/D) turn the boat, ↑ (W) goes on the quiet trolling motor
+(hold Shift to run the outboard), ↓ (S) brakes; Settings switches to point-to-go steering. M = lake
 map while driving (1-9 picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
 T = twitch/hop/shake, H = set the hook, B = thumb brake (also stops a drop shot on the fall), V = bow on a jump,
 M = move/burn in once fishing, I = data for this point (between casts), P = pop hook, K = check in (at the launch),

@@ -490,8 +490,9 @@ describe('keyboard mapping', () => {
     key('v', false);
     detach();
   });
-  it('drives on the trolling motor by default and the outboard with Shift', () => {
+  it('point-to-go steering: trolling motor by default, the outboard with Shift', () => {
     const { key, detach } = setup();
+    inputHub.steering = 'direct';
     key('w', true);
     key('d', true);
     const quiet = inputHub.frame('Navigate');
@@ -503,6 +504,7 @@ describe('keyboard mapping', () => {
     expect(Math.abs(inputHub.frame('Cast').stick.x)).toBeGreaterThan(0.6);
     key('w', false);
     key('d', false);
+    inputHub.steering = 'tank';
     detach();
   });
 });

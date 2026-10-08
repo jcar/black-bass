@@ -310,15 +310,15 @@ function sonarMarks(s: TournamentState, spot: Spot, maxD: (aim: number) => numbe
 /** Stick vector that makes stepNavigate head toward world heading h at magnitude m. */
 const stickFor = (h: number, m: number) => ({ x: Math.cos(h) * m, y: -Math.sin(h) * m });
 
-/** 8-way keyboard combo closest to a world heading. */
-function keysFor(h: number): string[] {
-  const dx = Math.cos(h);
-  const dy = -Math.sin(h); // stick y up = +1
+/**
+ * Keys that bring the boat onto world heading h with Rock n' Roll Racing steering (the keyboard
+ * default): A/D turn the bow toward it, W goes once it's roughly lined up (pivot first when way off).
+ */
+function keysFor(h: number, heading: number): string[] {
+  const d = Math.atan2(Math.sin(h - heading), Math.cos(h - heading));
   const keys: string[] = [];
-  if (dx > 0.38) keys.push('d');
-  if (dx < -0.38) keys.push('a');
-  if (dy > 0.38) keys.push('w');
-  if (dy < -0.38) keys.push('s');
+  if (Math.abs(d) > 0.14) keys.push(d > 0 ? 'd' : 'a');
+  if (Math.abs(d) < 0.9) keys.push('w');
   return keys;
 }
 
@@ -492,7 +492,7 @@ export function playDay(opts: {
           const run = d > 40;
           // On keys, feather Shift through stumps to stay under stump speed (a naive player lets it creep over).
           const feather = stumps && s.boat.speed > (P.name === 'naiveKeyboard' ? 27 : 22);
-          if (kb) kb.set([...keysFor(h), ...(run && !feather ? ['shift'] : [])]);
+          if (kb) kb.set([...keysFor(h, s.boat.heading), ...(run && !feather ? ['shift'] : [])]);
           else input.stick = stickFor(h, !run ? 0.32 : stumps ? 0.58 : 1);
           break;
         }
@@ -532,7 +532,7 @@ export function playDay(opts: {
           // Keys give whatever speed the mapping gives; a keyboard player lets off ~a boat-stop early
           // and fishes where the boat coasts to a halt.
           const stopDist = (s.boat.speed * s.boat.speed) / (2 * TUNING.boat.decel) + 6;
-          if (d > stopDist) kb.set([...keysFor(h), ...(run ? ['shift'] : [])]);
+          if (d > stopDist) kb.set([...keysFor(h, s.boat.heading), ...(run ? ['shift'] : [])]);
           else {
             kb.set([]);
             if (s.boat.speed <= TUNING.boat.fishHereMaxSpeed) kb.tap('f');

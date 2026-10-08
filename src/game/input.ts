@@ -7,7 +7,7 @@ const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
 
 /** Desktop key map, shown in the HUD and README. */
 export const KEY_HINTS =
-  'WASD/arrows steer (trolling) · Shift+steer run · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · K check in (at the launch) · Esc pause';
+  '←/→ (A/D) turn the boat · ↑ (W) go on the trolling motor, Shift+↑ runs the outboard · ↓ (S) brake (Settings: point-to-go steering) · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · K check in (at the launch) · Esc pause';
 
 /**
  * How to work the lure on the line, by the cadence the attraction model rewards (presentationMatch).
@@ -38,6 +38,11 @@ export function retrieveHint(lure: Pick<LureDef, 'motion' | 'style'>, keyboard: 
  */
 class InputHub {
   stick = { x: 0, y: 0 };
+  /**
+   * Keyboard boat steering: 'tank' (Rock n' Roll Racing: left/right turn the bow, up is the gas,
+   * down brakes) or 'direct' (the arrows point where you want to go). Touch always uses the stick.
+   */
+  steering: 'tank' | 'direct' = 'tank';
   private keyStick = { x: 0, y: 0 };
   reel = false;
   brake = false;
@@ -59,6 +64,11 @@ class InputHub {
     const sy = this.stick.y || (this.keyStick.y / km) * kbMag;
     const m = Math.hypot(sx, sy);
     f.stick = m > 1 ? { x: sx / m, y: sy / m } : { x: sx, y: sy };
+    if (phase === 'Navigate' && this.steering === 'tank' && !this.stick.x && !this.stick.y && (this.keyStick.x || this.keyStick.y)) {
+      const up = this.keyStick.y;
+      f.drive = { turn: this.keyStick.x, throttle: up > 0 ? (this.keysDown.has('shift') ? 1 : KEY_TROLL) : up < 0 ? -1 : 0 };
+      f.stick = { x: 0, y: 0 };
+    }
     f.reel = this.reel || this.keysDown.has(' ');
     f.brake = this.brake || this.keysDown.has('b');
     for (const k of Object.keys(this.pending) as (keyof InputHub['pending'])[]) {

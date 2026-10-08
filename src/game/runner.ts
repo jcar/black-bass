@@ -157,6 +157,7 @@ export class GameRunner {
     if (!t) return;
     const grid = getLakeGrid(LAKES[t.lakeId]);
     this.renderer.debug = store.save.settings.debugMeter;
+    inputHub.steering = store.save.settings.keySteering;
 
     const blocked = store.paused || store.mapOpen || store.screen !== 'game' || t.phase === 'WeighIn' || t.phase === 'Landed';
     // Settings can change mid-day (pause menu): the sim reads the auto-hookset choice from the state.

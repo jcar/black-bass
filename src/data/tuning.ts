@@ -66,6 +66,8 @@ export const TUNING = {
   },
 
   boat: {
+    /** Holding back (keyboard down arrow in relative steering) slows the boat this much faster than coasting. */
+    brakeDecelMult: 2,
     /** (game) World speeds are compressed so a lake crossing takes ~40 real seconds. */
     outboardMaxSpeed: 75,
     /** On plane above this speed a stump field outside the lanes is dangerous. */

@@ -337,6 +337,12 @@ export interface TournamentState {
 /** One frame of player input, produced by touch controls or keyboard. */
 export interface InputFrame {
   stick: Vec2; // -1..1, y up = +1
+  /**
+   * Relative ("tank", Rock n' Roll Racing) driving, used instead of the stick when present:
+   * turn -1 port .. +1 starboard (the boat pivots even when stopped), throttle 0..1 on the same
+   * trolling/outboard scale as stick magnitude, negative to brake.
+   */
+  drive?: { turn: number; throttle: number };
   reel: boolean;
   brake: boolean;
   /** Edge-triggered actions (true for exactly one tick). */

@@ -15,6 +15,11 @@ export function SettingsSheet({ open, onClose, children }: { open: boolean; onCl
     <Sheet open={open} onClose={onClose} title="Settings">
       <div className="col" style={{ gap: 0 }}>
         <Switch label="Sound & music" checked={settings.sound} onChange={(v) => set('sound', v)} />
+        <Switch
+          label="Keyboard: Rock n' Roll Racing steering (←/→ turn, ↑ go). Off: arrows point where to go"
+          checked={settings.keySteering === 'tank'}
+          onChange={(v) => mutateSave((s) => void (s.settings.keySteering = v ? 'tank' : 'direct'))}
+        />
         <Switch label="Left-handed controls" checked={settings.leftHanded} onChange={(v) => set('leftHanded', v)} />
         <Switch label="Auto hookset (off: set the hook yourself with HOOK / H when a fish has it)" checked={settings.autoHookset} onChange={(v) => set('autoHookset', v)} />
         <Switch label="Coach tips & retrieve meter" checked={settings.coach} onChange={(v) => set('coach', v)} />

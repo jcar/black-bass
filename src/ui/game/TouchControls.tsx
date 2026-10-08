@@ -201,11 +201,13 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
 
   // Desktop (no touch): show the key map instead of thumb hints.
   const keyboard = typeof window !== 'undefined' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
+  const tank = useStore((s) => s.save.settings.keySteering) === 'tank';
+  const drive = tank ? '←/→ turn · ↑ go (quiet) · Shift+↑ run · ↓ brake' : 'WASD steer (quiet) · Shift+WASD run';
   const hint = keyboard
     ? checkIn !== 'none' && (phase === 'Navigate' || phase === 'Cast')
-      ? 'At the launch · K check in (ends the day) · WASD steer · F fish'
+      ? `At the launch · K check in (ends the day) · ${tank ? '←/→ turn · ↑ go' : 'WASD steer'} · F fish`
       : phase === 'Navigate'
-      ? 'WASD steer (quiet) · Shift+WASD run · M map · F fish'
+      ? `${drive} · M map · F fish`
       : phase === 'Cast'
         ? 'A/D aim · C cast, C again to release · B thumb · M move'
         : phase === 'Present'

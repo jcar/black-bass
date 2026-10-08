@@ -39,6 +39,8 @@ export interface SaveData {
     anglersEye: boolean;
     /** Set the hook automatically when a fish has the bait (off: you set it, H / HOOK). */
     autoHookset: boolean;
+    /** Keyboard boat steering: 'tank' (left/right turn, up = gas, Rock n' Roll Racing) or 'direct' (point to go). */
+    keySteering: 'tank' | 'direct';
   };
   /** Every bass landed, newest last (capped at LOG_CAP). */
   logbook: LogEntry[];
@@ -63,7 +65,7 @@ export function newSave(): SaveData {
     deck: defaultDeck(),
     personalBests: { bigFishLb: 0, bestBagLb: 0 },
     history: [],
-    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false, coach: true, anglersEye: false, autoHookset: false },
+    settings: { leftHanded: false, sound: true, debugMeter: false, seenWeighIn: false, coach: true, anglersEye: false, autoHookset: false, keySteering: 'tank' },
     logbook: [],
   };
 }

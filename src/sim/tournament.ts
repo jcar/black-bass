@@ -154,21 +154,33 @@ function stepNavigate(s: TournamentState, ctx: SimCtx, input: InputFrame, dt: nu
   let targetSpeed = 0;
   /** Which way the stick wants to turn (+1 starboard): the side the boat glances off a bank. */
   let side = 1;
-  if (mag > 0.15) {
+  /** Stick magnitude (or throttle) to speed: trolling motor up to trollingStickMax, then the outboard. */
+  const speedFor = (m: number) =>
+    m <= B.trollingStickMax
+      ? (m / B.trollingStickMax) * B.trollingMaxSpeed
+      : B.trollingMaxSpeed + ((m - B.trollingStickMax) / (1 - B.trollingStickMax)) * (B.outboardMaxSpeed - B.trollingMaxSpeed);
+  let braking = false;
+  if (input.drive) {
+    // Relative steering: left/right rotate the bow (a stopped boat pivots on the trolling motor), forward is the gas.
+    const { turn, throttle } = input.drive;
+    if (turn) {
+      side = turn > 0 ? 1 : -1;
+      boat.heading += Math.max(-1, Math.min(1, turn)) * B.turnRate * (boat.speed > 30 ? 0.6 : 1) * dt;
+    }
+    if (throttle > 0) targetSpeed = speedFor(Math.min(1, throttle));
+    braking = throttle < 0;
+  } else if (mag > 0.15) {
     const desired = Math.atan2(-input.stick.y, input.stick.x);
     let d = desired - boat.heading;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     side = d < 0 ? -1 : 1;
     const turn = B.turnRate * (boat.speed > 30 ? 0.6 : 1) * dt;
     boat.heading += Math.sign(d) * Math.min(Math.abs(d), turn);
-    targetSpeed =
-      mag <= B.trollingStickMax
-        ? (mag / B.trollingStickMax) * B.trollingMaxSpeed
-        : B.trollingMaxSpeed + ((mag - B.trollingStickMax) / (1 - B.trollingStickMax)) * (B.outboardMaxSpeed - B.trollingMaxSpeed);
+    targetSpeed = speedFor(mag);
     // Don't floor it while pointed the wrong way.
     targetSpeed *= Math.max(0.2, Math.cos(d));
   }
-  boat.speed += Math.sign(targetSpeed - boat.speed) * Math.min(Math.abs(targetSpeed - boat.speed), (targetSpeed > boat.speed ? B.accel : B.decel) * dt);
+  boat.speed += Math.sign(targetSpeed - boat.speed) * Math.min(Math.abs(targetSpeed - boat.speed), (targetSpeed > boat.speed ? B.accel : B.decel * (braking ? B.brakeDecelMult : 1)) * dt);
   boat.motor = boat.speed > B.trollingMaxSpeed + 0.5 ? 'outboard' : 'trolling';
 
   /** Where a move of `step` m along `a` ends, if that water and the 6 m ahead of it are clear. */
