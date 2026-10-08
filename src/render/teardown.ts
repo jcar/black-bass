@@ -7,7 +7,13 @@ import type { Application } from 'pixi.js';
  * then destroy. Textures stay alive: generated art lives in Pixi's Assets cache and is reused by the
  * next screen (callers destroy their own canvas-painted textures).
  */
+const torn = new WeakSet<Application>();
+
 export function destroyPixiApp(app: Application) {
+  // Idempotent: Pixi nulls the renderer on destroy, so a second teardown (a screen unmounting while its
+  // async init settles) used to throw "Cannot read properties of null (reading 'destroy')".
+  if (!app.renderer || torn.has(app)) return;
+  torn.add(app);
   app.ticker?.stop();
   (app.renderer?.filter as unknown as { _globalFilterBindGroup?: { destroy(): void } } | undefined)?._globalFilterBindGroup?.destroy();
   app.destroy(true, { children: true, texture: false });
