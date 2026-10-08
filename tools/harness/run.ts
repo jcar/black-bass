@@ -92,6 +92,9 @@ interface Row {
   m: DayMetrics;
 }
 
+/** The coordinator's pid, as seen when this worker started. */
+const PARENT = process.ppid;
+
 function work(index: number, count: number): Row[] {
   const rows: Row[] = [];
   let k = 0;
@@ -99,6 +102,8 @@ function work(index: number, count: number): Row[] {
     for (const rig of rigs)
       for (const seed of seeds) {
         if (k++ % count !== index) continue;
+        // Orphaned (the coordinator died without killing us): stop rather than run on unattended.
+        if (IS_WORKER && process.ppid !== PARENT) process.exit(3);
         rows.push({ profile, rig: rig.lureId, m: playDay({ lakeId, tier, seed, deck: [rig], profile: PROFILES[profile], spots: planSpots(seed, rig) }) });
       }
   return rows;
@@ -113,6 +118,10 @@ async function main() {
   const t0 = Date.now();
   // A coordinator killed by a timeout must take its workers with it, or they run on as orphans.
   const children: ReturnType<typeof spawn>[] = [];
+  // Any exit, including a crash on a failed shard, kills the remaining workers.
+  process.on('exit', () => {
+    for (const c of children) if (c.exitCode === null) c.kill('SIGKILL');
+  });
   for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const)
     process.on(sig, () => {
       for (const c of children) c.kill('SIGKILL');
@@ -133,6 +142,11 @@ async function main() {
           let buf = '';
           child.stdout.on('data', (d) => (buf += d));
           child.on('close', (code) => (code === 0 ? resolve(JSON.parse(buf)) : reject(new Error(`shard ${i} exited ${code}`))));
+          // A failed spawn (e.g. the process cap) takes the rest down with it instead of leaving orphans.
+          child.on('error', (e) => {
+            for (const c of children) c.kill('SIGKILL');
+            reject(e);
+          });
         }),
     ),
   );
