@@ -50,6 +50,9 @@ interface FishVis {
 const idleHeading = (id: number, now: number) => id * 2.399 + Math.sin(now * 0.15 + id) * 0.6;
 
 /** Phases 3 & 4: top-down over the water (boat at the bottom) plus a side-profile depth inset. */
+/** The mouth sits this far ahead of the body's centre, in body lengths (the nose of the fish outline). */
+const MOUTH = 0.55;
+
 export class WaterScene implements Scene {
   root = new Container();
   overlay = new Container();
@@ -276,7 +279,8 @@ export class WaterScene implements Scene {
       const wag = calm ? 0 : Math.sin(v.tail) * (band >= 3 ? 0.2 : 0.12);
       const cx = v.x;
       const cy = v.y;
-      const tx = (x: number, y: number) => [cx + x * len * ca - y * len * sa, cy + x * len * sa + y * len * ca];
+      // The fish's position is its mouth (where it meets the lure): the body hangs behind it and turns about it.
+      const tx = (x: number, y: number) => [cx + (x - MOUTH) * len * ca - y * len * sa, cy + (x - MOUTH) * len * sa + y * len * ca];
       // Body + a tail that beats (faster as interest climbs).
       const tailY = wag;
       const pts = [
@@ -286,7 +290,8 @@ export class WaterScene implements Scene {
       if (hot) {
         // Brighten: a soft light glow around a fish that's about to commit.
         const glow = calm ? 0.22 : 0.2 + 0.08 * Math.sin(now * 9);
-        g.ellipse(cx, cy, len * 0.75, len * 0.75).fill({ color: 0xe8fbff, alpha: glow * v.alpha });
+        const [bx, by] = tx(0, 0);
+        g.ellipse(bx, by, len * 0.75, len * 0.75).fill({ color: 0xe8fbff, alpha: glow * v.alpha });
       }
       g.poly(pts).fill({ color: 0x0b1a22, alpha: v.alpha });
       if (band >= 2 && v.leaving <= 0) {
@@ -365,12 +370,13 @@ export class WaterScene implements Scene {
       const c2 = Math.cos(ang);
       const s2 = Math.sin(ang);
       const air = f.jumpT > 0;
+      // The hook is in the mouth: the line meets the fish there and the body swings behind it.
       const pts = [
         [len * 0.55, 0], [len * 0.2, len * 0.18], [-len * 0.3, len * 0.12], [-len * 0.55, len * 0.24],
         [-len * 0.5, 0], [-len * 0.55, -len * 0.24], [-len * 0.3, -len * 0.12], [len * 0.2, -len * 0.18],
-      ].flatMap(([px, py]) => [f.pos.x + px * c2 - py * s2, f.pos.y + px * s2 + py * c2]);
+      ].flatMap(([px, py]) => [f.pos.x + (px - len * MOUTH) * c2 - py * s2, f.pos.y + (px - len * MOUTH) * s2 + py * c2]);
       g.poly(pts).fill({ color: air ? 0x6b7f3a : 0x0b1a22, alpha: air ? 1 : 0.55 });
-      if (air || f.burstT > 0) this.rings.push({ x: f.pos.x, y: f.pos.y, age: air ? 0 : 0.5, big: air });
+      if (air || f.burstT > 0) this.rings.push({ x: f.pos.x - len * MOUTH * c2, y: f.pos.y - len * MOUTH * s2, age: air ? 0 : 0.5, big: air });
     }
 
     for (const r of this.rings) r.age += dt;
