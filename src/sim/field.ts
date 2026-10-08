@@ -3,7 +3,7 @@ import { SPECIES, weightFromLength } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { activityFor } from './fish/activity';
 import { sampleLength } from './fish/population';
-import { keeperMinIn } from './livewell';
+import { inSlot, isBigFish, keeperMinIn } from './livewell';
 import type { Rng } from './rng';
 import type { Conditions, Rival, SpeciesId, Tier } from './types';
 
@@ -43,36 +43,66 @@ export function biteFactor(c: Conditions, lake?: LakeDef): number {
  * from the lake's own population model (so trophy lakes produce real kickers), then the weights are
  * scaled so the best five equal a bag drawn from the lognormal calibrated per lake and tier
  * (e.g. Champlain Elite days: ~18-22 lb winners). Calibration is unchanged; the shape is the lake's.
+ * Rivals keep only legal fish (minimum, protected slot, one big fish a day) and can be late to check-in.
  */
 export function rollRivalDay(r: Rival, lake: LakeDef, tier: Tier, c: Conditions, rng: Rng): void {
   const T = TUNING.clock;
   r.catches = [];
   r.feedCursor = 0;
+  // Now and then a rival misses check-in: 1 lb a minute, and over 15 minutes the day counts zero.
+  const C = TUNING.checkIn;
+  r.lateMin = rng.chance(C.rivalLateChance) ? (rng.chance(C.rivalZeroShare) ? rng.int(C.lateMaxMin + 1, C.lateMaxMin + 10) : rng.int(1, 12)) : 0;
   if (rng.chance(0.03)) return; // zeroed: it happens
   const bag = rng.logNormal(lake.field.medianBagLb[tier] * r.skill * biteFactor(c, lake), lake.field.sigma);
   const keepers = rng.int(5, 11);
   const mix = bassMix(lake);
   const minIn = keeperMinIn(lake);
-  const fish = Array.from({ length: keepers }, () => {
-    const species = rng.weighted(
+  // Rivals play by the lake's rules: shorts go back (and are re-rolled, as before) and protected-slot
+  // fish are released. On a lake with a one-big-fish rule, a rival's kicker comes from its own odds
+  // (field.bigFishOdds, scaled by skill), so the field swings on big fish as a slot lake's does.
+  const big = lake.regs?.bigFish;
+  const fish: { species: SpeciesId; len: number; w: number }[] = [];
+  const pickSpecies = () =>
+    rng.weighted(
       mix.map(([sp]) => sp),
       (sp) => mix.find(([x]) => x === sp)![1],
     );
+  for (let i = 0; i < keepers; i++) {
+    const species = pickSpecies();
     let len = 0;
-    for (let k = 0; k < 6 && len < minIn; k++) len = sampleLength(rng, lake, species, rng.chance(0.7));
-    return { species, w: weightFromLength(species, Math.max(len, minIn), lake.species.condition * rng.normal(1, 0.05)) };
-  });
-  const best5 = [...fish]
-    .sort((a, b) => b.w - a.w)
-    .slice(0, 5)
-    .reduce((a, f) => a + f.w, 0);
-  const k = bag / best5;
+    for (let k = 0; k < 6 && (len < minIn || (big && isBigFish({ species, lengthIn: len }, lake))); k++) len = sampleLength(rng, lake, species, rng.chance(0.7));
+    len = Math.max(len, minIn);
+    if (big && isBigFish({ species, lengthIn: len }, lake)) continue;
+    const w = weightFromLength(species, len, lake.species.condition * rng.normal(1, 0.05));
+    if (inSlot({ species, lengthIn: len }, lake)) continue;
+    fish.push({ species, len, w });
+  }
+  if (big && rng.chance(Math.min(1, (lake.field.bigFishOdds ?? 0) * r.skill))) {
+    const species: SpeciesId = 'largemouth';
+    let len = 0;
+    for (let k = 0; k < 60 && len < big.minIn; k++) len = sampleLength(rng, lake, species, true);
+    len = Math.max(len, big.minIn);
+    fish.push({ species, len, w: weightFromLength(species, len, lake.species.condition * rng.normal(1, 0.05)) });
+  }
+  if (!fish.length) return;
+  // The best five are scaled so they equal the drawn bag. On a lake with a one-big-fish rule the bag
+  // is the rest of the limit: the kicker keeps its own weight, so the field's bags swing on it as a
+  // slot lake's do.
+  const best = [...fish].sort((a, b) => b.w - a.w).slice(0, 5);
+  const fixed = (f: (typeof fish)[number]) => isBigFish({ species: f.species, lengthIn: f.len }, lake);
+  const scaled = best.filter((f) => !fixed(f)).reduce((a, f) => a + f.w, 0);
+  const k = scaled > 0 ? bag / scaled : 1;
   // A weak day sometimes means fewer than 5 keepers.
   const kept = rng.chance(0.08) ? fish.slice(0, rng.int(2, 4)) : fish;
-  // Never scale a fish past the biggest the lake can grow (keeps Champlain kickers plausible).
-  const cap = (sp: SpeciesId) => weightFromLength(sp, lake.species.sizes[sp]?.maxIn ?? 22, lake.species.condition * 1.05);
+  // Never scale a fish past the biggest the lake can grow (keeps Champlain kickers plausible), nor a
+  // fish under a protected slot past the slot's bottom length (it would have to be a slot fish).
+  const slot = lake.regs?.slot;
+  const cap = (f: (typeof fish)[number]) =>
+    slot && f.species === 'largemouth' && f.len < slot.minIn
+      ? weightFromLength(f.species, slot.minIn, lake.species.condition)
+      : weightFromLength(f.species, lake.species.sizes[f.species]?.maxIn ?? 22, lake.species.condition * 1.05);
   for (const f of kept)
-    r.catches.push({ atMin: rng.range(T.dayStartMin + 10, T.dayEndMin - 15), weightLb: Math.max(0.9, Math.round(Math.min(cap(f.species), f.w * k) * 100) / 100), species: f.species });
+    r.catches.push({ atMin: rng.range(T.dayStartMin + 10, T.dayEndMin - 15), weightLb: Math.max(0.9, Math.round(Math.min(cap(f), f.w * (fixed(f) ? 1 : k)) * 100) / 100), species: f.species });
   r.catches.sort((a, b) => a.atMin - b.atMin);
 }
 
@@ -88,6 +118,16 @@ export function rivalBagAt(r: Rival, clockMin: number): number {
   got.sort((a, b) => b - a);
   return Math.round(got.slice(0, 5).reduce((a, b) => a + b, 0) * 100) / 100;
 }
+
+/** A rival's weight on the scales today: the best five, less the late penalty (zero if over 15 minutes late). */
+export function rivalDayWeight(r: Rival): number {
+  const late = r.lateMin ?? 0;
+  if (late > TUNING.checkIn.lateMaxMin) return 0;
+  return Math.max(0, Math.round((rivalBagAt(r, TUNING.clock.dayEndMin) - late * TUNING.checkIn.latePenaltyLbPerMin) * 100) / 100);
+}
+
+/** A rival's bag on the live leaderboard: what's in the boat, then what's on the scales after check-in time. */
+export const rivalTodayAt = (r: Rival, clockMin: number) => (clockMin >= TUNING.clock.dayEndMin ? rivalDayWeight(r) : rivalBagAt(r, clockMin));
 
 export interface Standing {
   id: number; // -1 = player

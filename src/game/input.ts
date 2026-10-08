@@ -7,7 +7,7 @@ const KEY_TROLL = TUNING.boat.trollingStickMax * 0.9;
 
 /** Desktop key map, shown in the HUD and README. */
 export const KEY_HINTS =
-  'WASD/arrows steer (trolling) · Shift+steer run · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · Esc pause';
+  'WASD/arrows steer (trolling) · Shift+steer run · M lake map (while driving) · F fish · C cast · Space reel · T twitch/hop/shake · H set the hook · B thumb · V bow · M move/burn in (once fishing) · I data for this point · P pop · K check in (at the launch) · Esc pause';
 
 /**
  * How to work the lure on the line, by the cadence the attraction model rewards (presentationMatch).
@@ -42,7 +42,7 @@ class InputHub {
   reel = false;
   brake = false;
   private keysDown = new Set<string>();
-  private pending = { castTap: 0, popTap: 0, bowFlick: 0, twitch: 0, fishHere: 0, moveOn: 0, hookSet: 0 };
+  private pending = { castTap: 0, popTap: 0, bowFlick: 0, twitch: 0, fishHere: 0, moveOn: 0, hookSet: 0, checkIn: 0 };
 
   tap(kind: keyof InputHub['pending']) {
     this.pending[kind]++;
@@ -117,6 +117,10 @@ class InputHub {
         // A dedicated hookset key: Space is held to reel, so a press on it can't tell a set from a retrieve.
         case 'h':
           this.tap('hookSet');
+          break;
+        // Check in at the launch: ends the day (only works there, once check-in opens).
+        case 'k':
+          this.tap('checkIn');
           break;
       }
       this.updateKeyStick();

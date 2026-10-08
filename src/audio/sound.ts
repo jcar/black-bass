@@ -106,6 +106,12 @@ const SYNTH: Partial<Record<TournamentEvent['type'], () => void>> = {
     tone(740, 0.2, 0.12, 'square');
     setTimeout(() => tone(740, 0.2, 0.12, 'square'), 260);
   },
+  // Check-in time and you're still on the water: the warning, lower and longer.
+  late: () => {
+    tone(520, 0.3, 0.12, 'square');
+    setTimeout(() => tone(390, 0.4, 0.12, 'square'), 320);
+  },
+  fishDied: () => tone(220, 0.5, 0.1, 'triangle', 140),
   dayOver: () => tone(392, 0.6, 0.12, 'triangle', 523),
   shore: () => noiseBurst(0.25, 300, 1, 0.4),
   // Hull on the bank: a low thump plus a gravelly scrape.

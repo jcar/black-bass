@@ -9,6 +9,8 @@ import { DayPlan } from '../ProAdvice';
 import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import type { Weather } from '../../sim/types';
 import { keeperMinIn } from '../../sim/livewell';
+import { formatClock } from '../../sim/conditions';
+import { TUNING } from '../../data/tuning';
 import { conditionsAdvice } from '../advice';
 import { adviceFor } from '../../sim/tierAdvice';
 import { Button, Icon, LowerThird, Scene, Scorebug, Slug, rise, stagger, type IconName } from '../kit';
@@ -60,7 +62,16 @@ export function BriefingScreen() {
             </span>
           )}
           <span className="badge">Bass {minIn}" minimum</span>
-          {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": catch, weigh &amp; release (counts)</span>}
+          {slot && <span className="badge warn">Slot {slot.minIn}-{slot.maxIn}": release immediately (doesn't count)</span>}
+          {lake.regs?.bigFish && (
+            <span className="badge warn">
+              One {lake.regs.bigFish.minIn}"+ a day
+            </span>
+          )}
+          <span className="badge" title={`Check in at ${lake.launch.name}: 1 lb a minute late, zero after ${TUNING.checkIn.lateMaxMin} minutes; dead fish cost ${TUNING.livewell.deadPenaltyLb * 16} oz each`}>
+            Check-in {formatClock(TUNING.clock.dayEndMin)} at the launch
+          </span>
+          {c.waterTempF >= TUNING.livewell.tempOnsetF + 2 && <span className="badge warn">{Math.round(c.waterTempF)}°F water: keep fish alive</span>}
           {lake.lanes?.length ? <span className="badge">Run the buoyed lanes: stumps everywhere else</span> : null}
         </m.div>
         <m.div className="tier-help small" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>

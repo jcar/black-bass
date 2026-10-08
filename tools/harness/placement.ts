@@ -3,9 +3,8 @@
 //
 //   node --import tsx tools/harness/placement.ts docs/model-reports/gate-champlain-advisor.json [lure,...]
 import { readFileSync } from 'node:fs';
-import { rivalBagAt } from '../../src/sim/field';
+import { rivalDayWeight } from '../../src/sim/field';
 import { createTournament } from '../../src/sim/tournament';
-import { TUNING } from '../../src/data/tuning';
 import type { DayMetrics } from './player';
 import type { RodSetup, Tier } from '../../src/sim/types';
 
@@ -15,7 +14,7 @@ const fieldCache = new Map<number, number[]>();
 const field = (seed: number) => {
   if (!fieldCache.has(seed)) {
     const t = createTournament({ lakeId: run.lakeId, tier: run.tier, seed, deck: [run.rigs[0]] });
-    fieldCache.set(seed, t.rivals.map((r) => rivalBagAt(r, TUNING.clock.dayEndMin)));
+    fieldCache.set(seed, t.rivals.map((r) => rivalDayWeight(r)));
   }
   return fieldCache.get(seed)!;
 };

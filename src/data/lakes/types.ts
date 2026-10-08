@@ -61,15 +61,24 @@ export interface LakeDef {
     weatherOdds: Record<Weather, number>;
   };
   field: {
-    /** Median 5-fish daily bag for the field, per tier (lb). */
+    /** Median 5-fish daily bag for the field, per tier (lb). With a big-fish rule (`regs.bigFish`), the limit without the kicker, which rivals weigh at its own weight. */
     medianBagLb: Record<Tier, number>;
     sigma: number;
+    /** With a big-fish rule: a rival's chance of weighing a kicker over the line today (x skill). */
+    bigFishOdds?: number;
   };
-  /** Lake regulations. Defaults: 12" minimum, no slot. */
+  /** Lake regulations (largemouth). Defaults: 12" minimum, no slot. */
   regs?: {
+    /** Tournament minimum length (in). */
     minIn: number;
-    /** Protected slot. Under catch-weigh-release, slot bass are weighed on the boat and count. */
-    slot?: { minIn: number; maxIn: number; mode: 'catchWeighRelease' };
+    /**
+     * Protected slot (TPWD Lake Fork: 16-24"): `release` = back in the lake immediately; it can't go in
+     * the livewell or be weighed. (Only a catch-weigh-release event with an on-boat judge, like the 2024
+     * Elite at Lake Fork, can weigh slot fish; this game's events weigh in at the ramp.)
+     */
+    slot?: { minIn: number; maxIn: number; mode: 'release' };
+    /** Only `perDay` bass of `minIn` or longer may be kept each day (TPWD Lake Fork: one 24" or longer). */
+    bigFish?: { minIn: number; perDay: number };
   };
   /** Buoyed boat lanes (polylines). Running the outboard outside them in a stump zone is risky. */
   lanes?: Pt[][];

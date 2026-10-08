@@ -131,10 +131,35 @@ interface ControlsProps {
   dataMin: number | null;
   /** A strike: HOOK replaces REEL ('wait' while the fish closes or blows up, glowing 'set' once it has it). */
   hook: 'none' | 'wait' | 'set';
+  /** At the launch with check-in open: CHECK IN ends the day. `due` = time to head in (it glows). */
+  checkIn: 'none' | 'open' | 'due';
+}
+
+/** Ends the day, so it takes two taps: CHECK IN, then CONFIRM within a few seconds. */
+function CheckInButton({ due }: { due: boolean }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const id = setTimeout(() => setArmed(false), 3000);
+    return () => clearTimeout(id);
+  }, [armed]);
+  return (
+    <TapButton
+      label={armed ? 'CONFIRM' : 'CHECK IN'}
+      size="md"
+      accent={armed}
+      cue={due && !armed}
+      haptic
+      onTap={() => {
+        if (armed) inputHub.tap('checkIn');
+        setArmed(!armed);
+      }}
+    />
+  );
 }
 
 /** Memoised: the HUD snapshot ticks at 10 Hz, but the controls only change with these props. */
-export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId, dataMin, hook }: ControlsProps) {
+export const TouchControls = memo(function TouchControls({ phase, canFish, inRange, castFlying, castCharging, tension, leftHanded, lureId, dataMin, hook, checkIn }: ControlsProps) {
   const [stick, setStick] = useState<{ ox: number; oy: number; x: number; y: number } | null>(null);
   const touch = useRef<{ id: number; t0: number; x0: number; y0: number } | null>(null);
 
@@ -177,7 +202,9 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
   // Desktop (no touch): show the key map instead of thumb hints.
   const keyboard = typeof window !== 'undefined' && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
   const hint = keyboard
-    ? phase === 'Navigate'
+    ? checkIn !== 'none' && (phase === 'Navigate' || phase === 'Cast')
+      ? 'At the launch · K check in (ends the day) · WASD steer · F fish'
+      : phase === 'Navigate'
       ? 'WASD steer (quiet) · Shift+WASD run · M map · F fish'
       : phase === 'Cast'
         ? 'A/D aim · C cast, C again to release · B thumb · M move'
@@ -213,13 +240,20 @@ export const TouchControls = memo(function TouchControls({ phase, canFish, inRan
         {!stick && <div className="stick-hint">{hint}</div>}
       </div>
       <div className="btn-zone">
-        {phase === 'Navigate' && <TapButton label="FISH" size="xl" accent haptic disabled={!canFish} cue={inRange && canFish} onTap={() => inputHub.tap('fishHere')} />}
+        {/* CHECK IN sits beside FISH, not above it: up there it would cover the minimap. */}
+        {phase === 'Navigate' && (
+          <div className="btn-row">
+            {checkIn !== 'none' && <CheckInButton due={checkIn === 'due'} />}
+            <TapButton label="FISH" size="xl" accent haptic disabled={!canFish} cue={inRange && canFish} onTap={() => inputHub.tap('fishHere')} />
+          </div>
+        )}
         {phase === 'Cast' && (
           <>
             {!castFlying && (
               <div className="btn-row">
                 {dataMin !== null && !castCharging && <TapButton label={dataMin ? `DATA ${dataMin}m` : 'DATA'} size="md" onTap={() => useStore.getState().checkPoint(true)} />}
                 <TapButton label="MOVE" size="md" onTap={() => inputHub.tap('moveOn')} />
+                {checkIn !== 'none' && !castCharging && <CheckInButton due={checkIn === 'due'} />}
               </div>
             )}
             <div className="btn-row">

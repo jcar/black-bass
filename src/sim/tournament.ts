@@ -2,17 +2,18 @@ import { LAKES, PURSE, TIER_FORMAT } from '../data/lakes';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { stepCast } from './cast';
-import { generateConditions, nextDayConditions } from './conditions';
+import { formatClock, generateConditions, nextDayConditions } from './conditions';
 import { dist, emit, fishActivity, makeCtx, type SimCtx } from './context';
 import { stepFight } from './fight';
-import { createRivals, notableWeight, rivalBagAt, rollRivalDay, type Standing } from './field';
+import { createRivals, notableWeight, rivalDayWeight, rivalTodayAt, rollRivalDay, type Standing } from './field';
 import { generatePopulation, updatePopulationSlice } from './fish/population';
 import { getLakeGrid, isWater, stumpHazardAt } from './lake';
-import { bagWeight, resolveCull, suggestedCull } from './livewell';
+import { bagWeight, deadPenaltyLb, isDead, resolveCull, stepLivewell, suggestedCull } from './livewell';
 import { transition } from './machine';
+import { atLaunch, etaHomeMin, headInDue, lateMinutes } from './nav';
 import { stepPresent } from './presentation';
 import { Rng } from './rng';
-import type { BroadcastState, Conditions, InputFrame, RodSetup, Tier, TournamentState } from './types';
+import type { BroadcastState, Conditions, DayCheckIn, InputFrame, RodSetup, Tier, TournamentState } from './types';
 
 export interface NewTournamentOptions {
   lakeId: string;
@@ -53,6 +54,7 @@ export function createTournament(o: NewTournamentOptions): TournamentState {
     pendingCull: null,
     lastLanded: null,
     dayWeights: [],
+    checkIns: [],
     fish,
     rivals,
     pressure: 0,
@@ -63,6 +65,7 @@ export function createTournament(o: NewTournamentOptions): TournamentState {
     stats: { casts: 0, bites: 0, lost: 0, bycatch: 0, bigFishLb: 0, missed: 0 },
     autoHookset: !!o.autoHookset,
     timeWarned: false,
+    lateWarned: false,
     lastAimAngle: 0,
     popCursor: 0,
     broadcast: { notableLb: notableWeight(rivals), lastReportMin: -Infinity, leaderId: null, lastPlace: fmt.fieldSize },
@@ -238,12 +241,18 @@ export function stepTournament(s: TournamentState, input: InputFrame, dt: number
   if (s.phase === 'WeighIn') return;
   const ctx = makeCtx(s);
   const bagBefore = s.livewell.length + (s.pendingCull ? 1 : 0);
+  const clock0 = s.clockMin;
 
   if (s.phase !== 'Landed') s.clockMin += TUNING.clock.gameMinPerSec * dt;
 
-  if (!s.timeWarned && s.clockMin >= TUNING.clock.warnAtMin) {
-    s.timeWarned = true;
-    emit(s, 'timeWarning', '30 minutes to weigh-in!');
+  // Head in: warn when the run back to the launch (plus a margin) reaches check-in time.
+  if (!s.timeWarned && s.clockMin >= TUNING.clock.dayEndMin - 120) {
+    const eta = etaHomeMin(ctx.grid, s.boat.pos);
+    if (headInDue(s.clockMin, eta)) {
+      s.timeWarned = true;
+      const run = Math.max(1, Math.ceil(eta));
+      emit(s, 'timeWarning', `Head in: ${run} min run to the launch. Check-in ${formatClock(TUNING.clock.dayEndMin)}.`, undefined, { etaMin: run });
+    }
   }
 
   s.popCursor = updatePopulationSlice(s.fish, ctx.grid, s.conditions, s.clockMin, s.popCursor, 24, (f) => fishActivity(s, f));
@@ -266,11 +275,50 @@ export function stepTournament(s: TournamentState, input: InputFrame, dt: number
       break;
   }
 
+  // Livewell: fish lose condition with time, faster in warm water. Dead fish can't be culled.
+  for (const f of stepLivewell(s, s.clockMin - clock0))
+    emit(s, 'fishDied', `Your ${f.weightLb.toFixed(2)} lb fish died in the livewell: ${TUNING.livewell.deadPenaltyLb * 16} oz penalty, and it can't be culled.`, undefined, { weightLb: f.weightLb });
+
+  if (input.checkIn && canCheckIn(s)) endDay(s);
+  else if (s.clockMin >= TUNING.clock.dayEndMin) {
+    if (clock0 < TUNING.clock.dayEndMin) for (const r of s.rivals) if (!r.cut && r.lateMin) emit(s, 'message', `${r.name} is late to check-in`);
+    // Sitting at the ramp at check-in time: checked in. Out on the water: late, 1 lb a minute.
+    if (canCheckIn(s)) endDay(s);
+    else if (lateMinutes(s.clockMin) > TUNING.checkIn.lateMaxMin) endDay(s);
+    else if (!s.lateWarned) {
+      s.lateWarned = true;
+      emit(s, 'late', `Check-in time! ${TUNING.checkIn.latePenaltyLbPerMin} lb a minute until you reach the launch; over ${TUNING.checkIn.lateMaxMin} minutes late and the day counts zero.`);
+    }
+  }
   stepBroadcast(s, s.livewell.length + (s.pendingCull ? 1 : 0) !== bagBefore);
-  if (s.clockMin >= TUNING.clock.dayEndMin) endDay(s);
   s.rngState = ctx.rng.state;
 }
 
+/**
+ * Check-in is at the launch: within TUNING.checkIn.radiusM of it, between casts (driving, or stopped
+ * with the lure in), once check-in opens after blast-off.
+ */
+export function canCheckIn(s: TournamentState): boolean {
+  if (s.phase !== 'Navigate' && s.phase !== 'Cast') return false;
+  if (s.cast?.flying || s.cast?.powerCharging) return false;
+  if (s.clockMin < TUNING.clock.dayStartMin + TUNING.checkIn.openAfterMin) return false;
+  return atLaunch(getLakeGrid(LAKES[s.lakeId]), s.boat.pos);
+}
+
+/** What check-in at `clockMin` with this livewell puts on the scales (B.A.S.S. late and dead-fish penalties). */
+export function checkInResult(livewell: TournamentState['livewell'], clockMin: number): DayCheckIn {
+  const C = TUNING.checkIn;
+  const grossLb = bagWeight(livewell);
+  const lateMin = lateMinutes(clockMin);
+  const zeroed = lateMin > C.lateMaxMin;
+  const deadFish = livewell.filter(isDead).length;
+  const deadPen = deadPenaltyLb(livewell);
+  const latePen = lateMin * C.latePenaltyLbPerMin;
+  const netLb = zeroed ? 0 : Math.max(0, Math.round((grossLb - deadPen - latePen) * 100) / 100);
+  return { atMin: clockMin, grossLb, lateMin, latePenaltyLb: latePen, deadFish, deadPenaltyLb: deadPen, zeroed, netLb };
+}
+
+/** Check in and weigh in: the day ends here (on time, early, late, or too late to count). */
 export function endDay(s: TournamentState): void {
   if (s.phase === 'WeighIn') return;
   if (s.pendingCull) resolveCull(s, suggestedCull(s));
@@ -278,10 +326,16 @@ export function endDay(s: TournamentState): void {
   s.present = null;
   s.fight = null;
   s.lastLanded = null;
-  s.clockMin = TUNING.clock.dayEndMin;
-  s.dayWeights.push(bagWeight(s.livewell));
-  for (const r of s.rivals) r.dayWeights.push(r.cut ? 0 : rivalBagAt(r, TUNING.clock.dayEndMin));
-  emit(s, 'dayOver', 'Time! Head to the weigh-in.');
+  const c = checkInResult(s.livewell, s.clockMin);
+  (s.checkIns ??= []).push(c);
+  s.dayWeights.push(c.netLb);
+  for (const r of s.rivals) r.dayWeights.push(r.cut ? 0 : rivalDayWeight(r));
+  const text = c.zeroed
+    ? `More than ${TUNING.checkIn.lateMaxMin} minutes late: today's catch doesn't count.`
+    : c.lateMin
+      ? `Checked in ${c.lateMin} min late: -${c.latePenaltyLb} lb.`
+      : 'Checked in. Head to the weigh-in.';
+  emit(s, 'dayOver', text, undefined, { lateMin: c.lateMin });
   transition(s, 'WeighIn');
 }
 
@@ -300,7 +354,7 @@ export function standings(s: TournamentState, final = s.phase === 'WeighIn'): St
   const playerToday = final ? (s.dayWeights[s.dayWeights.length - 1] ?? 0) : bagWeight(s.livewell);
   const playerPrev = s.dayWeights.slice(0, final ? daysDone - 1 : daysDone).reduce((a, b) => a + b, 0);
   const rows: Standing[] = s.rivals.map((r) => {
-    const today = final ? (r.dayWeights[r.dayWeights.length - 1] ?? 0) : r.cut ? 0 : rivalBagAt(r, s.clockMin);
+    const today = final ? (r.dayWeights[r.dayWeights.length - 1] ?? 0) : r.cut ? 0 : rivalTodayAt(r, s.clockMin);
     const prev = r.dayWeights.slice(0, final ? r.dayWeights.length - 1 : r.dayWeights.length).reduce((a, b) => a + b, 0);
     return { id: r.id, name: r.name, total: Math.round((prev + today) * 100) / 100, today, isPlayer: false, cut: r.cut };
   });
@@ -327,6 +381,7 @@ export function startNextDay(s: TournamentState): void {
   s.clockMin = TUNING.clock.dayStartMin;
   s.livewell = [];
   s.timeWarned = false;
+  s.lateWarned = false;
   s.conditions = nextDayConditions(lake, ctx.rng, s.conditions);
   s.pressure = Math.min(1, s.pressure + TUNING.multiDay.pressurePerDay);
   for (const f of s.fish) {

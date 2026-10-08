@@ -117,8 +117,10 @@ The advice is the strike model run forward analytically, not a separate heuristi
   swims at the lure and takes its depth; if the bait is slow enough to catch (follow speed vs lure
   speed), it strikes at full proximity and depth match. This is why slow baits convert followers.
 - **Time:** cast cycle from the lure's reel speed and the pace an expert works it (measured), fall time,
-  ~60 s per move and ~15 s per fish. Expected bites per stop visit become bites per day. The retrieve
-  path scales with cast distance (heavy baits cast further and sweep more water).
+  ~60 s per move and ~15 s per fish. Expected bites per stop visit become bites per day, over the
+  fishing day: blast-off to check-in less the run back to the launch (one move) and the "head in"
+  margin (`DAY_FISHING_SEC`, ~823 of 900 real seconds). The retrieve path scales with cast distance
+  (heavy baits cast further and sweep more water).
 - **Drop shot:** the expert casts to fish it saw on the forward sonar when it stopped, thumbs the bait at
   a suspended fish's depth, and shakes ~15 s before reeling up. The advisor applies the dwell to the
   proximity a fish needs, a depth match of 0.8 for suspended fish, and a sonar-targeting factor (1.75 x
@@ -130,7 +132,38 @@ The advice is the strike model run forward analytically, not a separate heuristi
   misses with the same rules: spooked arrivals, crashes, broken retrieves, followers that won't commit,
   fishless water.
 
-## 8. Known simplifications
+## 8. Tournament rules (`livewell.ts`, `tournament.ts`, `nav.ts`)
+
+- **Lake Fork regulations** (TPWD, `lakefork.json` `regs`): 16-24" largemouth are a protected slot and go
+  back immediately: never in the livewell, never weighed (the catch card says so). Only one bass 24" or
+  longer may be kept a day; a second is released, or swapped for the smaller one (not a dead one). The
+  tournament minimum is 14". (The 2024 Elite at Lake Fork ran catch-weigh-release with on-boat judges,
+  so slot fish counted there; this game's events weigh in at the ramp, which the slot rule forbids.)
+  Rivals keep only legal fish; their kicker (24"+) comes from `field.bigFishOdds` and keeps its own
+  weight, so the field swings on big fish. Champlain: 12" minimum, no slot.
+- **Check-in** (B.A.S.S. "Rules are rules: the late penalty"): be back at the launch (within 60 m) by
+  3:00 PM. CHECK IN (K) there ends the day early, from an hour after blast-off. Sitting at the launch at
+  check-in time checks you in. Out on the water the day runs on: 1 lb per minute late (any part of a
+  minute counts), and more than 15 minutes late the day's catch counts zero. The "Head in" warning fires
+  when the clock plus the run back plus 10 minutes reaches check-in: the run is a Dijkstra over the grid
+  from the launch on the outboard's route (lanes through stump fields, which count at just under stump
+  speed), at 80% of top speed. After it, the destination chip points home with the run time. About 2.5%
+  of rivals check in late (15% of those too late to count).
+- **Livewell survival:** each kept fish has health 1 (lively) to 0 (dead), "sluggish" below 0.5. It comes
+  aboard at `1 - 0.0025 x fight seconds x sqrt(heat) x size / hardiness` and loses
+  `0.02/h x heat x size / hardiness` in the livewell, where `heat = 1 + ((T - 72F)/7)^2` above 72F,
+  `size = (lb / 3)^0.35` and hardiness ~ lognormal(1, 0.35) from the sim rng when it's landed
+  (deterministic). With no culling, ~0.1% of fish kept from capture to check-in die at 76F, ~1.6% at
+  80F, ~13% at 84F, ~36% at 88F. Champlain's summer water (median 69F) never kills; Lake Fork's
+  tournament months (Feb-May, Oct-Nov, median 65F) only rarely reach 80F, so a dead fish there is a
+  warm-day event. Dead fish can't be culled and cost 4 oz each
+  at the scales (B.A.S.S. "the dead fish penalty"). The coach warns when a fish goes sluggish ("Hot water:
+  cull and weigh early, fish shorter fights") and the debrief counts dead fish and lateness.
+- **Sonar** (render only): every return is the same colour (no spooked or species tell), carries a fixed
+  per-fish size error (x0.55-1.8), and fades into clutter returned by wood, grass and docks
+  (`src/render/sonarNoise.ts`). The harness reads the sim directly and is unaffected.
+
+## 9. Known simplifications
 
 - Fish don't school or relate to each other; bait (shad) isn't modelled.
 - Wind direction doesn't move fish to banks yet (wind only affects lure fit and casting).

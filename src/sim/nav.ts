@@ -270,3 +270,142 @@ export function stumpsOnRoute(g: LakeGrid, from: Vec2, path: readonly Vec2[], he
   }
   return null;
 }
+
+// ---------- The run back to the launch (check-in) ----------
+// One Dijkstra from the launch over the water grid per lake, on the outboard's costs (the route keeps
+// to the boat lanes through stump fields), recording the real distance along the cheapest route. The
+// sim's "head in" warning, the HUD's ETA and the harness all read it. An off-lane stump field counts at
+// the speed you can run it (just under stump speed), so a stop in the timber reads as far as it is.
+
+const homeCache = new WeakMap<LakeGrid, Float32Array>();
+/** Running an off-lane stump field just under stump speed: each metre takes this many full-speed metres. */
+const STUMP_SLOW = TUNING.boat.outboardMaxSpeed / (TUNING.boat.stumpSpeed * 0.9);
+
+/** Run distance (full-speed metres) from every cell to the launch along the outboard's route (Infinity: unreachable). */
+function homeField(g: LakeGrid): Float32Array {
+  const hit = homeCache.get(g);
+  if (hit) return hit;
+  const n = g.cols * g.rows;
+  const cost = new Float64Array(n).fill(Infinity);
+  const dist = new Float32Array(n).fill(Infinity);
+  const L = g.def.launch;
+  let start = Math.min(g.rows - 1, Math.max(0, Math.floor(L.y / g.cellM))) * g.cols + Math.min(g.cols - 1, Math.max(0, Math.floor(L.x / g.cellM)));
+  if (!g.water[start]) {
+    // The ramp sits on the bank: start from the nearest water cell.
+    let bd = Infinity;
+    for (let i = 0; i < n; i++)
+      if (g.water[i]) {
+        const d = Math.hypot(((i % g.cols) + 0.5) * g.cellM - L.x, (Math.floor(i / g.cols) + 0.5) * g.cellM - L.y);
+        if (d < bd) {
+          bd = d;
+          start = i;
+        }
+      }
+  }
+  cost[start] = 0;
+  dist[start] = 0;
+  const heap: [number, number][] = [[0, start]];
+  const push = (f: number, i: number) => {
+    heap.push([f, i]);
+    let k = heap.length - 1;
+    while (k > 0) {
+      const p = (k - 1) >> 1;
+      if (heap[p][0] <= heap[k][0]) break;
+      [heap[p], heap[k]] = [heap[k], heap[p]];
+      k = p;
+    }
+  };
+  const pop = () => {
+    const top = heap[0];
+    const last = heap.pop()!;
+    if (heap.length) {
+      heap[0] = last;
+      let k = 0;
+      for (;;) {
+        const l = 2 * k + 1;
+        const r = l + 1;
+        let m = k;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === k) break;
+        [heap[m], heap[k]] = [heap[k], heap[m]];
+        k = m;
+      }
+    }
+    return top;
+  };
+  while (heap.length) {
+    const [f, i] = pop();
+    if (f > cost[i]) continue;
+    const c = i % g.cols;
+    const r = Math.floor(i / g.cols);
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const cc = c + dc;
+        const rr = r + dr;
+        if (cc < 0 || rr < 0 || cc >= g.cols || rr >= g.rows) continue;
+        const j = rr * g.cols + cc;
+        if (!g.water[j]) continue;
+        if (dr && dc && (!g.water[r * g.cols + cc] || !g.water[rr * g.cols + c])) continue;
+        const len = (dr && dc ? Math.SQRT2 : 1) * g.cellM;
+        const near = g.shoreDistM[j] <= g.cellM ? SHORE_COST : 1;
+        const offLaneStumps = g.stump[j] && !g.lane[j];
+        const step = len * near * (offLaneStumps ? STUMP_RUN_COST : 1);
+        if (cost[i] + step < cost[j]) {
+          cost[j] = cost[i] + step;
+          dist[j] = dist[i] + len * (offLaneStumps ? STUMP_SLOW : 1);
+          push(cost[j], j);
+        }
+      }
+  }
+  homeCache.set(g, dist);
+  return dist;
+}
+
+/** Run distance (full-speed metres) from `at` back to the launch along the outboard's route. */
+export function homeDistM(g: LakeGrid, at: Vec2): number {
+  const L = g.def.launch;
+  const straight = distanceM(at, L);
+  if (straight <= g.cellM * 2) return straight;
+  const field = homeField(g);
+  const c = Math.min(g.cols - 1, Math.max(0, Math.floor(at.x / g.cellM)));
+  const r = Math.min(g.rows - 1, Math.max(0, Math.floor(at.y / g.cellM)));
+  // Against a bank the boat's own cell can be land: use the best water neighbour.
+  let best = Infinity;
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      const cc = c + dc;
+      const rr = r + dr;
+      if (cc < 0 || rr < 0 || cc >= g.cols || rr >= g.rows) continue;
+      const d = field[rr * g.cols + cc] + (dr || dc ? g.cellM : 0);
+      if (d < best) best = d;
+    }
+  return Number.isFinite(best) ? Math.max(straight, best) : straight;
+}
+
+/** Game minutes to run back to the launch on the outboard from `at`. */
+export function etaHomeMin(g: LakeGrid, at: Vec2): number {
+  const T = TUNING.checkIn;
+  const d = homeDistM(g, at);
+  if (d <= T.radiusM) return 0;
+  const realSec = d / (TUNING.boat.outboardMaxSpeed * T.runSpeedFrac) + T.runOverheadSec;
+  return realSec * TUNING.clock.gameMinPerSec;
+}
+
+/** Within check-in range of the launch. */
+export const atLaunch = (g: LakeGrid, at: Vec2) => distanceM(at, g.def.launch) <= TUNING.checkIn.radiusM;
+
+/**
+ * Time to head in: the run back (game minutes) plus `marginMin` reaches check-in time. The HUD's "Head
+ * in" warning uses TUNING.checkIn.headInMarginMin; the harness players their own margins.
+ */
+export const headInDue = (clockMin: number, etaMin: number, marginMin: number = TUNING.checkIn.headInMarginMin) => clockMin + etaMin + marginMin >= TUNING.clock.dayEndMin;
+
+/** The latest clock (game minutes) to leave for the launch from here with `marginMin` to spare. */
+export const leaveByMin = (etaMin: number, marginMin: number = TUNING.checkIn.headInMarginMin) => TUNING.clock.dayEndMin - etaMin - marginMin;
+
+/** Whole minutes late to check in at `clockMin` (any part of a minute counts). */
+/** A few game seconds of slack, so the sim step that crosses check-in time at the ramp is on time. */
+const LATE_TOLERANCE_MIN = 0.05;
+export const lateMinutes = (clockMin: number) => Math.max(0, Math.ceil(clockMin - TUNING.clock.dayEndMin - LATE_TOLERANCE_MIN));

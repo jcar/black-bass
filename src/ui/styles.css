@@ -1248,8 +1248,24 @@ p {
   height: 100%;
   object-fit: cover;
 }
-.fish-thumb.cwr::after {
-  content: 'SLOT';
+.fish-thumb.dead img {
+  filter: grayscale(1) brightness(0.7);
+}
+.fish-thumb.sluggish::after {
+  content: 'SLUGGISH';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--gold);
+  color: #241a00;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+}
+.fish-thumb.dead::after {
+  content: 'DEAD';
   position: absolute;
   top: 2px;
   right: 2px;
@@ -1417,24 +1433,50 @@ p {
 .trend.down {
   color: var(--bad);
 }
-.lw-slot.cwr {
+/* Livewell health: lively (green, the default), sluggish (amber, "~"), dead (grey, struck through, "x"). */
+.lw-slot.sluggish,
+.lw-slot.dead {
   position: relative;
-  border-color: rgba(233, 185, 73, 0.8);
-  background: rgba(233, 185, 73, 0.16);
 }
-.lw-slot.cwr::after {
-  content: 'S';
+.lw-slot.full.sluggish {
+  border-color: rgba(233, 185, 73, 0.9);
+  background: rgba(233, 185, 73, 0.18);
+}
+.lw-slot.full.dead {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: line-through;
+}
+.lw-slot.sluggish::after,
+.lw-slot.dead::after {
   position: absolute;
   top: -6px;
   right: -5px;
   width: 13px;
   height: 13px;
   border-radius: 3px;
-  background: var(--gold);
-  color: #241a00;
   font-size: 9px;
   line-height: 13px;
   text-align: center;
+  text-decoration: none;
+}
+.lw-slot.sluggish::after {
+  content: '~';
+  background: var(--gold);
+  color: #241a00;
+}
+.lw-slot.dead::after {
+  content: 'x';
+  background: var(--bad);
+  color: #fff;
+}
+/* Check-in: the clock cell's label turns into the run home once it's time to head in. */
+.sb-label.headin {
+  color: var(--gold);
+}
+.sb-label.late {
+  color: #ff8a7d;
 }
 .hud-box {
   background: var(--panel);

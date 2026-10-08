@@ -7,10 +7,11 @@ import { TUNING } from '../data/tuning';
 import { dayPlan, pointData, proPickNow, windowAt, type PointVerdict, type WindowPlan } from '../sim/advisor';
 import { formatClock } from '../sim/conditions';
 import { bagWeight, resolveCull, continueAfterLanded } from '../sim/livewell';
-import type { NavCue, NavStop } from '../sim/nav';
+import { atLaunch, etaHomeMin, lateMinutes, leaveByMin, type NavCue, type NavStop } from '../sim/nav';
+import { getLakeGrid } from '../sim/lake';
 import { biteAtSec } from '../sim/presentation';
 import { adviceFor } from '../sim/tierAdvice';
-import { createTournament, isTournamentOver, spendMinutes, standings, startNextDay, switchRod } from '../sim/tournament';
+import { canCheckIn, createTournament, isTournamentOver, spendMinutes, standings, startNextDay, switchRod } from '../sim/tournament';
 import type { CaughtFish, GamePhase, TournamentState, Vec2, Weather } from '../sim/types';
 import { applyResult, tierOfLake } from './career';
 import type { TournamentResult } from './save';
@@ -54,6 +55,22 @@ export interface Hud {
   inRange: boolean;
   /** A strike in progress: 'wait' while the fish closes on it (or blows up on a topwater), 'set' once it has the bait. */
   hook: 'none' | 'wait' | 'set';
+  /** Getting back for check-in. */
+  checkIn: CheckInHud;
+}
+
+export interface CheckInHud {
+  /** Game minutes to run back to the launch from here. */
+  etaMin: number;
+  /** Leave by this clock to make check-in with the usual margin ("2:38 PM"). */
+  leaveBy: string;
+  /** The "head in" warning has gone off (or it's past check-in time). */
+  headIn: boolean;
+  /** Minutes late so far (past check-in time). */
+  lateMin: number;
+  atLaunch: boolean;
+  /** The CHECK IN button/key works now (at the launch, between casts, after check-in opens). */
+  can: boolean;
 }
 
 export interface NavHud {
@@ -73,6 +90,8 @@ export interface NavHud {
   outboard: boolean;
   /** Picked on the map, rather than the route's next stop. */
   manual: boolean;
+  /** The destination is the launch (time to head in for check-in). */
+  home?: boolean;
 }
 
 /**
@@ -361,6 +380,20 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint'], 
     nav: t.phase === 'Navigate' ? nav : null,
     inRange: t.phase === 'Navigate' && inRange,
     hook: t.present?.strikingFishId == null ? 'none' : t.present.strikeT < biteAtSec(LURES[t.deck[t.activeRod].lureId]) ? 'wait' : 'set',
+    checkIn: checkInHud(t),
+  };
+}
+
+export function checkInHud(t: TournamentState): CheckInHud {
+  const grid = getLakeGrid(LAKES[t.lakeId]);
+  const etaMin = etaHomeMin(grid, t.boat.pos);
+  return {
+    etaMin,
+    leaveBy: formatClock(Math.max(TUNING.clock.dayStartMin, leaveByMin(etaMin))),
+    headIn: t.timeWarned || t.clockMin >= TUNING.clock.dayEndMin,
+    lateMin: lateMinutes(t.clockMin),
+    atLaunch: atLaunch(grid, t.boat.pos),
+    can: canCheckIn(t),
   };
 }
 

@@ -1,15 +1,18 @@
 import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
-import type { LakeGrid } from '../../sim/lake';
+import { COVER_CODES, coverAt, type LakeGrid } from '../../sim/lake';
 import { OFF_PLANE_M } from '../../sim/nav';
 import type { TournamentState, Vec2 } from '../../sim/types';
 import { BOAT_LENGTH_M, BOAT_SPRITE, texture } from '../../game/assets';
 import { paintLakeCanvas } from '../lakeTexture';
 import { PAL } from '../palette';
+import { clutterPoints, COVER_CLUTTER, coverFade, markSizeNoise } from '../sonarNoise';
 import { HUD_FONT, type Scene, type View } from './types';
 
 const MAP_PX_PER_M = 0.5;
 const SONAR_RANGE = 45;
 const SONAR_HALF = 0.5;
+/** Every return on the sonar is drawn in the one colour. */
+const SONAR_MARK = 0xffe066;
 /** A PRO stop this close (m) to a waypoint is the same place: label them together. */
 const PRO_MERGE_M = 30;
 const PRO_GREEN = 0x5ee08a;
@@ -256,18 +259,43 @@ export class MapScene implements Scene {
       .lineTo(boat.pos.x + Math.cos(h + sweep) * SONAR_RANGE, boat.pos.y + Math.sin(h + sweep) * SONAR_RANGE)
       .stroke({ width: 0.6, color: PAL.sonar, alpha: 0.6 });
     if (boat.motor === 'trolling') {
+      // Real returns, not a fish finder from a game: every target is the same colour (a spooked fish
+      // or a drum looks like a bass), sizes carry a per-fish error, and cover returns clutter.
+      const inCone = (x: number, y: number) => {
+        const dx = x - boat.pos.x;
+        const dy = y - boat.pos.y;
+        const d = Math.hypot(dx, dy);
+        if (d > SONAR_RANGE || d < 2) return null;
+        const da = Math.atan2(Math.sin(Math.atan2(dy, dx) - h), Math.cos(Math.atan2(dy, dx) - h));
+        return Math.abs(da) > SONAR_HALF ? null : da;
+      };
+      const pingN = Math.floor((view.time * 2.2) / Math.PI);
+      const c0 = Math.max(0, Math.floor((boat.pos.x - SONAR_RANGE) / grid.cellM));
+      const c1 = Math.min(grid.cols - 1, Math.floor((boat.pos.x + SONAR_RANGE) / grid.cellM));
+      const r0 = Math.max(0, Math.floor((boat.pos.y - SONAR_RANGE) / grid.cellM));
+      const r1 = Math.min(grid.rows - 1, Math.floor((boat.pos.y + SONAR_RANGE) / grid.cellM));
+      for (let r = r0; r <= r1; r++)
+        for (let c = c0; c <= c1; c++) {
+          const i = r * grid.cols + c;
+          const cover = COVER_CODES[grid.cover[i]];
+          if (!grid.water[i] || !COVER_CLUTTER[cover]) continue;
+          for (const p of clutterPoints(i, cover)) {
+            const x = (c + p.u) * grid.cellM;
+            const y = (r + p.v) * grid.cellM;
+            const da = inCone(x, y);
+            if (da === null) continue;
+            const ping = 0.25 + 0.4 * Math.max(0, 1 - Math.abs(da - sweep) * 3);
+            s.ellipse(x, y, p.s * 1.2, p.s * 0.7).fill({ color: SONAR_MARK, alpha: ping * 0.55 });
+          }
+        }
       for (const f of t.fish) {
         if (f.caught) continue;
-        const dx = f.pos.x - boat.pos.x;
-        const dy = f.pos.y - boat.pos.y;
-        const d = Math.hypot(dx, dy);
-        if (d > SONAR_RANGE || d < 2) continue;
-        let da = Math.atan2(dy, dx) - h;
-        da = Math.atan2(Math.sin(da), Math.cos(da));
-        if (Math.abs(da) > SONAR_HALF) continue;
-        const size = 0.5 + Math.sqrt(f.weightLb) * 0.6;
+        const da = inCone(f.pos.x, f.pos.y);
+        if (da === null) continue;
+        const size = (0.5 + Math.sqrt(f.weightLb) * 0.6) * markSizeNoise(f.id, t.seed);
         const ping = 0.45 + 0.55 * Math.max(0, 1 - Math.abs(da - sweep) * 3);
-        s.ellipse(f.pos.x, f.pos.y, size * 1.4, size * 0.8).fill({ color: f.spookUntil > t.clockMin ? 0x9fb6c2 : 0xffe066, alpha: ping });
+        const fade = coverFade(coverAt(grid, f.pos.x, f.pos.y), f.id, pingN);
+        s.ellipse(f.pos.x, f.pos.y, size * 1.4, size * 0.8).fill({ color: SONAR_MARK, alpha: ping * fade });
       }
     }
 

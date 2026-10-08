@@ -12,8 +12,9 @@ import { RODS } from '../../src/data/rods';
 import { maxCastDistance } from '../../src/sim/cast';
 import { jerkPauseWindow } from '../../src/sim/fish/attraction';
 import { biteAtSec } from '../../src/sim/presentation';
-import { getLakeGrid, HARD_COVER, isWater, coverAt, depthAt } from '../../src/sim/lake';
-import { bagWeight, continueAfterLanded } from '../../src/sim/livewell';
+import { getLakeGrid, HARD_COVER, isWater, coverAt, depthAt, stumpHazardAt } from '../../src/sim/lake';
+import { bagWeight, continueAfterLanded, isDead } from '../../src/sim/livewell';
+import { atLaunch, etaHomeMin, steerPoint, waterPath } from '../../src/sim/nav';
 import { Rng } from '../../src/sim/rng';
 import { createTournament, drainEvents, stepTournament } from '../../src/sim/tournament';
 import { emptyInput, type InputFrame, type RodSetup, type Tier, type TournamentEvent, type TournamentState, type Vec2 } from '../../src/sim/types';
@@ -57,6 +58,11 @@ export interface Profile {
   dropShotWorkSec: number;
   /** Seconds before ripping a treble bait free of grass (null: never notices). */
   ripDelaySec: number | null;
+  /**
+   * Check-in: leaves for the launch when the clock plus the run back (the HUD's ETA) plus this margin
+   * (game minutes, normal(mean, sd), drawn per day) reaches check-in time. A negative margin is late.
+   */
+  headInMarginMin: [number, number];
 }
 
 export const PROFILES: Record<string, Profile> = {
@@ -83,6 +89,7 @@ export const PROFILES: Record<string, Profile> = {
     sonarTargets: true,
     dropShotWorkSec: 18,
     ripDelaySec: 0.3,
+    headInMarginMin: [10, 1.5],
   },
   average: {
     name: 'average',
@@ -107,6 +114,7 @@ export const PROFILES: Record<string, Profile> = {
     sonarTargets: true,
     dropShotWorkSec: 25,
     ripDelaySec: 1,
+    headInMarginMin: [5, 2],
   },
   naiveKeyboard: {
     name: 'naiveKeyboard',
@@ -131,6 +139,8 @@ export const PROFILES: Record<string, Profile> = {
     sonarTargets: false,
     dropShotWorkSec: 40,
     ripDelaySec: null,
+    // Keeps fishing past the warning "for one more cast": sometimes cuts it close, now and then late.
+    headInMarginMin: [4, 4],
   },
 };
 
@@ -151,7 +161,17 @@ export interface DayMetrics {
   spookedAtArrival: number; // mean fraction of fish within 30 m spooked when fishing starts
   avgMatch: number;
   bassLanded: number;
+  /** On the scales, after the late and dead-fish penalties (zero if more than 15 minutes late). */
   bag: number;
+  /** The livewell before penalties. */
+  grossBag: number;
+  /** Check-in: clock (game minutes), minutes late, the day zeroed, dead fish, and the penalties (lb). */
+  checkInMin: number;
+  lateMin: number;
+  zeroed: boolean;
+  deadFish: number;
+  latePenaltyLb: number;
+  deadPenaltyLb: number;
   presentSec: number;
   /** Where and when the player fished, and how many casts each stop got (for the advisor gate). */
   visits: { x: number; y: number; clockMin: number; casts: number }[];
@@ -325,9 +345,21 @@ export function itinerary(lakeId: string, seed: number): Spot[] {
   return [...shuffle(wps), ...shuffle(cover)];
 }
 
-export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: RodSetup[]; profile: Profile; maxRealSec?: number; spots?: Spot[]; onStep?: (s: TournamentState, events: TournamentEvent[], t: number) => void }): DayMetrics {
+export function playDay(opts: {
+  lakeId: string;
+  tier: Tier;
+  seed: number;
+  deck: RodSetup[];
+  profile: Profile;
+  maxRealSec?: number;
+  spots?: Spot[];
+  /** Start the day at this clock (game minutes) instead of blast-off: tests play just the end of a day. */
+  startMin?: number;
+  onStep?: (s: TournamentState, events: TournamentEvent[], t: number) => void;
+}): DayMetrics {
   const { profile: P } = opts;
   const s = createTournament({ lakeId: opts.lakeId, tier: opts.tier, seed: opts.seed, deck: opts.deck });
+  if (opts.startMin !== undefined) s.clockMin = opts.startMin;
   const rng = new Rng(opts.seed ^ 0xbadc0de); // the player's own randomness, separate from the sim
   const kb = P.input === 'keyboard' ? keyboard() : null;
   if (kb) inputHub.reset();
@@ -364,7 +396,38 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
   let fouledAt: number | null = null;
   let matchSum = 0;
   let matchN = 0;
-  const m: DayMetrics = { seed: opts.seed, casts: 0, bassStrikes: 0, otherStrikes: 0, bassHooked: 0, missedSets: 0, followCasts: 0, crashes: 0, snags: 0, stumps: 0, arrivals: 0, spookedAtArrival: 0, avgMatch: 0, bassLanded: 0, bag: 0, presentSec: 0, visits: [] };
+  const m: DayMetrics = {
+    seed: opts.seed,
+    casts: 0,
+    bassStrikes: 0,
+    otherStrikes: 0,
+    bassHooked: 0,
+    missedSets: 0,
+    followCasts: 0,
+    crashes: 0,
+    snags: 0,
+    stumps: 0,
+    arrivals: 0,
+    spookedAtArrival: 0,
+    avgMatch: 0,
+    bassLanded: 0,
+    bag: 0,
+    grossBag: 0,
+    checkInMin: 0,
+    lateMin: 0,
+    zeroed: false,
+    deadFish: 0,
+    latePenaltyLb: 0,
+    deadPenaltyLb: 0,
+    presentSec: 0,
+    visits: [],
+  };
+  // Check-in: when this player leaves for the launch (its own rng, so the rest of its play is unchanged).
+  const homeMargin = new Rng(opts.seed ^ 0x7e7c4).normal(P.headInMarginMin[0], P.headInMarginMin[1]);
+  let headingHome = false;
+  // The run home follows the destination chip: the water route in the boat lanes (re-planned as it goes).
+  let homePath: { from: Vec2; at: number; pts: Vec2[] } | null = null;
+  let homeSteer: { at: number; p: Vec2 } | null = null;
   let spookSum = 0;
   const jit = (v: number) => v * (1 + (rng.next() * 2 - 1) * P.timingJitter);
   const maxSec = opts.maxRealSec ?? 3600;
@@ -400,9 +463,39 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
     }
     phaseT += DT;
     const sp = spots[spotIdx % spots.length];
+    // Time to head in: the run back (the HUD's ETA) plus this player's margin reaches check-in time.
+    if (!headingHome && s.clockMin + etaHomeMin(dayGrid, s.boat.pos) + homeMargin >= TUNING.clock.dayEndMin) headingHome = true;
 
     switch (s.phase) {
       case 'Navigate': {
+        if (headingHome) {
+          const L = LAKES[opts.lakeId].launch;
+          const d = Math.hypot(L.x - s.boat.pos.x, L.y - s.boat.pos.y);
+          if (atLaunch(dayGrid, s.boat.pos) && d < TUNING.checkIn.radiusM * 0.7) {
+            // At the ramp: stop and check in (it opens an hour after blast-off).
+            if (kb) {
+              kb.set([]);
+              kb.tap('k');
+            } else input.checkIn = true;
+            break;
+          }
+          if (!homePath || t - homePath.at > 2 || Math.hypot(homePath.from.x - s.boat.pos.x, homePath.from.y - s.boat.pos.y) > 15) {
+            homePath = { from: { ...s.boat.pos }, at: t, pts: waterPath(dayGrid, s.boat.pos, L, true) };
+            homeSteer = null;
+          }
+          if (!homeSteer || t - homeSteer.at > 0.25) homeSteer = { at: t, p: steerPoint(dayGrid, s.boat.pos, homePath.pts, true) };
+          const leg = homeSteer.p;
+          const h = clearHeading(s, Math.atan2(leg.y - s.boat.pos.y, leg.x - s.boat.pos.x), 40);
+          // Run it on the outboard, below stump speed through an off-lane stump field ("Stay in the lane");
+          // ease off in the last stretch to the ramp. Keys only give trolling or wide open.
+          const stumps = [0, 20, 40].some((k) => stumpHazardAt(dayGrid, s.boat.pos.x + Math.cos(s.boat.heading) * k, s.boat.pos.y + Math.sin(s.boat.heading) * k));
+          const run = d > 40;
+          // On keys, feather Shift through stumps to stay under stump speed (a naive player lets it creep over).
+          const feather = stumps && s.boat.speed > (P.name === 'naiveKeyboard' ? 27 : 22);
+          if (kb) kb.set([...keysFor(h), ...(run && !feather ? ['shift'] : [])]);
+          else input.stick = stickFor(h, !run ? 0.32 : stumps ? 0.58 : 1);
+          break;
+        }
         const target = standOff(sp);
         if (routeFor !== spotIdx) {
           route = planRoute(opts.lakeId, s.boat.pos, target);
@@ -472,7 +565,7 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
           markIdx = 0;
         }
         if (!cs || cs.flying) break;
-        if (castsLeft <= 0) {
+        if (castsLeft <= 0 || (headingHome && !cs.powerCharging)) {
           spotIdx++;
           if (kb) kb.tap('m');
           else input.moveOn = true;
@@ -641,6 +734,8 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
             }
             break;
         }
+        // Heading in: reel up and go (a naive player finishes the cast it's on).
+        if (headingHome && P.name !== 'naiveKeyboard' && p.strikingFishId === null) moveOn = true;
         // A treble bait fouled in the grass: rip it free (a twitch) once the player notices.
         if (p.fouled && P.ripDelaySec !== null && p.strikingFishId === null) {
           fouledAt ??= phaseT;
@@ -717,5 +812,13 @@ export function playDay(opts: { lakeId: string; tier: Tier; seed: number; deck: 
   m.avgMatch = matchN ? matchSum / matchN : 0;
   m.spookedAtArrival = m.arrivals ? spookSum / m.arrivals : 0;
   m.bag = s.dayWeights[s.dayWeights.length - 1] ?? bagWeight(s.livewell);
+  const ci = s.checkIns?.[s.checkIns.length - 1];
+  m.grossBag = ci?.grossLb ?? bagWeight(s.livewell);
+  m.checkInMin = ci?.atMin ?? s.clockMin;
+  m.lateMin = ci?.lateMin ?? 0;
+  m.zeroed = !!ci?.zeroed;
+  m.deadFish = ci?.deadFish ?? s.livewell.filter(isDead).length;
+  m.latePenaltyLb = ci?.latePenaltyLb ?? 0;
+  m.deadPenaltyLb = ci?.deadPenaltyLb ?? 0;
   return m;
 }

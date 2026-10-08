@@ -7,6 +7,7 @@ import { assetUrl, portraitId } from '../../game/assets';
 import { PROMOTE_TOP } from '../../state/career';
 import type { Standing } from '../../sim/field';
 import { isTournamentOver, playerCut, standings } from '../../sim/tournament';
+import { isDead } from '../../sim/livewell';
 import type { CaughtFish } from '../../sim/types';
 import { lakeName, useStore } from '../../state/store';
 import { lbOz, money } from '../components';
@@ -32,7 +33,7 @@ const sortRows = (rows: Standing[]) => rows.sort((a, b) => Number(a.cut) - Numbe
 function FishThumb({ f, small }: { f: CaughtFish; small?: boolean }) {
   const url = assetUrl(portraitId(f.species, f.weightLb));
   return (
-    <div className={`fish-thumb ${f.cwr ? 'cwr' : ''}`} style={small ? { width: 70, height: 50 } : undefined} title={f.cwr ? `${SPECIES[f.species].name} (slot fish: weighed and released)` : SPECIES[f.species].name}>
+    <div className={`fish-thumb ${isDead(f) ? 'dead' : ''}`} style={small ? { width: 70, height: 50 } : undefined} title={isDead(f) ? `${SPECIES[f.species].name} (dead: 4 oz penalty)` : SPECIES[f.species].name}>
       {url && <img src={url} alt="" />}
       <span className="fw">{lbOz(f.weightLb)}</span>
     </div>
@@ -63,11 +64,14 @@ export function WeighInScreen() {
     const idx = LAKE_LADDER.findIndex((l) => l.id === t.lakeId);
     const next = LAKE_LADDER[idx + 1];
     const big = bag[bag.length - 1];
+    // Check-in: late and dead-fish penalties (B.A.S.S.), or a day that doesn't count.
+    const checkIn = t.checkIns?.[t.dayWeights.length - 1] ?? null;
     // Big Bass of the day across the whole field (rivals catch real fish now).
     let fieldBig = { name: 'You', weightLb: big?.weightLb ?? 0, isPlayer: true };
     for (const r of t.rivals)
       for (const c of r.catches) if (!r.cut && c.weightLb > fieldBig.weightLb) fieldBig = { name: r.name, weightLb: c.weightLb, isPlayer: false };
     return {
+      checkIn,
       fieldBig,
       final,
       before,
@@ -250,6 +254,29 @@ export function WeighInScreen() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Check-in penalties (B.A.S.S.): stay up from the verdict on, under the scale. */}
+            {phase >= Phase.Verdict && data.checkIn && (data.checkIn.zeroed || data.checkIn.lateMin > 0 || data.checkIn.deadFish > 0) && (
+              <m.div className="row" style={{ gap: 6, flexWrap: 'wrap' }} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
+                {data.checkIn.zeroed ? (
+                  <Slug tone="red">{data.checkIn.lateMin} min late · catch disqualified</Slug>
+                ) : (
+                  <>
+                    {data.checkIn.lateMin > 0 && (
+                      <Slug tone="red">
+                        Late {data.checkIn.lateMin} min · -{data.checkIn.latePenaltyLb} lb
+                      </Slug>
+                    )}
+                    {data.checkIn.deadFish > 0 && (
+                      <Slug tone="red">
+                        {data.checkIn.deadFish} dead · -{Math.round(data.checkIn.deadPenaltyLb * 16)} oz
+                      </Slug>
+                    )}
+                  </>
+                )}
+                <span className="small muted">{lbOz(data.checkIn.grossLb)} in the livewell</span>
+              </m.div>
+            )}
 
             <AnimatePresence initial={false}>
               {phase < Phase.Board && (

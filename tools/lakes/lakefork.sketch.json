@@ -1331,19 +1331,24 @@
  },
  "field": {
   "medianBagLb": {
-   "Amateur": 13,
-   "SemiPro": 16,
-   "Pro": 19,
-   "Elite": 24
+   "Amateur": 1.9,
+   "SemiPro": 2.2,
+   "Pro": 2.6,
+   "Elite": 3.3
   },
-  "sigma": 0.3
+  "sigma": 0.35,
+  "bigFishOdds": 0.1
  },
  "regs": {
-  "minIn": 12,
+  "minIn": 14,
   "slot": {
    "minIn": 16,
    "maxIn": 24,
-   "mode": "catchWeighRelease"
+   "mode": "release"
+  },
+  "bigFish": {
+   "minIn": 24,
+   "perDay": 1
   }
  }
 }

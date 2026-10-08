@@ -3,9 +3,10 @@ import { memo, useEffect, useState } from 'react';
 import { PURSE, TIER_FORMAT } from '../../data/lakes';
 import { TUNING } from '../../data/tuning';
 import { inputHub } from '../../game/input';
-import { LIVEWELL_LIMIT } from '../../sim/livewell';
+import { healthOf, LIVEWELL_LIMIT } from '../../sim/livewell';
 import { OFF_PLANE_M } from '../../sim/nav';
 import { POINT_VERDICT_TEXT } from '../../sim/advisor';
+import { formatClock } from '../../sim/conditions';
 import type { RodSetup } from '../../sim/types';
 import type { Hud as HudData, NavHud, PointInfo } from '../../state/store';
 import { useStore } from '../../state/store';
@@ -61,9 +62,14 @@ const RodBar = memo(function RodBar({ labels, active, pick, deck }: { labels: st
  * Where you're headed, beside the minimap: the stop, how far, which way relative to the bow (arrow up =
  * dead ahead), and the approach cue (come off plane at the advisor's distance, then fish it in range).
  */
-const NavChip = memo(function NavChip({ nav, onOpen }: { nav: NavHud; onOpen: () => void }) {
-  const status =
-    nav.cue === 'inRange'
+const NavChip = memo(function NavChip({ nav, onOpen, etaMin, canCheckIn }: { nav: NavHud; onOpen: () => void; etaMin: number; canCheckIn: boolean }) {
+  const status = nav.home
+    ? canCheckIn
+      ? 'Check in now'
+      : nav.distM <= TUNING.checkIn.radiusM
+        ? 'At the launch'
+        : `Head in · ${Math.max(1, Math.ceil(etaMin))} min run`
+    : nav.cue === 'inRange'
       ? 'In range'
       : nav.cue === 'lane'
         ? 'Stay in the lane'
@@ -77,7 +83,7 @@ const NavChip = memo(function NavChip({ nav, onOpen }: { nav: NavHud; onOpen: ()
             ? `Off plane at ${OFF_PLANE_M} m`
             : null;
   return (
-    <button className={`nav-chip hud-box ${nav.cue === 'lane' || nav.cue === 'stumpsAhead' ? 'idleIn' : (nav.cue ?? '')}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
+    <button className={`nav-chip hud-box ${nav.home ? (canCheckIn ? 'inRange' : 'idleIn') : nav.cue === 'lane' || nav.cue === 'stumpsAhead' ? 'idleIn' : (nav.cue ?? '')}`} onClick={onOpen} aria-label={`Destination ${nav.pro ? `PRO ${nav.pro}, ` : ''}${nav.name}, ${nav.distM} metres ${nav.compass}. Open the lake map`}>
       <span className="nav-arrow" style={{ transform: `rotate(${nav.rel}rad)` }} aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <path d="M12 2l8 18-8-4.5L4 20z" />
@@ -85,7 +91,7 @@ const NavChip = memo(function NavChip({ nav, onOpen }: { nav: NavHud; onOpen: ()
       </span>
       <span className="nav-text">
         <span className="nav-name">
-          {nav.pro ? <b className="nav-pro">PRO {nav.pro}</b> : <Icon name="pin" size={13} />} {nav.name}
+          {nav.pro ? <b className="nav-pro">PRO {nav.pro}</b> : nav.home ? <b className="nav-pro">CHECK-IN</b> : <Icon name="pin" size={13} />} {nav.name}
         </span>
         <span className="nav-dist">
           {nav.distM} m {nav.compass}
@@ -170,7 +176,17 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
   const showRods = hud.phase === 'Navigate' || (hud.phase === 'Cast' && !hud.castFlying && !hud.castCharging);
   const trend = usePlaceTrend(hud.place);
   const left = Math.max(0, (C.dayEndMin - hud.clockMin) / (C.dayEndMin - C.dayStartMin));
-  const late = hud.clockMin >= C.warnAtMin;
+  const ci = hud.checkIn;
+  const late = ci.headIn;
+  // Once it's time to head in, the clock cell says how far out you are (or how late).
+  const clockLabel =
+    ci.lateMin > 0
+      ? `Late ${ci.lateMin} min · -${ci.lateMin * TUNING.checkIn.latePenaltyLbPerMin} lb`
+      : ci.headIn
+        ? ci.atLaunch
+          ? 'At the launch · check in'
+          : `Head in · ${Math.max(1, Math.ceil(ci.etaMin))} min run`
+        : `Day ${hud.day}/${hud.totalDays} · ${hud.motor === 'outboard' ? 'Outboard' : 'Trolling'}`;
   const money = tier ? PURSE[tier].payouts.length : 10;
   const line = cutDay ?? (hud.fieldSize > money ? money : null);
   const inside = line !== null && hud.place <= line;
@@ -182,8 +198,8 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
         <div className="hud-left">
           <div className="scorebug">
             <div className="sb-cell clock">
-              <span className="sb-label">
-                Day {hud.day}/{hud.totalDays} · {hud.motor === 'outboard' ? 'Outboard' : 'Trolling'}
+              <span className={`sb-label ${ci.lateMin > 0 ? 'late' : ci.headIn ? 'headin' : ''}`} title={`Check in at the launch by ${formatClock(C.dayEndMin)}: 1 lb a minute late, zero after ${TUNING.checkIn.lateMaxMin} minutes`}>
+                {clockLabel}
               </span>
               <span className={`sb-value ${late ? 'late' : ''}`}>{hud.clock}</span>
               <span className={`time-left ${late ? 'late' : ''}`} style={{ transform: `scaleX(${left})` }} />
@@ -191,11 +207,19 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
             <div className="sb-cell">
               <span className="sb-label">Livewell</span>
               <div className="livewell">
-                {slots.map((f, i) => (
-                  <div key={i} className={`lw-slot ${f ? 'full' : ''} ${f?.cwr ? 'cwr' : ''}`} title={f?.cwr ? 'Slot fish: weighed and released' : undefined}>
-                    {f ? lbOz(f.weightLb) : ''}
-                  </div>
-                ))}
+                {slots.map((f, i) => {
+                  const health = f ? healthOf(f) : null;
+                  return (
+                    <div
+                      key={i}
+                      className={`lw-slot ${f ? 'full' : ''} ${health && health !== 'lively' ? health : ''}`}
+                      title={health ? (health === 'dead' ? `Dead: ${TUNING.livewell.deadPenaltyLb * 16} oz penalty, can't be culled` : health === 'sluggish' ? 'Sluggish: cull it or weigh in early' : 'Lively') : undefined}
+                      aria-label={f ? `${lbOz(f.weightLb)} lb, ${health}` : 'Empty'}
+                    >
+                      {f ? lbOz(f.weightLb) : ''}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="sb-cell accent">
@@ -245,7 +269,7 @@ export function Hud({ hud, debug }: { hud: HudData; debug: boolean }) {
       </div>
 
       {hud.phase === 'Navigate' && <button className="minimap-hit" aria-label="Open the lake map" onClick={openMap} />}
-      {hud.nav && <NavChip nav={hud.nav} onOpen={openMap} />}
+      {hud.nav && <NavChip nav={hud.nav} onOpen={openMap} etaMin={ci.etaMin} canCheckIn={ci.can} />}
 
       {/* Outside the zoomed top bar: it's placed under the sonar inset by the renderer (--sonar-bottom). */}
       <CoachCard hold={hud.phase === 'Fight' || hud.phase === 'Landed'} />

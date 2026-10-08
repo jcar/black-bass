@@ -4,7 +4,7 @@ import { playUi } from '../../audio/sound';
 import { SPECIES } from '../../data/species';
 import { TUNING } from '../../data/tuning';
 import { LAKES } from '../../data/lakes';
-import { isKeeper, keeperMinIn } from '../../sim/livewell';
+import { catchVerdict, healthOf, isDead, keeperMinIn } from '../../sim/livewell';
 import type { CaughtFish } from '../../sim/types';
 import { useStore } from '../../state/store';
 import { FishArt, lbOz } from '../components';
@@ -14,7 +14,7 @@ import { assetUrl, portraitId } from '../../game/assets';
 function Thumb({ f }: { f: CaughtFish }) {
   const url = assetUrl(portraitId(f.species, f.weightLb));
   return (
-    <div className="fish-thumb" style={{ height: 52 }}>
+    <div className={`fish-thumb ${healthOf(f) === 'lively' ? '' : healthOf(f)}`} style={{ height: 52 }} title={healthOf(f)}>
       {url && <img src={url} alt="" />}
       <span className="fw">{lbOz(f.weightLb)}</span>
     </div>
@@ -31,10 +31,13 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
   const tourneyBig = useStore((s) => s.tournament?.stats.bigFishLb ?? 0);
   const lake = useStore((s) => (s.tournament ? LAKES[s.tournament.lakeId] : undefined));
   const all = pending ? [...livewell, pending] : [];
-  const smallest = all.reduce((mi, f, i) => (f.weightLb < all[mi].weightLb ? i : mi), 0);
-  const [release, setRelease] = useState(smallest);
+  // Dead fish can't be culled: the suggestion is the smallest live fish.
+  const smallest = all.reduce((mi, f, i) => (!isDead(f) && (mi < 0 || f.weightLb < all[mi].weightLb) ? i : mi), -1);
+  const [release, setRelease] = useState(Math.max(0, smallest));
   const sp = SPECIES[fish.species];
-  const keeper = isKeeper(fish, lake);
+  const verdict = catchVerdict(fish, lake);
+  // A legal fish released under the one-big-fish rule still reads as a keeper-size fish, but it went back.
+  const keeper = verdict === 'keeper' && fish.released !== 'bigFish';
   const pb = keeper && fish.weightLb > bigFishPb && fish.weightLb >= tourneyBig;
   // Texas Parks & Wildlife's ShareLunker program: 13 lb and up.
   const lunker = keeper && fish.species === 'largemouth' && fish.weightLb >= 13;
@@ -52,8 +55,8 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
       </m.div>
       <div className="catch-info">
         <m.div className="stamp" initial={{ scale: 1.6, opacity: 0, rotate: -6 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} transition={{ ...spring, delay: 0.25 }}>
-          <Slug tone={keeper ? 'good' : 'red'} size="lg">
-            {keeper ? 'Keeper' : sp.isBass ? 'Short fish' : 'Bycatch'}
+          <Slug tone={keeper ? 'good' : verdict === 'slot' || fish.released ? 'gold' : 'red'} size="lg">
+            {keeper ? 'Keeper' : verdict === 'slot' ? 'Slot fish' : fish.released === 'bigFish' ? 'Over the limit' : verdict === 'short' ? 'Short fish' : 'Bycatch'}
           </Slug>
         </m.div>
         <m.h1 initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ ...spring, delay: 0.15 }}>
@@ -65,24 +68,33 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
         </div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <span className="badge">{fish.lengthIn}" long</span>
-          {fish.cwr && <span className="badge warn">Slot fish · weighed &amp; released</span>}
+          {verdict === 'slot' && <span className="badge warn">Protected slot · released</span>}
           {(pb || lunker) && (
             <m.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...spring, delay: 1.3 }}>
               <Slug tone="gold">{lunker ? 'ShareLunker class' : 'Personal best'}</Slug>
             </m.span>
           )}
         </div>
-        {fish.cwr && <p className="small muted">A marshal weighs it in the boat and it goes straight back: it still counts toward your bag.</p>}
-        {!keeper && (
+        {verdict === 'slot' && lake?.regs?.slot && (
+          <p className="small muted">
+            Texas law protects {lake.regs.slot.minIn}-{lake.regs.slot.maxIn}" largemouth here: it goes straight back, never into the livewell, and it doesn't count. Keep fish under {lake.regs.slot.minIn}" and one {lake.regs.slot.maxIn}" or longer.
+          </p>
+        )}
+        {fish.released === 'bigFish' && lake?.regs?.bigFish && (
+          <p className="small muted">
+            Only {lake.regs.bigFish.perDay} bass {lake.regs.bigFish.minIn}" or longer may be kept a day, and you already have a bigger one. Back it goes.
+          </p>
+        )}
+        {(verdict === 'short' || verdict === 'bycatch') && (
           <p className="small" style={{ color: '#ff8a7d' }}>
-            {sp.isBass ? `Under the ${keeperMinIn(lake)}" minimum: back in the lake.` : `Only bass count. Unhooking cost ${TUNING.clock.unhookBycatchMin} minutes.`}
+            {verdict === 'short' ? `Under the ${keeperMinIn(lake)}" minimum: back in the lake.` : `Only bass count. Unhooking cost ${TUNING.clock.unhookBycatchMin} minutes.`}
           </p>
         )}
 
         {pending ? (
           <>
             <span className="kicker" style={{ color: 'var(--accent)' }}>
-              Livewell full · choose one to release
+              Livewell full · choose one to release{all.some(isDead) ? ' · dead fish must be weighed' : ''}
             </span>
             <div className="cull-tray">
               {all.map((f, i) => (
@@ -90,7 +102,9 @@ export function LandedModal({ fish, livewell, pending }: { fish: CaughtFish; liv
                   key={i}
                   type="button"
                   className={`tile ${release === i ? 'release' : ''}`}
-                  whileTap={{ scale: 0.94 }}
+                  whileTap={isDead(f) ? undefined : { scale: 0.94 }}
+                  disabled={isDead(f)}
+                  aria-label={isDead(f) ? `${lbOz(f.weightLb)} lb, dead: can't be culled` : `Release ${lbOz(f.weightLb)} lb${healthOf(f) === 'sluggish' ? ' (sluggish)' : ''}`}
                   onClick={() => {
                     playUi('tap');
                     setRelease(i);

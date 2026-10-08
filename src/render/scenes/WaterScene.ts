@@ -3,11 +3,14 @@ import { COLORS } from '../../data/lures';
 import { SPECIES } from '../../data/species';
 import { TUNING } from '../../data/tuning';
 import { activeTackle } from '../../sim/context';
-import { depthAt, secchiAt, type LakeGrid } from '../../sim/lake';
+import { cellIndex, coverAt, depthAt, secchiAt, type LakeGrid } from '../../sim/lake';
 import type { TournamentState, Vec2 } from '../../sim/types';
 import { BOAT_LENGTH_M, BOAT_SPRITE, texture } from '../../game/assets';
 import { paintLocalCanvas } from '../lakeTexture';
 import { hexNum, PAL } from '../palette';
+import { clutterPoints, COVER_CLUTTER, coverFade, markSizeNoise } from '../sonarNoise';
+
+const SONAR_MARK = 0xffe066;
 import { HUD_FONT, sonarInsetRect, type Scene, type View } from './types';
 
 const PATCH_M = 140;
@@ -412,6 +415,22 @@ export class WaterScene implements Scene {
     pts.push(px(range), py(maxDepth), px(0), py(maxDepth));
     g.poly(pts).fill({ color: 0x8a6b3d, alpha: 0.85 });
     g.moveTo(px(0), py(0)).lineTo(px(range), py(0)).stroke({ width: 1, color: PAL.sonar, alpha: 0.4 });
+    // Cover returns: wood and grass stand up off the bottom, docks hang from the top, as clutter.
+    const pingN = Math.floor(view.time * 1.5);
+    for (let i = 0; i <= 40; i++) {
+      const dd = (range * i) / 40;
+      const x = b.x + Math.cos(a) * dd;
+      const y = b.y + Math.sin(a) * dd;
+      const cover = coverAt(grid, x, y);
+      const k = COVER_CLUTTER[cover];
+      if (!k) continue;
+      const cell = cellIndex(grid, x, y);
+      const tall = cover === 'standing' ? 0.9 : cover === 'timber' ? 0.45 : cover === 'dock' ? 0.25 : 0.3;
+      for (const p of clutterPoints(cell * 41 + i, cover, 3)) {
+        const dep = cover === 'dock' ? p.v * samples[i] * tall : samples[i] * (1 - p.v * tall);
+        g.circle(px(dd + (p.u - 0.5) * (range / 40)), py(dep), 0.8 + p.s).fill({ color: SONAR_MARK, alpha: 0.35 * k });
+      }
+    }
 
     for (const f of t.fish) {
       if (f.caught) continue;
@@ -420,12 +439,15 @@ export class WaterScene implements Scene {
       const along = rx * Math.cos(a) + ry * Math.sin(a);
       const lateral = Math.abs(-rx * Math.sin(a) + ry * Math.cos(a));
       if (along < 0 || along > range || lateral > 6) continue;
-      const sz = 2 + Math.sqrt(f.weightLb) * 1.6;
+      // Same mark for every fish (species and spooked fish look alike), with a per-fish size error,
+      // faded into the clutter inside cover.
+      const sz = (2 + Math.sqrt(f.weightLb) * 1.6) * markSizeNoise(f.id, t.seed);
       const ax = px(along);
       const ay = py(f.depthFt);
+      const fade = coverFade(coverAt(grid, f.pos.x, f.pos.y), f.id, pingN);
       g.moveTo(ax + Math.cos(Math.PI * 1.15) * sz, ay + Math.sin(Math.PI * 1.15) * sz)
         .arc(ax, ay, sz, Math.PI * 1.15, Math.PI * 1.85)
-        .stroke({ width: 2, color: f.interest >= 3 ? 0xff6b3d : 0xffe066, alpha: 0.9 });
+        .stroke({ width: 2, color: f.interest >= 3 ? 0xff6b3d : SONAR_MARK, alpha: 0.9 * fade });
     }
     if (t.present) {
       const p = t.present;

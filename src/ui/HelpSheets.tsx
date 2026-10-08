@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { LAKES } from '../data/lakes';
 import { KEY_HINTS } from '../game/input';
 import { keeperMinIn } from '../sim/livewell';
+import { formatClock } from '../sim/conditions';
+import { TUNING } from '../data/tuning';
 import type { TournamentState } from '../sim/types';
 import { adviceFor } from '../sim/tierAdvice';
 import { useStore } from '../state/store';
@@ -75,7 +77,18 @@ export function HowToFishSheet({ lakeId, open, onClose }: { lakeId: string; open
         </p>
         <p>
           Your <strong>five heaviest bass</strong> count. A sixth keeper means culling your smallest. Shorts under {minIn}" and other species don't count.
-          {slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") are weighed in the boat by a marshal, released, and still count.` : ''}
+          {slot ? ` Slot fish (${slot.minIn}-${slot.maxIn}") are protected: they go straight back and don't count.` : ''}
+          {lake?.regs?.bigFish ? ` Only ${lake.regs.bigFish.perDay} bass ${lake.regs.bigFish.minIn}" or longer may be kept a day.` : ''}
+        </p>
+        <p>
+          <strong>Keep them alive:</strong> fish in the livewell go from lively to sluggish to dead, faster in warm water (80°F and up), after a long
+          fight, and the bigger they are. Cull a sluggish fish first. A dead fish can't be culled and costs {TUNING.livewell.deadPenaltyLb * 16} oz at
+          the scales.
+        </p>
+        <p>
+          <strong>Check in</strong> at the launch by {formatClock(TUNING.clock.dayEndMin)}: CHECK IN (K) there ends your day early. Late costs{' '}
+          {TUNING.checkIn.latePenaltyLbPerMin} lb a minute, and more than {TUNING.checkIn.lateMaxMin} minutes late the day counts zero. "Head in" warns
+          you in time for the run back, and the chip points home.
         </p>
       </div>
     </Sheet>

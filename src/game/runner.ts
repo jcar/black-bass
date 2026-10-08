@@ -6,6 +6,7 @@ import { advisorRoute } from '../sim/advisor';
 import { coachStep, debrief, newCoach } from '../sim/coach';
 import { bearingTo, castRangeM, compassPoint, distanceM, markVisited, navCue, nearestInRange, nextStop, relativeBearing, steerPoint, stumpsOnRoute, waterPath, type NavStop } from '../sim/nav';
 import { isKeeper } from '../sim/livewell';
+import { TUNING } from '../data/tuning';
 import { adviceFor } from '../sim/tierAdvice';
 import { appendLog, logEntry } from '../state/logbook';
 import { vibrate } from '../ui/kit/haptics';
@@ -46,10 +47,20 @@ function noticeFor(e: TournamentEvent): Omit<Notice, 'id'> | null {
       return { kind: 'banner', title: 'Thrown', sub: 'It threw the hook on the jump', tone: 'bad' };
     case 'stump':
       return { kind: 'banner', title: 'Stump!', sub: e.text?.replace(/^Hit a stump! /, ''), tone: 'bad' };
-    case 'dayOver':
-      return { kind: 'banner', title: "That's time", sub: 'Head to the weigh-in', tone: 'gold' };
+    case 'dayOver': {
+      const late = e.data?.lateMin ?? 0;
+      if (late > TUNING.checkIn.lateMaxMin) return { kind: 'banner', title: 'Too late', sub: `${late} min late: today's catch doesn't count`, tone: 'bad' };
+      if (late > 0) return { kind: 'banner', title: `Late: -${late * TUNING.checkIn.latePenaltyLbPerMin} lb`, sub: `Checked in ${late} min late`, tone: 'bad' };
+      return { kind: 'banner', title: 'Checked in', sub: 'Head to the weigh-in', tone: 'gold' };
+    }
     case 'timeWarning':
-      return { kind: 'bug', title: '30 min to weigh-in', tone: 'bad' };
+      return { kind: 'bug', title: `Head in: ${e.data?.etaMin ?? '?'} min run to the launch`, tone: 'bad' };
+    case 'late':
+      return { kind: 'banner', title: 'Check-in time', sub: `Get to the launch: ${TUNING.checkIn.latePenaltyLbPerMin} lb a minute late`, tone: 'bad' };
+    case 'fishDied':
+      return { kind: 'banner', title: 'Fish died', sub: `${TUNING.livewell.deadPenaltyLb * 16} oz penalty at the scales, and it can't be culled`, tone: 'bad' };
+    case 'message':
+      return e.text ? { kind: 'ticker', title: e.text, tone: 'info' } : null;
     case 'popped':
       return { kind: 'bug', title: 'Shook it off', tone: 'info' };
     case 'missed':
@@ -215,7 +226,7 @@ export class GameRunner {
       if (this.timeUpAt === null) this.timeUpAt = now;
       else if (now - this.timeUpAt >= TIME_HOLD) {
         this.timeUpAt = null;
-        store.setDebrief(debrief(this.coach.stats, t.conditions.waterTempF));
+        store.setDebrief(debrief(this.coach.stats, t.conditions.waterTempF, t.checkIns?.[t.checkIns.length - 1]));
         store.finishDay();
       }
     }
@@ -240,6 +251,8 @@ export class GameRunner {
       if (c && e.at) this.renderer.callout(c.text, c.color, e.at);
       if ((e.type === 'landed' || e.type === 'cullNeeded') && t.lastLanded) this.logCatch(t);
       if (e.type === 'landed' || e.type === 'cullNeeded') store.persist();
+      // Time to head in: the chip and the map point at the launch (drop any stop picked on the map).
+      if (e.type === 'timeWarning' && store.navTarget) store.setNavTarget(null);
       if (e.type === 'bank') {
         this.renderer.shake();
         if (this.realT - this.bankNoticeAt > BANK_NOTICE_GAP) {
@@ -254,7 +267,7 @@ export class GameRunner {
   /** Every bass landed goes in the logbook (with the lure, line, conditions and where it bit). */
   private logCatch(t: TournamentState) {
     const c = t.lastLanded!;
-    const e = logEntry(t, c, !!c.cwr || isKeeper(c, LAKES[t.lakeId]));
+    const e = logEntry(t, c, isKeeper(c, LAKES[t.lakeId]) && !c.released);
     if (e) useStore.getState().mutateSave((s) => void (s.logbook = appendLog(s.logbook, e)));
   }
 
@@ -278,7 +291,10 @@ export class GameRunner {
   /** The destination chip: where you're headed, how far, which way, and what to do about it. */
   private navHud(t: TournamentState): { hud: NavHud | null; inRange: boolean } {
     const target = useStore.getState().navTarget;
-    const dest = target ?? nextStop(this.route, this.visited);
+    // Check-in: once it's time to head in, the launch is the destination (unless you pick a stop on the map).
+    const L = LAKES[t.lakeId].launch;
+    const home = t.timeWarned || t.clockMin >= TUNING.clock.dayEndMin;
+    const dest = target ?? (home ? { id: 'launch', name: L.name, x: L.x, y: L.y } : nextStop(this.route, this.visited));
     const range = this.castRange(t);
     const boat = t.boat;
     const grid = getLakeGrid(LAKES[t.lakeId]);
@@ -310,6 +326,7 @@ export class GameRunner {
         cue: navCue(d, boat.motor, range, stumps),
         outboard: boat.motor === 'outboard',
         manual: !!target,
+        home: dest.id === 'launch',
       },
       inRange,
     };

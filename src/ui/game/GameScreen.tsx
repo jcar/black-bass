@@ -116,6 +116,7 @@ export function GameScreen() {
               lureId={lureId}
               dataMin={dataMin}
               hook={hud.hook}
+              checkIn={hud.checkIn.can ? (hud.checkIn.headIn ? 'due' : 'open') : 'none'}
             />
           )}
           <Hud hud={hud} debug={settings.debugMeter} />

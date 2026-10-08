@@ -145,13 +145,13 @@ async function main() {
   console.log(`${lakeId} (${tier}) · plan ${plan} · ${days} paired days · ${rigs.length} rigs · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
   for (const profile of profiles) {
     console.log(`\n${profile}`);
-    console.log('rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag   hooked  missed  s/cast');
+    console.log('rig           bass/day  [95% CI]        other  casts  follow%  match  spooked  crash/day  bag   hooked  missed  s/cast  late%  zero%  dead/day');
     const sorted = [...rigs].sort((a, b) => report[profile][b.lureId].bass.mean - report[profile][a.lureId].bass.mean);
     for (const rig of sorted) {
       const r = report[profile][rig.lureId];
       console.log(
         `${rig.lureId.padEnd(13)} ${r.bass.mean.toFixed(2).padStart(6)}  [${r.bass.lo.toFixed(2)}, ${r.bass.hi.toFixed(2)}]`.padEnd(40) +
-          `${r.other.toFixed(1).padStart(5)}  ${r.casts.toFixed(0).padStart(5)}  ${(r.followRate * 100).toFixed(0).padStart(6)}%  ${r.match.toFixed(2)}  ${(r.spooked * 100).toFixed(0).padStart(6)}%  ${r.crashes.toFixed(1).padStart(8)}  ${r.bag.toFixed(1).padStart(5)}  ${r.hooked.toFixed(1).padStart(6)}  ${r.missed.toFixed(1).padStart(6)}  ${r.secPerCast.toFixed(1).padStart(6)}`,
+          `${r.other.toFixed(1).padStart(5)}  ${r.casts.toFixed(0).padStart(5)}  ${(r.followRate * 100).toFixed(0).padStart(6)}%  ${r.match.toFixed(2)}  ${(r.spooked * 100).toFixed(0).padStart(6)}%  ${r.crashes.toFixed(1).padStart(8)}  ${r.bag.toFixed(1).padStart(5)}  ${r.hooked.toFixed(1).padStart(6)}  ${r.missed.toFixed(1).padStart(6)}  ${r.secPerCast.toFixed(1).padStart(6)}  ${(r.late * 100).toFixed(0).padStart(4)}%  ${(r.zeroed * 100).toFixed(0).padStart(4)}%  ${r.dead.toFixed(2).padStart(8)}`,
       );
     }
   }
@@ -172,7 +172,11 @@ function summarise(ms: DayMetrics[]) {
     match: mean(ms.map((m) => m.avgMatch)),
     spooked: mean(ms.map((m) => m.spookedAtArrival)),
     crashes: mean(ms.map((m) => m.crashes)),
+    /** On the scales, after the late and dead-fish penalties. */
     bag: mean(ms.map((m) => m.bag)),
+    late: mean(ms.map((m) => ((m.lateMin ?? 0) > 0 ? 1 : 0))),
+    zeroed: mean(ms.map((m) => (m.zeroed ? 1 : 0))),
+    dead: mean(ms.map((m) => m.deadFish ?? 0)),
     landed: mean(ms.map((m) => m.bassLanded)),
     hooked: mean(ms.map((m) => m.bassHooked ?? 0)),
     missed: mean(ms.map((m) => m.missedSets ?? 0)),

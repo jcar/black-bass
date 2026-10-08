@@ -128,17 +128,20 @@ describe('fight', () => {
   });
 
   it('lets light line survive the first run of a bigger fish through the drag, but not with the spool thumbed', () => {
-    const run = (thumb: boolean) => {
-      const s = hooked(3, 'largemouth', 5, { type: 'fluoro', testLb: 8 });
+    // Over a few seeds (the first run's strength is random): the drag never lets 8 lb break in the
+    // first two seconds; thumbing the spool often does.
+    const run = (seed: number, thumb: boolean) => {
+      const s = hooked(seed, 'largemouth', 5, { type: 'fluoro', testLb: 8 });
       const types: string[] = [];
       for (let i = 0; i < 120 && s.phase === 'Fight'; i++) {
         stepTournament(s, { ...emptyInput(), reel: true, brake: thumb }, DT);
         types.push(...drainEvents(s).map((e) => e.type));
       }
-      return types;
+      return types.includes('snap');
     };
-    expect(run(false)).not.toContain('snap');
-    expect(run(true)).toContain('snap');
+    const seeds = [1, 2, 3, 4, 5, 6];
+    expect(seeds.filter((k) => run(k, false))).toEqual([]);
+    expect(seeds.filter((k) => run(k, true)).length).toBeGreaterThanOrEqual(2);
   });
 
   it('brings a beaten fish to the boat quickly', () => {
@@ -275,9 +278,9 @@ describe('every lake', () => {
 describe('Lake Fork regulations', () => {
   const lake = LAKES.lakefork;
   const fish = (lengthIn: number) => ({ species: 'largemouth' as const, lengthIn });
-  it('treats 16-24" largemouth as catch-weigh-release slot fish that still count', () => {
+  it('protects 16-24" largemouth: slot fish are released, not kept', () => {
     expect(inSlot(fish(18), lake)).toBe(true);
-    expect(isKeeper(fish(18), lake)).toBe(true);
+    expect(isKeeper(fish(18), lake)).toBe(false);
     expect(inSlot(fish(15.75), lake)).toBe(false);
     expect(inSlot(fish(24), lake)).toBe(false);
     expect(inSlot(fish(18), LAKES.champlain)).toBe(false);
@@ -343,7 +346,8 @@ describe('rival field', () => {
   it('catches individual fish of the lake species within the lake size limits', () => {
     const s = forkT(21);
     const caught = s.rivals.flatMap((r) => r.catches);
-    expect(caught.length).toBeGreaterThan(100);
+    // Lake Fork's slot sends most fish back, so rivals keep fewer than the 5-11 they catch.
+    expect(caught.length).toBeGreaterThan(50);
     expect(caught.every((c) => c.species === 'largemouth')).toBe(true);
     expect(Math.max(...caught.map((c) => c.weightLb))).toBeLessThan(weightFromLength('largemouth', 28, 1.08 * 1.05) + 0.01);
     const champ = newT(21).rivals.flatMap((r) => r.catches);

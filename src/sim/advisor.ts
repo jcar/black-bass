@@ -65,6 +65,12 @@ const CASTS_PER_VISIT = 11;
 const MOVE_SEC = 60;
 /** Real seconds a strike costs (fight, unhook, recast). */
 const FIGHT_SEC = 15;
+/**
+ * Fishing time in a day (real seconds): blast-off to check-in, less the run back to the launch (a move)
+ * and the margin the "head in" warning leaves (TUNING.checkIn).
+ */
+export const DAY_FISHING_SEC =
+  (TUNING.clock.dayEndMin - TUNING.clock.dayStartMin) / TUNING.clock.gameMinPerSec - MOVE_SEC - TUNING.checkIn.headInMarginMin / TUNING.clock.gameMinPerSec;
 
 /** Cadence match a skilled player actually achieves per technique (harness expert profile). */
 const EXPERT_MATCH: Record<LureDef['style'], number> = { steady: 0.88, twitchPause: 0.67, walk: 0.75, bottom: 0.75, shake: 0.91 };
@@ -401,7 +407,7 @@ export function estimateRig(c: Conditions, clockMin: number, rig: Rig, env: Cell
     }
   }
   const visitSec = MOVE_SEC + casts * cycleSec + strikes * FIGHT_SEC;
-  const daySec = (TUNING.clock.dayEndMin - TUNING.clock.dayStartMin) / TUNING.clock.gameMinPerSec;
+  const daySec = DAY_FISHING_SEC;
   const w = fishN || 1;
   return {
     bitesPerVisit: strikes,

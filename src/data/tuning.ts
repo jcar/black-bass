@@ -4,16 +4,65 @@
 export const TUNING = {
   clock: {
     dayStartMin: 6 * 60,
+    /** Check-in time: be back at the launch by now (see checkIn). */
     dayEndMin: 15 * 60,
     /** 540 game minutes in ~15 real minutes = 0.6 game-min per real second (36x). */
     gameMinPerSec: 0.6,
-    warnAtMin: 14 * 60 + 30,
     unhookBassMin: 1.5,
     unhookBycatchMin: 6,
     shoreSnagMin: 3,
     /** Stump strike: check the lower unit, trim up, idle back to a lane. */
     stumpMin: 8,
     popAttemptMin: 0.5,
+  },
+
+  /**
+   * Check-in (B.A.S.S. "Rules are rules: the late penalty"): be at the launch by check-in time. Every
+   * minute late costs 1 lb, up to 15 minutes; any later and the day's catch is disqualified.
+   */
+  checkIn: {
+    /** Within this of the launch (m) you can check in. */
+    radiusM: 60,
+    latePenaltyLbPerMin: 1,
+    /** More than this many minutes late: zero for the day. */
+    lateMaxMin: 15,
+    /** (game) Check-in opens this long after blast-off, so a stray tap at the ramp can't end the day. */
+    openAfterMin: 60,
+    /** "Head in" warning: when the run back plus this margin (game minutes) reaches check-in time. */
+    headInMarginMin: 10,
+    /** ETA: a run averages this share of top outboard speed (lanes, turns, idling out of the marina). */
+    runSpeedFrac: 0.8,
+    /** ETA: real seconds to get on plane and come off it at the ramp. */
+    runOverheadSec: 4,
+    /** Rivals: chance a rival checks in late (1-12 min), and the share of those more than 15 minutes late. (game) */
+    rivalLateChance: 0.025,
+    rivalZeroShare: 0.15,
+  },
+
+  /**
+   * Livewell survival. Tournament mortality climbs steeply with water temperature (above ~77-80F),
+   * long fights and big fish (Wilde 1998; Gilliland & Schramm, B.A.S.S. Keeping Bass Alive). Health
+   * runs 1 (lively) to 0 (dead). (game) rates: of fish kept from capture to check-in with no culling,
+   * ~0.1% die at 76F, ~1.6% at 80F, ~13% at 84F and ~36% at 88F; Champlain's summer water (~69F) never
+   * kills, and a warm late-May or early-October day at Lake Fork can cost you one.
+   */
+  livewell: {
+    /** Health lost per hour in the livewell below the warm-water onset. */
+    baseLossPerHour: 0.02,
+    /** Above this temperature losses grow with the square of the excess: x (1 + (dT / tempScaleF)^2), 2.3x at 80F, 3.9x at 84F. */
+    tempOnsetF: 72,
+    tempScaleF: 7,
+    /** Health lost on landing per real second of fight (x temperature factor^0.5). */
+    fightLossPerSec: 0.0025,
+    /** Big fish suffer more: losses x (weight / sizeRefLb)^sizeExp. */
+    sizeRefLb: 3,
+    sizeExp: 0.35,
+    /** Each fish's hardiness ~ lognormal(1, sigma): losses are divided by it. */
+    hardinessSigma: 0.35,
+    /** Health below this reads "sluggish" in the livewell. */
+    sluggishBelow: 0.5,
+    /** B.A.S.S. "Rules are rules: the dead fish penalty": 4 oz per dead fish at the scales; dead fish can't be culled. */
+    deadPenaltyLb: 0.25,
   },
 
   boat: {

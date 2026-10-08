@@ -22,8 +22,8 @@ full-screen landscape play that works offline.
 Desktop keyboard: WASD/arrows steer on the quiet trolling motor (hold Shift to run the outboard), M = lake
 map while driving (1-9 picks a PRO stop, 0 follows the route; M/Esc closes), F = fish here, Enter/C = cast, Space = reel (hold it steady for moving baits, short pulses for bottom baits),
 T = twitch/hop/shake, H = set the hook, B = thumb brake (also stops a drop shot on the fall), V = bow on a jump,
-M = move/burn in once fishing, I = data for this point (between casts), P = pop hook, Esc = pause (or close the
-open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
+M = move/burn in once fishing, I = data for this point (between casts), P = pop hook, K = check in (at the launch),
+Esc = pause (or close the open panel). Steering keys never twitch the lure; the on-screen hint follows the lure.
 
 Setting the hook: a strike is a fish charging the lure; once it has the bait (a thump and a buzz, "HOOK HIM!", and
 on touch the HOOK button that replaces REEL glows) you have about a second to set (H or HOOK) before it spits a hard
@@ -55,6 +55,13 @@ with the follow (3) and strike (6) lines marked. **Data for this point** (on FIS
 the NES verdict for the water around the boat ("NICE BASS POINT" / "SOME BASS HERE" / "LITTLE BASS HERE") with
 the clock, sky and water temperature. It comes from the advisor's model (expected bass within reach and how
 active they are now, against the lake's own range), never from the live fish.
+
+Tournament rules (B.A.S.S. and Texas Parks & Wildlife; see `docs/fish-model.md` section 8): check in at the
+launch by 3:00 PM. CHECK IN (K) there ends your day early; late costs 1 lb a minute and more than 15 minutes
+late zeroes the day. "Head in" warns you in time for the run back (the chip then points home with the run
+time). Fish in the livewell go lively, sluggish, dead, faster in warm water, after long fights and for big
+fish; a dead fish can't be culled and costs 4 oz at the scales. At Lake Fork the 16-24" slot goes straight
+back (it never counts), only one 24"+ bass may be kept a day, and the minimum is 14".
 
 Advice fades as you climb (`src/sim/tierAdvice.ts`, like the NES Class A lakes that hid the hot spots):
 Co-Angler gets 6 PRO stops, the Pro rod badge, the full day plan and free point data; Semi-Pro 3 stops; Pro no
@@ -116,7 +123,10 @@ node --import tsx tools/advisor-check.ts champlain
 The harness (`tools/harness/`) plays through the real inputs (keyboard or stick) with expert, average
 and naive-keyboard profiles, each setting the hook with its own timing (the expert on the thump, the
 average player sometimes late, the naive one often early or late) and drop-shotting the marks it saw
-on the sonar as it stopped; see `docs/model-reports/` for its reports. Bass/day counts strikes, as the
+on the sonar as it stopped; see `docs/model-reports/` for its reports. Every profile heads back for
+check-in when the run home (the HUD's ETA) plus its own margin reaches 3:00 (the expert ~10 minutes
+early, the average player ~5, the naive keyboard player cutting it close and sometimes late), and its bag
+is what goes on the scales after the late and dead-fish penalties. Bass/day counts strikes, as the
 advisor predicts; hooked and missed show the hookset. It caps itself at 8 worker
 processes and its workers refuse to spawn more.
 
@@ -134,8 +144,9 @@ npm run simulate -- 30 lakefork SemiPro         # calibrate field.medianBagLb ag
 
 Then register it in `src/data/lakes/index.ts` (`LAKES` and `LAKE_LADDER`), add a plate description
 in the asset manifest (`plates.lakes`, optional `plates.lakeCovers`), and run
-`npm run assets -- --only "plate_<id>_*" --no-anchor`. Per-lake options: `regs` (minimum length and
-protected slot with catch-weigh-release), `lanes`/`stumpZones` (boat lanes and the stump hazard), and
+`npm run assets -- --only "plate_<id>_*" --no-anchor`. Per-lake options: `regs` (minimum length, a
+protected slot released immediately, and a one-big-fish-a-day limit; `field.bigFishOdds` sets the rivals'
+kicker odds), `lanes`/`stumpZones` (boat lanes and the stump hazard), and
 `standing` timber cover (fishable; can wrap light line in a fight).
 
 ## Architecture

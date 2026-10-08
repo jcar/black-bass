@@ -108,6 +108,14 @@ export function runBotDay(seed: number, lakeId = 'champlain', tier: Tier = 'Amat
       twitches = 0;
     }
     phaseT += DT;
+    // Check-in: run back to the launch (teleporting, with the travel time) a little before check-in time.
+    const L = lake.launch;
+    const runHome = (Math.hypot(L.x - s.boat.pos.x, L.y - s.boat.pos.y) / TUNING.boat.outboardMaxSpeed) * TUNING.clock.gameMinPerSec;
+    if (s.clockMin + runHome + 5 >= TUNING.clock.dayEndMin && (s.phase === 'Navigate' || (s.phase === 'Cast' && !s.cast?.flying && !s.cast?.powerCharging))) {
+      s.clockMin += runHome;
+      s.boat.pos = { x: L.x, y: L.y };
+      input.checkIn = true;
+    }
     switch (s.phase) {
       case 'Navigate':
         if (castsHere === 0) input.fishHere = true;

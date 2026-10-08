@@ -215,7 +215,7 @@ export function stepFight(s: TournamentState, ctx: SimCtx, input: InputFrame, dt
 
   if (D < F.landDistM) {
     if (fight.stamina <= F.landStaminaMax) {
-      landFish(s, s.fish[fight.fishId]);
+      landFish(s, s.fish[fight.fishId], rng);
       return;
     }
     // Green fish at the boat surges away.

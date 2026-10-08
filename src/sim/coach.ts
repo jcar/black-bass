@@ -7,7 +7,9 @@ import { RODS, rodPowerOk } from '../data/rods';
 import { SPECIES } from '../data/species';
 import { TUNING } from '../data/tuning';
 import { advisorRoute, APPROACH_TIP, techniqueTip } from './advisor';
-import type { GamePhase, HookMiss, RodSetup, TournamentEvent, TournamentState, Vec2 } from './types';
+import { healthOf } from './livewell';
+import { formatClock } from './conditions';
+import type { DayCheckIn, GamePhase, HookMiss, RodSetup, TournamentEvent, TournamentState, Vec2 } from './types';
 
 export interface CoachTip {
   id: string;
@@ -29,7 +31,12 @@ export interface DayStats {
   match: Record<string, { n: number; sum: number }>;
   /** Strikes that didn't become hooked fish, by why (presentation.ts hookset). */
   missed?: Record<HookMiss, number>;
+  /** Fish that died in the livewell today. */
+  deadFish?: number;
 }
+
+/** What the coach says about warm-water livewell losses (tip and debrief). */
+const HOT_WATER = `Hot water: cull and weigh early, fish shorter fights. A sluggish fish is the one to cull; a dead one costs ${TUNING.livewell.deadPenaltyLb * 16} oz at the scales and can never be culled.`;
 
 export interface CoachState {
   stats: DayStats;
@@ -135,7 +142,16 @@ export function coachStep(c: CoachState, t: TournamentState, events: TournamentE
     }
   }
 
+  // A fish going sluggish in the livewell: warm water is starting to tell.
+  if (t.conditions.waterTempF >= TUNING.livewell.tempOnsetF && t.livewell.some((f) => healthOf(f) === 'sluggish')) candidates.push({ id: 'hotWater', title: `Livewell: ${Math.round(t.conditions.waterTempF)}°F water`, text: HOT_WATER });
+
   for (const e of events) {
+    if (e.type === 'fishDied') {
+      c.stats.deadFish = (c.stats.deadFish ?? 0) + 1;
+      candidates.unshift({ id: 'hotWater', title: 'A fish died in the livewell', text: HOT_WATER });
+    }
+    if (e.type === 'timeWarning')
+      candidates.unshift({ id: 'headIn', title: 'Head in for check-in', text: `Check-in is ${formatClock(TUNING.clock.dayEndMin)} at the launch. Every minute late costs ${TUNING.checkIn.latePenaltyLbPerMin} lb, and more than ${TUNING.checkIn.lateMaxMin} minutes late zeroes the day. The chip points home with the run time.` });
     if (e.type === 'crash') {
       c.stats.crashes++;
       candidates.push({ id: 'crash', title: 'Cast hit the cover', text: `A lure landing on docks or wood spooks fish within ${TUNING.cast.crashSpookRadius} m. Aim at the edge: edge casts are rewarded.` });
@@ -217,9 +233,13 @@ export function coachStep(c: CoachState, t: TournamentState, events: TournamentE
   return null;
 }
 
-/** Three things to work on, from the day's stats, most costly first. */
-export function debrief(s: DayStats, waterTempF: number): string[] {
+/** Three things to work on, from the day's stats (and how check-in went), most costly first. */
+export function debrief(s: DayStats, waterTempF: number, checkIn?: DayCheckIn): string[] {
   const out: { cost: number; text: string }[] = [];
+  if (checkIn?.zeroed) out.push({ cost: 100, text: `Checked in ${checkIn.lateMin} minutes late: over ${TUNING.checkIn.lateMaxMin} and the day counts zero. Head in when the chip says so; it allows for the run back.` });
+  else if (checkIn?.lateMin) out.push({ cost: 50 + checkIn.lateMin, text: `${checkIn.lateMin} minutes late to check-in cost ${checkIn.latePenaltyLb} lb. Leave when the "Head in" warning comes: it counts the run back to the launch.` });
+  const dead = checkIn?.deadFish ?? s.deadFish ?? 0;
+  if (dead > 0) out.push({ cost: 40 + dead, text: `${dead} fish died in the livewell (${Math.round(waterTempF)}°F water): -${Math.round(dead * TUNING.livewell.deadPenaltyLb * 16)} oz. ${HOT_WATER}` });
   if (s.arrivals >= 2 && s.spookedArrivals / s.arrivals >= 0.25)
     out.push({ cost: (s.spookedArrivals / s.arrivals) * 10, text: `${s.spookedArrivals} of ${s.arrivals} stops started with spooked fish. ${APPROACH_TIP}` });
   if (s.crashes >= 2) out.push({ cost: s.crashes * 0.8, text: `${s.crashes} casts crashed into cover, spooking the fish around it. Aim for the edge of docks and wood.` });

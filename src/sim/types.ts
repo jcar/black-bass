@@ -77,8 +77,15 @@ export interface CaughtFish {
   lengthIn: number;
   caughtAtMin: number;
   lureId: string;
-  /** Protected-slot fish under catch-weigh-release: weighed by the marshal, counted, released. */
-  cwr?: boolean;
+  /**
+   * Why a legal-length bass went back (Landed card): a protected-slot fish (released immediately), or a
+   * second fish over the one-per-day big-fish limit.
+   */
+  released?: 'slot' | 'bigFish';
+  /** Livewell health, 1 lively to 0 dead (livewell.ts). Missing on fish kept before it existed: lively. */
+  health?: number;
+  /** This fish's hardiness (losses are divided by it). */
+  hardy?: number;
   /** Logbook details (optional: fish caught before the logbook existed lack them). */
   colorId?: string;
   line?: Line;
@@ -99,6 +106,8 @@ export interface Rival {
   feedCursor?: number;
   dayWeights: number[];
   cut: boolean;
+  /** Minutes late to check-in today (0 or missing: on time). */
+  lateMin?: number;
 }
 
 export type LureState = 'air' | 'water';
@@ -210,6 +219,9 @@ export interface TournamentEvent {
     | 'popped'
     | 'popFailed'
     | 'cullNeeded'
+    | 'fishDied'
+    | 'late'
+    | 'checkedIn'
     | 'retrieved'
     | 'spooked'
     | 'timeWarning'
@@ -223,7 +235,7 @@ export interface TournamentEvent {
   text?: string;
   at?: Vec2;
   /** Structured payload for the broadcast feed (rival name, weight, place...). */
-  data?: { name?: string; weightLb?: number; species?: SpeciesId; place?: number; big?: boolean; miss?: HookMiss; topwater?: boolean };
+  data?: { name?: string; weightLb?: number; species?: SpeciesId; place?: number; big?: boolean; miss?: HookMiss; topwater?: boolean; lateMin?: number; etaMin?: number };
 }
 
 /** Running state of the live broadcast feed (leader, player place, rate limiting). */
@@ -233,6 +245,23 @@ export interface BroadcastState {
   lastReportMin: number;
   leaderId: number | null;
   lastPlace: number;
+}
+
+/** How a day's check-in went: the scales before and after penalties. */
+export interface DayCheckIn {
+  /** Clock at check-in (game minutes). */
+  atMin: number;
+  /** Bag before penalties (lb). */
+  grossLb: number;
+  /** Whole minutes late (0 = on time). */
+  lateMin: number;
+  latePenaltyLb: number;
+  deadFish: number;
+  deadPenaltyLb: number;
+  /** More than 15 minutes late: the day's catch doesn't count. */
+  zeroed: boolean;
+  /** What went on the scales (dayWeights holds the same number). */
+  netLb: number;
 }
 
 export interface BoatState {
@@ -266,6 +295,8 @@ export interface TournamentState {
   /** Last landed fish (for the Landed card). */
   lastLanded: CaughtFish | null;
   dayWeights: number[];
+  /** Check-in details per day, parallel to dayWeights (missing on tournaments saved before check-in existed). */
+  checkIns?: DayCheckIn[];
   fish: FishEntity[];
   rivals: Rival[];
   /** 0..1 lake-wide pressure, rises over multi-day events. */
@@ -278,7 +309,10 @@ export interface TournamentState {
   stats: { casts: number; bites: number; lost: number; bycatch: number; bigFishLb: number; missed?: number };
   /** Settings: the sim sets the hook for you (otherwise the player must, input.hookSet). */
   autoHookset?: boolean;
+  /** The "head in" warning (run back to the launch vs check-in time) has been given today. */
   timeWarned: boolean;
+  /** The "you're late" notice has been given today. */
+  lateWarned?: boolean;
   lastAimAngle: number;
   /** Round-robin cursor for population updates. */
   popCursor: number;
@@ -305,6 +339,8 @@ export interface InputFrame {
   moveOn: boolean;
   /** Set the hook (keyboard H, touch HOOK). */
   hookSet: boolean;
+  /** Check in at the launch and end the day (keyboard K, touch CHECK IN). */
+  checkIn: boolean;
 }
 
 export const emptyInput = (): InputFrame => ({
@@ -318,4 +354,5 @@ export const emptyInput = (): InputFrame => ({
   fishHere: false,
   moveOn: false,
   hookSet: false,
+  checkIn: false,
 });
