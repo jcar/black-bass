@@ -1,17 +1,19 @@
 // Pro advice panels. Every recommendation comes from src/sim/advisor.ts, which predicts bites from the
 // same strike model the fish use, checked against human-like play by tools/advisor-check.ts.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { LAKES } from '../data/lakes';
 import { COLORS, LURES, lureKey } from '../data/lures';
 import { lineLabel, RODS } from '../data/rods';
-import { APPROACH_TIP, dayOutlook, dayPlan, rigIssues, rodNeed, scoutLake, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
+import { APPROACH_TIP, dayOutlook, dayPlan, rigIssues, rodNeed, suggestedRod, techniqueTip, WINDOWS, type WindowId } from '../sim/advisor';
 import { getLakeGrid, nearCover } from '../sim/lake';
 import { adviceFor } from '../sim/tierAdvice';
 import type { Conditions, RodSetup, Tier } from '../sim/types';
 import { tierOfLake } from '../state/career';
 import { useStore } from '../state/store';
+import { scoutReport } from './advice';
 import { LureIcon, money } from './components';
 import { Button, Icon, Sheet } from './kit';
+import { ProRigButton, ProRigSheet } from './ProRig';
 
 /** The cover a technique tip talks about: what's within a short cast of the stop. */
 const COVER_NEAR_M = 25;
@@ -19,15 +21,55 @@ const COVER_NEAR_M = 25;
 const WINDOW_LABEL = Object.fromEntries(WINDOWS.map((w) => [w.id, w.label])) as Record<WindowId, string>;
 
 /** Pre-tournament scouting report for a lake: what the fish respond to across its tournament season. */
-export function ScoutingSheet({ lakeId, open, onClose, onRigUp }: { lakeId: string; open: boolean; onClose: () => void; onRigUp?: () => void }) {
+export function ScoutingSheet({
+  lakeId,
+  open,
+  onClose,
+  onRigUp,
+  proRig,
+}: {
+  lakeId: string;
+  open: boolean;
+  onClose: () => void;
+  onRigUp?: () => void;
+  /** Offer "Rig me up like the pro" from this report, keeping `reserve` cash back. */
+  proRig?: { reserve: number; reserveLabel?: string; onApplied: () => void };
+}) {
   const save = useStore((s) => s.save);
+  const [pro, setPro] = useState(false);
   const lake = LAKES[lakeId];
   if (!lake) return null;
+  const footer = (onRigUp || proRig) && (
+    <>
+      {proRig && <ProRigButton onClick={() => setPro(true)} />}
+      {onRigUp && (
+        <Button variant={proRig ? 'default' : 'primary'} haptic onClick={onRigUp}>
+          Rig up <Icon name="next" />
+        </Button>
+      )}
+    </>
+  );
   return (
-    <Sheet open={open} onClose={onClose} title={`Scouting · ${lake.name}`} footer={onRigUp && <Button variant="primary" haptic onClick={onRigUp}>Rig up <Icon name="next" /></Button>}>
-      {open && <ScoutingReport lakeId={lakeId} spots={adviceFor(tierOfLake(lakeId)).scoutSpots} />}
-      {open && <RigCheck lakeId={lakeId} deck={save.deck} />}
-    </Sheet>
+    <>
+      <Sheet open={open} onClose={onClose} title={`Scouting · ${lake.name}`} footer={footer}>
+        {open && <ScoutingReport lakeId={lakeId} spots={adviceFor(tierOfLake(lakeId)).scoutSpots} />}
+        {open && <RigCheck lakeId={lakeId} deck={save.deck} />}
+      </Sheet>
+      {proRig && (
+        <ProRigSheet
+          lakeId={lakeId}
+          open={open && pro}
+          onClose={() => setPro(false)}
+          conditions={null}
+          reserve={proRig.reserve}
+          reserveLabel={proRig.reserveLabel}
+          onApplied={() => {
+            setPro(false);
+            proRig.onApplied();
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -38,7 +80,7 @@ export function ScoutingSheet({ lakeId, open, onClose, onRigUp }: { lakeId: stri
 export function ScoutingReport({ lakeId, spots }: { lakeId: string; spots: boolean }) {
   const save = useStore((s) => s.save);
   const lake = LAKES[lakeId];
-  const report = useMemo(() => (lake ? scoutLake(lake) : null), [lake]);
+  const report = useMemo(() => (lake ? scoutReport(lake) : null), [lake]);
   if (!lake || !report) return null;
   const top = report.picks.slice(0, 4);
   const best = top[0]?.score ?? 1;

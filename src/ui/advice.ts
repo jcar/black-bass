@@ -1,5 +1,14 @@
 import type { LakeDef } from '../data/lakes/types';
+import { scoutLake } from '../sim/advisor';
 import type { Conditions } from '../sim/types';
+
+/** The lake's scouting report (deterministic per lake and ~1 s to build, so built once). */
+const scoutCache = new Map<string, ReturnType<typeof scoutLake>>();
+export function scoutReport(lake: LakeDef): ReturnType<typeof scoutLake> {
+  let r = scoutCache.get(lake.id);
+  if (!r) scoutCache.set(lake.id, (r = scoutLake(lake)));
+  return r;
+}
 
 /** Dock-talk for the briefing: the GDD's tackle-matching rules, phrased for the day's conditions and lake. */
 export function conditionsAdvice(c: Conditions, lake: LakeDef): string[] {

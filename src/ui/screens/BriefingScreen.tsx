@@ -6,6 +6,7 @@ import { plateId } from '../../game/assets';
 import { canRerig, useStore } from '../../state/store';
 import { promotionTarget } from '../../state/career';
 import { DayPlan } from '../ProAdvice';
+import { ProRigButton, ProRigSheet } from '../ProRig';
 import { HowToFishSheet, ProPlanSheet } from '../HelpSheets';
 import type { Weather } from '../../sim/types';
 import { isCwir, keeperMinIn } from '../../sim/livewell';
@@ -25,6 +26,8 @@ export function BriefingScreen() {
   const launchDay = useStore((s) => s.launchDay);
   const [howTo, setHowTo] = useState(false);
   const [plan, setPlan] = useState(false);
+  const [pro, setPro] = useState(false);
+  const rerig = useStore((s) => s.rerigBeforeLaunch);
   const unlocked = useStore((s) => s.save.unlockedLakes);
   if (!t) return null;
   const lake = LAKES[t.lakeId];
@@ -147,12 +150,32 @@ export function BriefingScreen() {
         onClose={() => setPlan(false)}
         footer={
           canRerig(t) && (
-            <Button cue="open" onClick={() => setScreen('deck')}>
-              Re-rig rods
-            </Button>
+            <>
+              <ProRigButton onClick={() => setPro(true)} />
+              <Button cue="open" onClick={() => setScreen('deck')}>
+                Re-rig rods
+              </Button>
+            </>
           )
         }
       />
+      {canRerig(t) && (
+        <ProRigSheet
+          lakeId={t.lakeId}
+          open={plan && pro}
+          onClose={() => setPro(false)}
+          // The Pro series and below get today's plan; the Elite series only the scouting report.
+          conditions={access.plan === 'scouting' ? null : c}
+          reserve={0}
+          onApplied={() => {
+            setPro(false);
+            setPlan(false);
+            // Today's tournament deck follows, then the rod locker shows it (back returns here).
+            rerig();
+            setScreen('deck');
+          }}
+        />
+      )}
       <HowToFishSheet lakeId={t.lakeId} open={howTo} onClose={() => setHowTo(false)} />
     </>
   );

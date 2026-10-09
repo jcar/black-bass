@@ -653,6 +653,7 @@ p {
 }
 .sheet-foot {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
   margin-top: 12px;
@@ -697,6 +698,19 @@ p {
 }
 .plan-strip {
   align-items: stretch;
+}
+/* "Rig me up like the pro" preview: the shopping list. Names wrap; nothing is cut off. */
+.pro-buy {
+  gap: 8px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.pro-buy .num {
+  flex: none;
+}
+.pro-buy.total {
+  border-bottom: none;
+  font-weight: 700;
 }
 .plan-chip {
   position: relative;

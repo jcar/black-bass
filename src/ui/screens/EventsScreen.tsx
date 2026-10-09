@@ -116,7 +116,25 @@ export function EventsScreen() {
           )}
         </div>
       </div>
-      <ScoutingSheet lakeId={sel.id} open={scout} onClose={() => setScout(false)} onRigUp={() => setScreen('deck')} />
+      <ScoutingSheet
+        lakeId={sel.id}
+        open={scout}
+        onClose={() => setScout(false)}
+        onRigUp={() => setScreen('deck')}
+        proRig={
+          active
+            ? undefined
+            : {
+                // Not entered yet: keep the entry fee back.
+                reserve: purse.entry,
+                reserveLabel: `the ${TIER_NAME[sel.tier]} entry fee`,
+                onApplied: () => {
+                  setScout(false);
+                  setScreen('deck');
+                },
+              }
+        }
+      />
       <ConfirmSheet
         open={withdraw}
         title="Withdraw"

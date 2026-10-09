@@ -113,6 +113,7 @@ rig converts over a stop's worth of casts (fish only strike on their closest pas
 followers close in). Cast pace and the cadence match an expert achieves are measured with the
 human-proxy harness. It tells you **what** to tie on, **where** to fish (a milk run of stops),
 **how** to work it and approach the spot, **when** each rig is best, and what to expect.
+**Rig me up like the pro** (Scouting, or the briefing's plan before blast-off) previews, buys and rigs that advice in one go (`src/state/proRig.ts`: each window's best bait, then the next best, up to 5 rods, keeping the entry fee back).
 
 `tools/advisor-check.ts` is the acceptance gate: the harness expert fishes every lure on the same
 seeded days, once on a player's default itinerary and once on the advisor's route, and the advice
