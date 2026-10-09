@@ -110,12 +110,12 @@ export function ShopScreen() {
             </AnimatePresence>
           </div>
 
-          <m.div key={tab === 'lures' ? lureId : rodId} className="col" style={{ flex: 1.2, justifyContent: 'center', gap: 6, minWidth: 0 }} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
+          <m.div key={tab === 'lures' ? lureId : rodId} className="col shop-info" style={{ flex: 1.2, justifyContent: 'safe center', gap: 6, minWidth: 0 }} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
             {tab === 'lures' ? (
               <>
                 <span className="kicker">{lureSpec(lureId).join(' · ')}</span>
                 <h1 className="shop-name">{lure.name}</h1>
-                <p className="muted clamp2" style={{ maxWidth: 440 }}>
+                <p className="muted shop-desc" style={{ maxWidth: 440 }}>
                   {lure.description}
                 </p>
                 <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>
@@ -155,7 +155,7 @@ export function ShopScreen() {
                   {rod.power} power · {rod.reel === 'spinning' ? 'Spinning' : 'Casting'} · lures {rod.lureOz[0]}–{rod.lureOz[1]} oz
                 </span>
                 <h1 className="shop-name">{rod.name}</h1>
-                <p className="muted clamp2" style={{ maxWidth: 440 }}>
+                <p className="muted shop-desc" style={{ maxWidth: 440 }}>
                   {rod.power === 'ML' || rod.power === 'M'
                     ? 'Light enough to cast finesse baits and protect light line.'
                     : 'Backbone to throw heavy baits far and haul big fish out of cover.'}
