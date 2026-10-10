@@ -53,7 +53,7 @@ export interface Hud {
   nav: NavHud | null;
   /** Within casting range of the destination, a PRO stop or a charted waypoint: the FISH button lights up. */
   inRange: boolean;
-  /** A strike in progress: 'wait' while the fish closes on it (or blows up on a topwater), 'set' once it has the bait. */
+  /** A strike in progress: 'wait' after a topwater blow-up, 'set' once the fish has the bait. A subsurface charge shows nothing. */
   hook: 'none' | 'wait' | 'set';
   /** Getting back for check-in. */
   checkIn: CheckInHud;
@@ -381,9 +381,21 @@ export function buildHud(t: TournamentState, nearWaypoint: Hud['nearWaypoint'], 
     proPick: !adviceFor(t.tier).proChip ? -1 : t.phase === 'Navigate' || t.phase === 'Cast' ? proPickNow(lake, t.conditions, t.deck, t.clockMin, t.boat.pos, planFor(t)) : t.activeRod,
     nav: t.phase === 'Navigate' ? nav : null,
     inRange: t.phase === 'Navigate' && inRange,
-    hook: t.present?.strikingFishId == null ? 'none' : t.present.strikeT < biteAtSec(LURES[t.deck[t.activeRod].lureId]) ? 'wait' : 'set',
+    hook: hookHud(t),
     checkIn: checkInHud(t),
   };
+}
+
+/**
+ * The HOOK button. A subsurface charge gives no cue (you feel nothing until the fish has it), so HOOK
+ * only appears on the thump; a topwater blow-up shows HOOK unlit while you wait for the weight.
+ */
+export function hookHud(t: TournamentState): Hud['hook'] {
+  const p = t.present;
+  if (p?.strikingFishId == null) return 'none';
+  const lure = LURES[t.deck[t.activeRod].lureId];
+  if (p.strikeT >= biteAtSec(lure)) return 'set';
+  return lure.motion === 'surface' ? 'wait' : 'none';
 }
 
 export function checkInHud(t: TournamentState): CheckInHud {

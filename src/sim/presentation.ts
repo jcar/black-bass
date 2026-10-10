@@ -403,7 +403,8 @@ export function stepPresent(s: TournamentState, ctx: SimCtx, input: InputFrame, 
   if (striker !== null) {
     p.strikingFishId = striker;
     p.strikeT = 0;
-    emit(s, 'strike', undefined, p.lurePos);
+    // Subsurface you feel nothing until the fish has it (the 'bite'); a topwater blow-up you see.
+    emit(s, 'strike', undefined, p.lurePos, { topwater: lure.motion === 'surface' });
     return;
   }
 

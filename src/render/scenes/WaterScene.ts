@@ -190,6 +190,7 @@ export class WaterScene implements Scene {
     const visibleFt = Math.max(3, secchi * 0.9);
     const radius = (view.h / this.zoom) * 1.2;
     const strikeId = t.present?.strikingFishId ?? null;
+    const topwater = !!t.present && activeTackle(t).lure.motion === 'surface';
     const lure = t.present?.lurePos ?? null;
     const now = view.time;
     const calm = this.reducedMotion;
@@ -238,7 +239,8 @@ export class WaterScene implements Scene {
       let size = 1;
       let px = f.pos.x;
       let py = f.pos.y;
-      const depth = striking ? 0 : f.depthFt;
+      // A topwater blow-up is at the surface; a subsurface strike happens at the bait's depth.
+      const depth = striking && topwater ? 0 : f.depthFt;
       const depthK = Math.max(0.55, Math.min(1, 1 - depth / (visibleFt * 2.5)));
       if (v.leaving > 0) {
         v.leaving = Math.max(0, v.leaving - dt);

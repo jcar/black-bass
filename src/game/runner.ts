@@ -242,7 +242,8 @@ export class GameRunner {
         if (this.realT - this.bankAt < BANK_DEBOUNCE) continue;
         this.bankAt = this.realT;
       }
-      playEvent(e.type);
+      // A subsurface charge is silent: the first thing you feel is the thump, the cue to set.
+      if (e.type !== 'strike' || e.data?.topwater) playEvent(e.type);
       const n = noticeFor(e);
       if (n) store.notify(n);
       if (e.type === 'rivalCatch' && e.data?.big) playUi('record');

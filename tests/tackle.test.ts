@@ -14,6 +14,7 @@ import { lightLevel } from '../src/sim/conditions';
 import { COVER_CODES, depthAt, getLakeGrid, nearCover, secchiAt } from '../src/sim/lake';
 import { biteAtSec, hookUpChance, hookWindowSec, newPresentState } from '../src/sim/presentation';
 import { createTournament, drainEvents, stepTournament } from '../src/sim/tournament';
+import { hookHud } from '../src/state/store';
 import { emptyInput, type CoverType, type InputFrame, type Line, type TournamentEvent, type TournamentState, type Vec2 } from '../src/sim/types';
 
 const DT = 1 / 60;
@@ -210,6 +211,27 @@ describe('hookset', () => {
     expect(hookUpChance(tube, h, mono, 25)).toBeGreaterThan(0.75); // modest
     expect(hookUpChance(squarebill, h, braid, 25)).toBeLessThan(hookUpChance(squarebill, h, mono, 25));
     expect(hookUpChance(flipJig, RODS['rod-m'], braid, 10)).toBeLessThan(hookUpChance(flipJig, RODS['rod-xh'], braid, 10));
+  });
+
+  it('a subsurface charge gives no cue: HOOK appears with the thump, on time for a normal reaction', () => {
+    const { s } = striking('deepCrank');
+    s.present!.strikingFishId = null;
+    s.fish[0].interest = TUNING.attraction.strikeAt + 1;
+    const first = step(s).find((e) => e.type === 'strike');
+    expect(first?.data?.topwater).toBe(false); // silent: the runner plays nothing for it
+    expect(hookHud(s)).toBe('none');
+    const ev = stepUntil(s, biteAtSec(LURES.deepCrank) + DT);
+    ev.push(...step(s));
+    expect(ev.some((e) => e.type === 'bite')).toBe(true);
+    expect(hookHud(s)).toBe('set');
+    stepUntil(s, biteAtSec(LURES.deepCrank) + 0.35); // a human reaction to the thump
+    expect(step(s, { hookSet: true }).find((e) => e.type === 'missed')?.data?.miss).not.toBe('early');
+  });
+
+  it('a topwater blow-up shows HOOK unlit while you wait for the weight', () => {
+    const { s } = striking('walker', { type: 'mono', testLb: 14 });
+    stepUntil(s, TUNING.attraction.strikeChargeSec + 0.05);
+    expect(hookHud(s)).toBe('wait');
   });
 
   it('H sets the hook from the keyboard', () => {
